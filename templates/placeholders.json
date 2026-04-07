@@ -1,0 +1,176 @@
+{
+  "version": "3.0",
+  "description": "销售分析报告 PPT 占位符定义（完全配置化版）",
+  "generated_at": "2026-04-06 22:19:00",
+  "template_file": "销售分析报告_标准模板.pptx",
+  "placeholders": {
+    "charts": {
+      "CHART:sales_by_person": {
+        "description": "销售员业绩横向条形图",
+        "data_source": "销售员业绩",
+        "chart_type": "bar_horizontal",
+        "x_field": "总销售额",
+        "y_field": "销售员",
+        "title": "销售员业绩表现分析",
+        "slide_index": 3
+      },
+      "CHART:product_pie": {
+        "description": "产品销售占比环形图",
+        "data_source": "产品占比",
+        "chart_type": "pie",
+        "category_field": "产品",
+        "value_field": "占比",
+        "title": "产品销售结构与占比",
+        "figsize": [6, 6],
+        "slide_index": 4
+      },
+      "CHART:city_ranking": {
+        "description": "城市销售业绩排名",
+        "data_source": "城市排名",
+        "chart_type": "bar_horizontal",
+        "x_field": "总销售额",
+        "y_field": "城市",
+        "title": "福建各城市销售业绩排名",
+        "slide_index": 5
+      },
+      "CHART:customer_comparison": {
+        "description": "新老客销售对比",
+        "data_source": "客户类型",
+        "chart_type": "column_clustered",
+        "category_field": "客户属性",
+        "series": ["总销售额", "订单数", "客单价"],
+        "title": "新老客销售贡献对比",
+        "slide_index": 6
+      },
+      "CHART:monthly_trend": {
+        "description": "月度销售趋势",
+        "data_source": "月度趋势",
+        "chart_type": "line",
+        "x_field": "年月",
+        "y_field": "总销售额",
+        "title": "销售趋势分析",
+        "slide_index": 7
+      },
+      "CHART:heatmap": {
+        "description": "销售员 - 产品热力图",
+        "data_source": "销售员 - 产品",
+        "chart_type": "heatmap",
+        "index_field": "销售员",
+        "columns": null,
+        "title": "销售员 - 产品销售能力矩阵分析",
+        "slide_index": 8
+      }
+    },
+    "insights": {
+      "INSIGHT:kpi_summary": {
+        "description": "核心指标洞察",
+        "slide_index": 2,
+        "skill": "data-insight",
+        "page": 4
+      },
+      "INSIGHT:sales_person": {
+        "description": "销售员业绩洞察",
+        "slide_index": 3,
+        "skill": "data-insight",
+        "page": 5
+      },
+      "INSIGHT:product": {
+        "description": "产品结构洞察",
+        "slide_index": 4,
+        "skill": "data-insight",
+        "page": 6
+      },
+      "INSIGHT:city": {
+        "description": "城市区域洞察",
+        "slide_index": 5,
+        "skill": "data-insight",
+        "page": 7
+      },
+      "INSIGHT:customer": {
+        "description": "客户类型洞察",
+        "slide_index": 6,
+        "skill": "data-insight",
+        "page": 8
+      },
+      "INSIGHT:trend": {
+        "description": "时间趋势洞察",
+        "slide_index": 7,
+        "skill": "data-insight",
+        "page": 9
+      },
+      "INSIGHT:heatmap": {
+        "description": "销售员 - 产品矩阵洞察",
+        "slide_index": 8,
+        "skill": "data-insight",
+        "page": 10
+      },
+      "INSIGHT:abnormal": {
+        "description": "异常订单洞察",
+        "slide_index": 9,
+        "skill": "data-insight",
+        "page": 11
+      },
+      "INSIGHT:conclusion": {
+        "description": "核心结论",
+        "slide_index": 10,
+        "skill": "data-insight",
+        "page": 12
+      },
+      "INSIGHT:strategy": {
+        "description": "落地策略",
+        "slide_index": 11,
+        "skill": "data-insight",
+        "page": 13
+      }
+    },
+    "tables": {
+      "TABLE:abnormal_orders": {
+        "description": "异常订单明细表",
+        "data_source": "异常订单",
+        "columns": null,
+        "slide_index": 9
+      }
+    },
+    "text": {
+      "TEXT:report_title": {
+        "description": "报告标题",
+        "default": "销售数据分析报告",
+        "slide_index": 0
+      },
+      "TEXT:report_subtitle": {
+        "description": "报告副标题",
+        "default": "业绩复盘 · 洞察归因 · 策略建议",
+        "slide_index": 0
+      },
+      "TEXT:report_date": {
+        "description": "报告日期",
+        "format": "YYYY-MM-DD",
+        "slide_index": 0
+      },
+      "KPI:cards": {
+        "description": "核心 KPI 卡片内容",
+        "default": "",
+        "slide_index": 2
+      }
+    }
+  },
+  "slide_mapping": {
+    "0": {"name": "封面页", "layout": "title"},
+    "1": {"name": "目录页", "layout": "toc"},
+    "2": {"name": "核心指标", "layout": "kpi"},
+    "3": {"name": "销售员业绩", "layout": "chart_text"},
+    "4": {"name": "产品结构", "layout": "chart_text"},
+    "5": {"name": "城市排名", "layout": "chart_text"},
+    "6": {"name": "客户类型", "layout": "chart_text"},
+    "7": {"name": "时间趋势", "layout": "chart_text"},
+    "8": {"name": "销售员 - 产品", "layout": "chart_text"},
+    "9": {"name": "异常订单", "layout": "table_text"},
+    "10": {"name": "核心结论", "layout": "content"},
+    "11": {"name": "落地策略", "layout": "content"},
+    "12": {"name": "结束页", "layout": "title"}
+  },
+  "report_settings": {
+    "date_range_auto_detect": true,
+    "date_range_format": "统计周期：{start} - {end} | 日期：{today}"
+  }
+}

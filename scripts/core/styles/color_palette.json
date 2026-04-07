@@ -1,0 +1,35 @@
+{
+  "name": "企业商务配色方案",
+  "version": "1.0",
+  "colors": {
+    "primary": "#1F4E79",
+    "primary_dark": "#153655",
+    "primary_light": "#2E75B6",
+    "secondary": "#2E75B6",
+    "accent": "#E74C3C",
+    "success": "#27AE60",
+    "warning": "#F39C12",
+    "info": "#3498DB",
+    "neutral": "#95A5A6",
+    "light_gray": "#ECF0F1",
+    "medium_gray": "#BDC3C7",
+    "dark_gray": "#7F8C8D",
+    "background": "#FFFFFF",
+    "text_primary": "#2C3E50",
+    "text_secondary": "#7F8C8D",
+    "white": "#FFFFFF",
+    "black": "#000000"
+  },
+  "chart_palettes": {
+    "default": ["#1F4E79", "#2E75B6", "#3498DB", "#5DADE2", "#85C1E9", "#AED6F1"],
+    "sequential": ["#1F4E79", "#2E75B6", "#3498DB", "#5DADE2", "#85C1E9"],
+    "diverging": ["#E74C3C", "#F39C12", "#F7DC6F", "#85C1E9", "#3498DB", "#2E75B6"],
+    "categorical": ["#1F4E79", "#27AE60", "#E74C3C", "#F39C12", "#9B59B6", "#3498DB"]
+  },
+  "gradient": {
+    "primary": ["#1F4E79", "#2E75B6", "#3498DB"],
+    "warm": ["#E74C3C", "#F39C12", "#F7DC6F"],
+    "cool": ["#3498DB", "#2E75B6", "#1F4E79"],
+    "success": ["#27AE60", "#58D68D", "#82E0AA"]
+  }
+}

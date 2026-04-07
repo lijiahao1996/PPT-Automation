@@ -1,0 +1,75 @@
+# 企业级 Matplotlib 样式配置
+# 使用方法：plt.style.use('styles/enterprise.mplstyle')
+
+# 图形背景
+figure.facecolor: white
+figure.figsize: 10, 6
+figure.dpi: 150
+figure.edgecolor: white
+figure.linewidth: 0
+
+# 坐标轴
+axes.facecolor: white
+axes.edgecolor: #E0E0E0
+axes.linewidth: 0.5
+axes.titlecolor: #1F4E79
+axes.titleweight: bold
+axes.titlesize: 14
+axes.labelcolor: #2C3E50
+axes.labelsize: 11
+axes.labelweight: normal
+axes.grid: True
+axes.axisbelow: True
+
+# 图例
+legend.loc: best
+legend.frameon: True
+legend.facecolor: white
+legend.edgecolor: #E0E0E0
+legend.framealpha: 0.95
+legend.fontsize: 9
+
+# 网格
+grid.color: #d3d3d3
+grid.linestyle: --
+grid.linewidth: 0.5
+grid.alpha: 1.0
+
+# 刻度
+xtick.color: #7F8C8D
+xtick.direction: out
+xtick.major.size: 4
+xtick.major.width: 0.5
+xtick.minor.size: 2
+xtick.minor.width: 0.5
+xtick.labelsize: 9
+xtick.labelcolor: #7F8C8D
+
+ytick.color: #7F8C8D
+ytick.direction: out
+ytick.major.size: 4
+ytick.major.width: 0.5
+ytick.minor.size: 2
+ytick.minor.width: 0.5
+ytick.labelsize: 9
+ytick.labelcolor: #7F8C8D
+
+# 字体
+font.sans-serif: Microsoft YaHei, SimHei, Arial, sans-serif
+font.family: sans-serif
+font.size: 10
+
+# 线条
+lines.linewidth: 2
+lines.markersize: 6
+lines.markeredgewidth: 0.5
+
+# 颜色循环（企业配色）
+axes.prop_cycle: cycler(color, ['#1F4E79', '#2E75B6', '#3498DB', '#5DADE2', '#27AE60', '#E74C3C', '#F39C12', '#9B59B6'])
+
+# 保存设置
+savefig.dpi: 300
+savefig.bbox: tight
+savefig.pad_inches: 0.1
+savefig.facecolor: white
+savefig.edgecolor: white

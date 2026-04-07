@@ -1,0 +1,182 @@
+<mxfile host="app.diagrams.net" modified="2026-04-07T01:17:00.000Z" agent="OpenClaw Agent" version="24.8.0" type="device">
+  <diagram name="帆软 PPT 执行流程图" id="fanruan-execution-flow">
+    <mxGraphModel dx="1422" dy="773" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="2339" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- ========== 标题 ========== -->
+        <mxCell id="title" value="帆软数据 → PPT 报告 企业版 v4.3 执行流程图（生产就绪）" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=24;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="400" y="20" width="800" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- ========== 阶段 1: 启动检查 ========== -->
+        <mxCell id="phase1" value="【阶段 1】启动检查" style="text;html=1;strokeColor=#1F4E79;fillColor=#D6EAF8;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="50" y="80" width="300" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="node1" value="Run.bat → Run.ps1&lt;br&gt;&lt;b&gt;启动检查&lt;/b&gt;&lt;br&gt;• 设置 UTF-8 编码&lt;br&gt;• 检查 output/*.xlsx 是否存在&lt;br&gt;• 决定是否需要爬取&lt;br&gt;&lt;br&gt;&lt;i&gt;Skills: 无&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#2E75B6;fillColor=#EBF5FB;fontSize=12;align=left;verticalAlign=top;spacingLeft=4;spacingTop=2" parent="1" vertex="1">
+          <mxGeometry x="50" y="140" width="300" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- ========== 阶段 2: 数据准备（可选） ========== -->
+        <mxCell id="phase2" value="【阶段 2】数据准备（可选）" style="text;html=1;strokeColor=#27AE60;fillColor=#D5F5E3;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="50" y="280" width="300" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="node2" value="fanruan_login.py&lt;br&gt;&lt;b&gt;帆软登录&lt;/b&gt;&lt;br&gt;• Playwright 启动 Chromium&lt;br&gt;• 自动填写账号密码&lt;br&gt;• 保存会话&lt;br&gt;&lt;br&gt;&lt;i&gt;Skills: 无&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#27AE60;fillColor=#E8F8F5;fontSize=12;align=left;verticalAlign=top;spacingLeft=4;spacingTop=2" parent="1" vertex="1">
+          <mxGeometry x="50" y="340" width="300" height="100" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="node3" value="fanruan_scrape.py&lt;br&gt;&lt;b&gt;数据爬取&lt;/b&gt;&lt;br&gt;• 加载会话文件&lt;br&gt;• 拦截 API 响应&lt;br&gt;• 提取 JSON 数据&lt;br&gt;• 保存 Excel&lt;br&gt;&lt;br&gt;&lt;i&gt;Skills: 无&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#27AE60;fillColor=#E8F8F5;fontSize=12;align=left;verticalAlign=top;spacingLeft=4;spacingTop=2" parent="1" vertex="1">
+          <mxGeometry x="50" y="460" width="300" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- ========== 阶段 3: 数据分析 ========== -->
+        <mxCell id="phase3" value="【阶段 3】数据分析" style="text;html=1;strokeColor=#E74C3C;fillColor=#FADBD8;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="400" y="80" width="300" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="node4" value="fanruan_analyze.py&lt;br&gt;&lt;b&gt;数据清洗 + 统计&lt;/b&gt;&lt;br&gt;• 读取原始 Excel&lt;br&gt;• 数据质量校验 (validator.py)&lt;br&gt;• 基础清洗（时间维度）&lt;br&gt;• 二次统计（10 个表）&lt;br&gt;• 保存统计汇总 (11 Sheets)&lt;br&gt;&lt;br&gt;&lt;i&gt;Skills: 无&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#E74C3C;fillColor=#FDEDEC;fontSize=12;align=left;verticalAlign=top;spacingLeft=4;spacingTop=2" parent="1" vertex="1">
+          <mxGeometry x="400" y="140" width="300" height="140" as="geometry" />
+        </mxCell>
+        
+        <!-- ========== 阶段 4: 报告生成（核心） ========== -->
+        <mxCell id="phase4" value="【阶段 4】报告生成（核心）" style="text;html=1;strokeColor=#9B59B6;fillColor=#F5EEF8;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="750" y="80" width="300" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="node5" value="generate_report.py&lt;br&gt;&lt;b&gt;主流程编排&lt;/b&gt;&lt;br&gt;• 加载统计数据&lt;br&gt;• 数据校验&lt;br&gt;• 生成 AI 洞察 (Step 5.3)&lt;br&gt;• 生成 6 个图表 (Step 5.4)&lt;br&gt;• 填充 PPT 模板 (Step 5.5)&lt;br&gt;&lt;br&gt;&lt;i&gt;★ 使用 Skill: data-insight&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#9B59B6;fillColor=#F5EEF8;fontSize=12;align=left;verticalAlign=top;spacingLeft=4;spacingTop=2" parent="1" vertex="1">
+          <mxGeometry x="750" y="140" width="300" height="140" as="geometry" />
+        </mxCell>
+        
+        <!-- Step 5.3: AI 洞察 -->
+        <mxCell id="node5_3" value="Step 5.3: insight_generator.py&lt;br&gt;&lt;b&gt;AI 洞察生成&lt;/b&gt;&lt;br&gt;• 加载 skills/data-insight/SKILL.md&lt;br&gt;• 构建数据上下文&lt;br&gt;• 构建 Prompt (系统 + 用户)&lt;br&gt;• 调用 Qwen API (qwen-plus)&lt;br&gt;• 解析 JSON 响应（10 条）&lt;br&gt;• 保存 artifacts/ai_insights.json&lt;br&gt;&lt;br&gt;&lt;i&gt;★ 唯一使用的 Skill&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#8E44AD;fillColor=#EBDEF0;fontSize=12;align=left;verticalAlign=top;spacingLeft=4;spacingTop=2" parent="1" vertex="1">
+          <mxGeometry x="750" y="300" width="300" height="160" as="geometry" />
+        </mxCell>
+        
+        <!-- Step 5.4: 图表生成 -->
+        <mxCell id="node5_4" value="Step 5.4: chart_engine.py&lt;br&gt;&lt;b&gt;6 个图表并行生成&lt;/b&gt;&lt;br&gt;1. 销售员业绩 - 横向条形图&lt;br&gt;2. 产品占比 - 环形饼图&lt;br&gt;3. 城市排名 - 横向条形图&lt;br&gt;4. 客户类型 - 多列柱状图&lt;br&gt;5. 月度趋势 - 折线图&lt;br&gt;6. 销售员 - 产品 - 热力图&lt;br&gt;&lt;br&gt;输出：artifacts/temp/chart_*.png&lt;br&gt;&lt;br&gt;&lt;i&gt;Skills: 无&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#F39C12;fillColor=#FEF5E7;fontSize=12;align=left;verticalAlign=top;spacingLeft=4;spacingTop=2" parent="1" vertex="1">
+          <mxGeometry x="750" y="480" width="300" height="160" as="geometry" />
+        </mxCell>
+        
+        <!-- Step 5.5: 模板填充 -->
+        <mxCell id="node5_5" value="Step 5.5: template_engine.py&lt;br&gt;&lt;b&gt;PPT 模板填充&lt;/b&gt;&lt;br&gt;• 加载模板 PPT&lt;br&gt;• 替换文本占位符 [TEXT:xxx]&lt;br&gt;• 替换 AI 洞察 {{INSIGHT:xxx}}&lt;br&gt;• 替换图表 [CHART:xxx]&lt;br&gt;• 生成异常订单表格 [TABLE:xxx]&lt;br&gt;• 保存最终 PPT&lt;br&gt;&lt;br&gt;&lt;i&gt;Skills: 无&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#3498DB;fillColor=#EBF5FB;fontSize=12;align=left;verticalAlign=top;spacingLeft=4;spacingTop=2" parent="1" vertex="1">
+          <mxGeometry x="750" y="660" width="300" height="140" as="geometry" />
+        </mxCell>
+        
+        <!-- ========== 输出文件 ========== -->
+        <mxCell id="output" value="【输出文件】" style="text;html=1;strokeColor=#1F4E79;fillColor=#D6EAF8;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="1100" y="300" width="300" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="output1" value="★ output/销售分析报告_*.pptx (最终报告)&lt;br&gt;• templates/placeholders.json (动态更新)&lt;br&gt;• templates/stats_rules.json (动态更新)&lt;br&gt;&lt;br&gt;注：临时文件已清理，不保留" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1F4E79;fillColor=#EBF5FB;fontSize=12;align=left;verticalAlign=top;spacingLeft=4;spacingTop=2" parent="1" vertex="1">
+          <mxGeometry x="1100" y="360" width="300" height="140" as="geometry" />
+        </mxCell>
+        
+        <!-- 箭头连接 -->
+        <mxCell id="arrow1-2" value="无 Excel 时执行" style="endArrow=classic;html=1;strokeColor=#27AE60;strokeWidth=2;fontSize=10;fontColor=#27AE60" parent="1" source="node1" target="node2" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="200" y="270" as="sourcePoint" />
+            <mxPoint x="200" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow2-3" value="会话文件" style="endArrow=classic;html=1;strokeColor=#27AE60;strokeWidth=2;fontSize=10;fontColor=#27AE60" parent="1" source="node2" target="node3" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="200" y="450" as="sourcePoint" />
+            <mxPoint x="200" y="470" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow3-4" value="原始数据 Excel" style="endArrow=classic;html=1;strokeColor=#E74C3C;strokeWidth=2;fontSize=10;fontColor=#E74C3C" parent="1" source="node3" target="node4" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="360" y="510" as="sourcePoint" />
+            <mxPoint x="410" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow4-5" value="统计汇总 Excel" style="endArrow=classic;html=1;strokeColor=#9B59B6;strokeWidth=2;fontSize=10;fontColor=#9B59B6" parent="1" source="node4" target="node5" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="710" y="210" as="sourcePoint" />
+            <mxPoint x="760" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow5-5_3" value="调用" style="endArrow=classic;html=1;strokeColor=#8E44AD;strokeWidth=2;fontSize=10;fontColor=#8E44AD" parent="1" source="node5" target="node5_3" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="900" y="290" as="sourcePoint" />
+            <mxPoint x="900" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow5-5_4" value="调用" style="endArrow=classic;html=1;strokeColor=#F39C12;strokeWidth=2;fontSize=10;fontColor=#F39C12" parent="1" source="node5" target="node5_4" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="900" y="290" as="sourcePoint" />
+            <mxPoint x="900" y="490" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow5-5_5" value="调用" style="endArrow=classic;html=1;strokeColor=#3498DB;strokeWidth=2;fontSize=10;fontColor=#3498DB" parent="1" source="node5" target="node5_5" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="900" y="290" as="sourcePoint" />
+            <mxPoint x="900" y="670" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow5_3-output" value="10 条 AI 洞察" style="endArrow=classic;html=1;strokeColor=#8E44AD;strokeWidth=2;fontSize=10;fontColor=#8E44AD;dashed=1" parent="1" source="node5_3" target="output1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1060" y="380" as="sourcePoint" />
+            <mxPoint x="1110" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow5_4-output" value="6 个图表 PNG" style="endArrow=classic;html=1;strokeColor=#F39C12;strokeWidth=2;fontSize=10;fontColor=#F39C12;dashed=1" parent="1" source="node5_4" target="output1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1060" y="560" as="sourcePoint" />
+            <mxPoint x="1110" y="420" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow5_5-output" value="最终 PPT" style="endArrow=classic;html=1;strokeColor=#3498DB;strokeWidth=2;fontSize=10;fontColor=#3498DB;dashed=1" parent="1" source="node5_5" target="output1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1060" y="740" as="sourcePoint" />
+            <mxPoint x="1110" y="440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- ========== 图例 ========== -->
+        <mxCell id="legend" value="【图例】" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="50" y="850" width="100" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend1" value="Python 脚本节点" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#2E75B6;fillColor=#EBF5FB;fontSize=10" parent="1" vertex="1">
+          <mxGeometry x="50" y="900" width="150" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend2" value="使用 Skill" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#8E44AD;fillColor=#EBDEF0;fontSize=10" parent="1" vertex="1">
+          <mxGeometry x="220" y="900" width="150" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend3" value="核心模块" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#E74C3C;fillColor=#FDEDEC;fontSize=10" parent="1" vertex="1">
+          <mxGeometry x="50" y="960" width="150" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend4" value="数据流" style="endArrow=classic;html=1;strokeWidth=2;fontSize=10" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="50" y="1020" as="sourcePoint" />
+            <mxPoint x="150" y="1020" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="legend5" value="输出文件" style="endArrow=classic;html=1;strokeWidth=2;fontSize=10;dashed=1" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="200" y="1020" as="sourcePoint" />
+            <mxPoint x="300" y="1020" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
