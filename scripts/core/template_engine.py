@@ -126,7 +126,7 @@ class TemplateEngine:
                 },
                 "insights": {
                     "INSIGHT:kpi_summary": {"description": "核心指标洞察", "slide_index": 2, "skill": "data-insight", "page": 4},
-                    "INSIGHT:sales_person": {"description": "销售员业绩洞察", "slide_index": 3, "skill": "data-insight", "page": 5},
+                    "INSIGHT:sales_by_person": {"description": "销售员业绩洞察", "slide_index": 3, "skill": "data-insight", "page": 5},
                     "INSIGHT:product": {"description": "产品结构洞察", "slide_index": 4, "skill": "data-insight", "page": 6},
                     "INSIGHT:city": {"description": "城市区域洞察", "slide_index": 5, "skill": "data-insight", "page": 7},
                     "INSIGHT:customer": {"description": "客户类型洞察", "slide_index": 6, "skill": "data-insight", "page": 8},
@@ -282,7 +282,7 @@ class TemplateEngine:
         
         # 洞察页码映射
         insight_pages = [
-            'kpi_summary', 'sales_person', 'product', 'city', 'customer',
+            'kpi_summary', 'sales_by_person', 'product', 'city', 'customer',
             'trend', 'heatmap', 'abnormal', 'conclusion', 'strategy'
         ]
         for i, insight_key in enumerate(insight_pages):
@@ -398,7 +398,7 @@ class TemplateEngine:
         chart_shape.text_frame.text = "[CHART:sales_by_person]"
         chart_shape.name = "CHART:sales_by_person"
         insight_box = slide.shapes.add_textbox(Inches(8.8), Inches(1.5), Inches(4), Inches(4.5))
-        insight_box.text_frame.paragraphs[0].text = "{{INSIGHT:sales_person}}"
+        insight_box.text_frame.paragraphs[0].text = "{{INSIGHT:sales_by_person}}"
         
         # 第 5 页：产品结构
         slide = prs.slides.add_slide(prs.slide_layouts[1])

@@ -47,6 +47,24 @@ class InsightGenerator:
                 return f.read()
         return None
     
+    def _load_charts_config(self) -> Optional[Dict]:
+        """动态加载图表配置"""
+        placeholders_path = os.path.join(self.base_dir, 'templates', 'placeholders.json')
+        if os.path.exists(placeholders_path):
+            with open(placeholders_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                return config.get('placeholders', {}).get('charts', {})
+        return None
+    
+    def _load_insights_config(self) -> Optional[Dict]:
+        """动态加载洞察配置"""
+        placeholders_path = os.path.join(self.base_dir, 'templates', 'placeholders.json')
+        if os.path.exists(placeholders_path):
+            with open(placeholders_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                return config.get('placeholders', {}).get('insights', {})
+        return None
+    
     def generate(self, data_summary: Dict, output_path: str = None) -> List[str]:
         """
         生成 AI 洞察
@@ -93,57 +111,30 @@ class InsightGenerator:
         return insights
     
     def _build_data_context(self, data_summary: Dict) -> str:
-        """构建数据上下文（支持 DataFrame）"""
+        """构建数据上下文（动态支持所有统计表）"""
         import pandas as pd
         context = []
         
-        if '核心 KPI' in data_summary:
-            kpi = data_summary['核心 KPI']
-            context.append("【核心指标】")
-            for _, row in kpi.iterrows():
-                context.append(f"  - {row['指标']}: {row['数值']}{row['单位']}")
-        
-        if '销售员业绩' in data_summary:
-            context.append("\n【销售员业绩 TOP5】")
-            df = data_summary['销售员业绩']
-            for _, row in df.head(5).iterrows():
-                context.append(f"  - {row['销售员']}: 销售额{row['总销售额']:,.0f}元，客单价{row['客单价']:,.0f}元")
-        
-        if '产品占比' in data_summary:
-            context.append("\n【产品销售占比】")
-            df = data_summary['产品占比']
-            for _, row in df.iterrows():
-                context.append(f"  - {row['产品']}: {row['占比']}%")
-        
-        if '城市排名' in data_summary:
-            context.append("\n【城市业绩 TOP5】")
-            df = data_summary['城市排名']
-            for _, row in df.head(5).iterrows():
-                context.append(f"  - {row['城市']}: 销售额{row['总销售额']:,.0f}元")
-        
-        if '客户类型' in data_summary:
-            context.append("\n【客户类型对比】")
-            df = data_summary['客户类型']
-            for _, row in df.iterrows():
-                context.append(f"  - {row['客户属性']}: 销售额{row['总销售额']:,.0f}元，占比{row['占比']}%")
-        
-        if '月度趋势' in data_summary:
-            context.append("\n【月度销售趋势】")
-            df = data_summary['月度趋势']
-            for _, row in df.iterrows():
-                context.append(f"  - {row['年月']}: 销售额{row['总销售额']:,.0f}元")
-        
-        if '季度对比' in data_summary:
-            context.append("\n【季度对比】")
-            df = data_summary['季度对比']
-            for _, row in df.iterrows():
-                context.append(f"  - {row['季度']}: 销售额{row['总销售额']:,.0f}元，占比{row['占比']}%")
-        
-        if '异常订单' in data_summary and len(data_summary['异常订单']) > 0:
-            context.append("\n【异常订单】")
-            df = data_summary['异常订单']
-            for _, row in df.head(5).iterrows():
-                context.append(f"  - {row['销售员']}: {row['销售额']:,.0f}元")
+        # 动态遍历所有可用的统计表
+        for sheet_name, df in data_summary.items():
+            if df is None or len(df) == 0:
+                continue
+            
+            context.append(f"\n【{sheet_name}】")
+            
+            # 显示前 5 行数据
+            for idx, row in df.head(5).iterrows():
+                row_data = []
+                for col in df.columns:
+                    val = row[col]
+                    if isinstance(val, (int, float)):
+                        row_data.append(f"{col}: {val:,.0f}")
+                    else:
+                        row_data.append(f"{col}: {val}")
+                context.append("  - " + "，".join(row_data))
+            
+            if len(df) > 5:
+                context.append(f"  ... 共{len(df)}行数据")
         
         return '\n'.join(context)
     
@@ -155,22 +146,63 @@ class InsightGenerator:
                 "请确保 Skill 文件存在，AI 洞察生成依赖此规范。"
             )
         
+        # 动态加载图表配置
+        charts_config = self._load_charts_config()
+        chart_count = len(charts_config) if charts_config else 0
+        
         return f"""你是一位专业的商业数据分析师，专门为销售分析报告生成 PPT 洞察文案。
 
 请严格遵循以下 SKILL 规范生成洞察：
 
 {self.skill_prompt[:10000]}
 
-【重要】直接输出 JSON 数组，不要任何其他文字。"""
+【重要】
+1. 直接输出 JSON 数组，不要任何其他文字
+2. JSON 数组的元素数量 = 图表数量（当前{chart_count}个图表）
+3. 每条洞察对应一个图表，按图表顺序输出
+4. 洞察内容必须基于提供的数据，不能虚构"""
     
     def _build_user_prompt(self, data_context: str) -> str:
-        """构建用户 Prompt"""
-        return f"""请根据以下销售数据，生成 10 条符合上述规范的商业洞察。
+        """构建用户 Prompt（支持洞察配置 + 结论策略）"""
+        # 动态加载图表配置
+        charts_config = self._load_charts_config()
+        insights_config = self._load_insights_config()
+        
+        chart_info = "\n\n【图表配置】\n"
+        if charts_config:
+            for i, (chart_key, chart_cfg) in enumerate(charts_config.items(), 1):
+                chart_info += f"{i}. {chart_key}: {chart_cfg.get('title', '')} (数据源：{chart_cfg.get('data_source', '')})\n"
+        
+        # 添加洞察配置
+        insight_config_info = ""
+        if insights_config:
+            insight_config_info = "\n\n【洞察配置】\n"
+            for chart_key, insight_cfg in insights_config.items():
+                insight_config_info += f"\n### {chart_key}\n"
+                insight_config_info += f"- 分析维度：{', '.join(insight_cfg.get('dimensions', []))}\n"
+                insight_config_info += f"- 关键指标：{', '.join(insight_cfg.get('metrics', []))}\n"
+                insight_config_info += f"- 对比基准：{insight_cfg.get('baseline', '无')}\n"
+                insight_config_info += f"- 洞察风格：{insight_cfg.get('style', '平衡型')}\n"
+                insight_config_info += f"- 字数要求：{insight_cfg.get('word_count', 150)}字\n"
+                if insight_cfg.get('custom_prompt'):
+                    insight_config_info += f"- 自定义提示：{insight_cfg.get('custom_prompt')}\n"
+        
+        chart_count = len(charts_config) if charts_config else 0
+        total_count = chart_count + 2  # +2 为结论和策略
+        
+        return f"""请根据以下销售数据，生成符合上述规范的商业洞察。
 
 数据摘要:
 {data_context}
-
-记住：JSON 数组中每条只包含纯洞察内容，不要任何前缀！"""
+{chart_info}
+{insight_config_info}
+记住：
+1. JSON 数组中每条只包含纯洞察内容，不要任何前缀
+2. 洞察数量 = 图表数量 +2（当前{chart_count}个图表 + 结论 + 策略 = 共{total_count}条）
+3. 前{chart_count}条：每条洞察对应一个图表，按顺序分析
+4. 第{chart_count + 1}条：核心结论（4 条结构化洞察，用\\n\\n 分隔）
+5. 第{chart_count + 2}条：落地策略（4 条结构化策略，用\\n\\n 分隔）
+6. 根据配置的洞察配置生成对应内容"""
     
     def _call_api(self, system_prompt: str, user_prompt: str) -> Optional[str]:
         """调用 Qwen API"""
@@ -225,11 +257,16 @@ class InsightGenerator:
             
             logger.info(f"AI 返回原始数据：{len(insights_raw)} 项")
             
-            # 展平嵌套数组 - 确保 10 条洞察
+            # 动态加载图表配置，确定期望的洞察数量
+            charts_config = self._load_charts_config()
+            chart_count = len(charts_config) if charts_config else 0
+            expected_count = chart_count + 2  # 图表 + 结论 + 策略
+            
+            # 展平嵌套数组
             insights = []
             for i, item in enumerate(insights_raw):
                 if isinstance(item, list):
-                    # 列表式洞察（第 5-11 页）：用换行符连接 3 条
+                    # 列表式洞察：用换行符连接
                     item_text = '\n'.join(item)
                     insights.append(item_text)
                     logger.info(f"第{i+1}条：列表式洞察，{len(item)} 条")
@@ -240,10 +277,10 @@ class InsightGenerator:
                 else:
                     logger.warning(f"第{i+1}条：未知类型 {type(item)}")
             
-            # 确保返回 10 条
-            if len(insights) != 10:
+            # 动态检查洞察数量（允许 7-9 条）
+            if len(insights) < chart_count:
                 raise ValueError(
-                    f"AI 返回的洞察数量异常：期望 10 条，实际{len(insights)}条\n"
+                    f"AI 返回的洞察数量异常：期望至少{chart_count}条，实际{len(insights)}条\n"
                     f"原始返回：{insights_raw[:2]}...\n"
                     "请检查 API 配置或联系管理员。"
                 )

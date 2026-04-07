@@ -78,65 +78,110 @@
       }
     },
     "insights": {
-      "INSIGHT:kpi_summary": {
-        "description": "核心指标洞察",
-        "slide_index": 2,
-        "skill": "data-insight",
-        "page": 4
+      "CHART:sales_by_person": {
+        "dimensions": [
+          "排名分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "客单价"
+        ],
+        "baseline": "头部对比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": "重点分析 TOP3 销售员的业绩贡献度和稳定性，指出潜在风险"
       },
-      "INSIGHT:sales_person": {
-        "description": "销售员业绩洞察",
-        "slide_index": 3,
-        "skill": "data-insight",
-        "page": 5
+      "CHART:product_pie": {
+        "dimensions": [
+          "占比分析",
+          "异常检测"
+        ],
+        "metrics": [
+          "销售额",
+          "占比"
+        ],
+        "baseline": "平均值",
+        "style": "问题导向",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": "指出爆品依赖风险，分析产品结构健康度"
       },
-      "INSIGHT:product": {
-        "description": "产品结构洞察",
-        "slide_index": 4,
-        "skill": "data-insight",
-        "page": 6
+      "CHART:city_ranking": {
+        "dimensions": [
+          "排名分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数"
+        ],
+        "baseline": "头部对比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": "分析头部城市贡献度，识别潜力市场"
       },
-      "INSIGHT:city": {
-        "description": "城市区域洞察",
-        "slide_index": 5,
-        "skill": "data-insight",
-        "page": 7
+      "CHART:customer_comparison": {
+        "dimensions": [
+          "对比分析",
+          "占比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "客单价",
+          "占比"
+        ],
+        "baseline": "无对比",
+        "style": "建议导向",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": "分析新老客结构健康度，给出拉新和维系建议"
       },
-      "INSIGHT:customer": {
-        "description": "客户类型洞察",
-        "slide_index": 6,
-        "skill": "data-insight",
-        "page": 8
+      "CHART:monthly_trend": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "环比增长"
+        ],
+        "baseline": "环比",
+        "style": "数据驱动",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": "分析月度波动原因，识别增长趋势"
       },
-      "INSIGHT:trend": {
-        "description": "时间趋势洞察",
-        "slide_index": 7,
-        "skill": "data-insight",
-        "page": 9
+      "CHART:heatmap": {
+        "dimensions": [
+          "排名分析",
+          "相关性分析"
+        ],
+        "metrics": [
+          "销售额"
+        ],
+        "baseline": "平均值",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": "分析销售员擅长品类，指出人货匹配优化空间"
       },
-      "INSIGHT:heatmap": {
-        "description": "销售员 - 产品矩阵洞察",
-        "slide_index": 8,
-        "skill": "data-insight",
-        "page": 10
-      },
-      "INSIGHT:abnormal": {
-        "description": "异常订单洞察",
-        "slide_index": 9,
-        "skill": "data-insight",
-        "page": 11
-      },
-      "INSIGHT:conclusion": {
-        "description": "核心结论",
-        "slide_index": 10,
-        "skill": "data-insight",
-        "page": 12
-      },
-      "INSIGHT:strategy": {
-        "description": "落地策略",
-        "slide_index": 11,
-        "skill": "data-insight",
-        "page": 13
+      "CHART:customer_city": {
+        "dimensions": [
+          "分布分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数"
+        ],
+        "baseline": "平均值",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": "分析客户 - 城市分布特征，识别重点市场"
       }
     },
     "tables": {

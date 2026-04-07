@@ -60,6 +60,58 @@ def setup_logging():
 logger, logs_dir = setup_logging()
 # ====================================
 
+# ========== 动态生成 SKILL.md ==========
+def build_skill_if_needed():
+    """如果图表配置变化，重新生成 SKILL.md"""
+    import hashlib
+    
+    stats_rules_path = os.path.join(BASE_DIR, 'templates', 'stats_rules.json')
+    placeholders_path = os.path.join(BASE_DIR, 'templates', 'placeholders.json')
+    skill_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'SKILL.md')
+    skill_builder_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'skill_builder.py')
+    
+    # 检查是否需要重新生成
+    need_rebuild = False
+    reason = ""
+    
+    if not os.path.exists(skill_path):
+        need_rebuild = True
+        reason = "SKILL.md 不存在"
+    else:
+        try:
+            with open(placeholders_path, 'rb') as f:
+                placeholders_hash = hashlib.md5(f.read()).hexdigest()
+            
+            with open(skill_path, 'r', encoding='utf-8') as f:
+                skill_content = f.read()
+                if placeholders_hash not in skill_content:
+                    need_rebuild = True
+                    reason = "图表配置已更新"
+        except:
+            need_rebuild = True
+            reason = "检查失败"
+    
+    if need_rebuild:
+        logger.info(f"正在重新生成 SKILL.md ({reason})...")
+        try:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("skill_builder", skill_builder_path)
+            skill_builder = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(skill_builder)
+            
+            skill_builder.build_skill_from_config(
+                stats_rules_path=stats_rules_path,
+                placeholders_path=placeholders_path,
+                output_path=skill_path
+            )
+            logger.info("✅ SKILL.md 已重新生成")
+        except Exception as e:
+            logger.warning(f"⚠️ SKILL.md 生成失败：{e}，使用现有文件")
+
+# 在生成报告前构建 SKILL
+build_skill_if_needed()
+# ====================================
+
 
 # 注意：图表配置已从 placeholders.json 读取
 # CHART_CONFIGS 已移除
@@ -195,14 +247,32 @@ def _build_text_replacements_from_config(placeholders: Dict, data_loader, insigh
             replacements[full_key] = config.get('default', '')
     
     # 2. 处理 INSIGHT 类型占位符
+    # 洞察与图表一一对应
     insight_placeholders = placeholders.get('placeholders', {}).get('insights', {})
-    for i, (key, config) in enumerate(insight_placeholders.items()):
-        full_key = '{{' + key + '}}'  # {{INSIGHT:xxx}}
+    charts = placeholders.get('placeholders', {}).get('charts', {})
+    
+    # 图表洞察：与图表一一对应
+    # insight_placeholders 的 key 是 CHART:xxx，需要转换为 {{INSIGHT:xxx}}
+    for i, (chart_key, chart_config) in enumerate(charts.items()):
+        # 从 chart_key 提取名称（如 CHART:sales_by_person -> sales_by_person）
+        chart_name = chart_key.replace('CHART:', '')
+        # PPT 模板中的占位符是 {{INSIGHT:sales_by_person}}
+        full_key = '{{INSIGHT:' + chart_name + '}}'
+        
         if i < len(insights):
             replacements[full_key] = insights[i]
         else:
             replacements[full_key] = ''
-            logger.warning(f"      洞察数量不足：{key} (需要{i+1}条，实际{len(insights)}条)")
+            logger.warning(f"      洞察数量不足：{full_key}")
+    
+    # 结论和策略：使用最后 2 条洞察（如果 AI 生成了的话）
+    if len(insights) >= len(charts) + 2:
+        replacements['{{INSIGHT:conclusion}}'] = insights[len(charts)]
+        replacements['{{INSIGHT:strategy}}'] = insights[len(charts) + 1]
+    else:
+        # 当前使用默认值，后期由 AI 生成
+        replacements['{{INSIGHT:conclusion}}'] = ''
+        replacements['{{INSIGHT:strategy}}'] = ''
     
     logger.info(f"      动态构建 {len(replacements)} 个文本占位符替换规则")
     return replacements
