@@ -141,7 +141,7 @@ qwen_api_key = sk-xxx  # 替换为你的 Qwen API Key
 
 ```ini
 [fanruan]
-username = 13021020077
+username = your_username
 password = your_password
 data_url = https://demo.fanruan.com/webroot/decision#/datacenter/config/table/xxx
 ```
