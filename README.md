@@ -24,9 +24,10 @@ copy config.ini.example config.ini
 **编辑 `config.ini`，填写以下必填项**：
 
 ```ini
+ # 替换为你的帆软密码
 [fanruan]
-username = 13021020077
-password = YOUR_PASSWORD_HERE  # ← 替换为你的帆软密码
+username = YOUR_USERNAME_HERE
+password = YOUR_PASSWORD_HERE 
 
 [api_keys]
 qwen_api_key = sk-YOUR_API_KEY_HERE  # ← 替换为你的 Qwen API Key
