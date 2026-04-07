@@ -21,7 +21,10 @@
         "category_field": "产品",
         "value_field": "占比",
         "title": "产品销售结构与占比",
-        "figsize": [6, 6],
+        "figsize": [
+          6,
+          6
+        ],
         "slide_index": 4
       },
       "CHART:city_ranking": {
@@ -38,7 +41,11 @@
         "data_source": "客户类型",
         "chart_type": "column_clustered",
         "category_field": "客户属性",
-        "series": ["总销售额", "订单数", "客单价"],
+        "series": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
         "title": "新老客销售贡献对比",
         "slide_index": 6
       },
@@ -59,6 +66,15 @@
         "columns": null,
         "title": "销售员 - 产品销售能力矩阵分析",
         "slide_index": 8
+      },
+      "CHART:customer_city": {
+        "description": "客户属性与城市销售分析",
+        "data_source": "客户城市分析",
+        "chart_type": "bar_horizontal",
+        "x_field": "总销售额",
+        "y_field": "城市",
+        "title": "客户属性与城市销售分析",
+        "slide_index": 9
       }
     },
     "insights": {
@@ -155,19 +171,58 @@
     }
   },
   "slide_mapping": {
-    "0": {"name": "封面页", "layout": "title"},
-    "1": {"name": "目录页", "layout": "toc"},
-    "2": {"name": "核心指标", "layout": "kpi"},
-    "3": {"name": "销售员业绩", "layout": "chart_text"},
-    "4": {"name": "产品结构", "layout": "chart_text"},
-    "5": {"name": "城市排名", "layout": "chart_text"},
-    "6": {"name": "客户类型", "layout": "chart_text"},
-    "7": {"name": "时间趋势", "layout": "chart_text"},
-    "8": {"name": "销售员 - 产品", "layout": "chart_text"},
-    "9": {"name": "异常订单", "layout": "table_text"},
-    "10": {"name": "核心结论", "layout": "content"},
-    "11": {"name": "落地策略", "layout": "content"},
-    "12": {"name": "结束页", "layout": "title"}
+    "0": {
+      "name": "封面页",
+      "layout": "title"
+    },
+    "1": {
+      "name": "目录页",
+      "layout": "toc"
+    },
+    "2": {
+      "name": "核心指标",
+      "layout": "kpi"
+    },
+    "3": {
+      "name": "销售员业绩",
+      "layout": "chart_text"
+    },
+    "4": {
+      "name": "产品结构",
+      "layout": "chart_text"
+    },
+    "5": {
+      "name": "城市排名",
+      "layout": "chart_text"
+    },
+    "6": {
+      "name": "客户类型",
+      "layout": "chart_text"
+    },
+    "7": {
+      "name": "时间趋势",
+      "layout": "chart_text"
+    },
+    "8": {
+      "name": "销售员 - 产品",
+      "layout": "chart_text"
+    },
+    "9": {
+      "name": "异常订单",
+      "layout": "table_text"
+    },
+    "10": {
+      "name": "核心结论",
+      "layout": "content"
+    },
+    "11": {
+      "name": "落地策略",
+      "layout": "content"
+    },
+    "12": {
+      "name": "结束页",
+      "layout": "title"
+    }
   },
   "report_settings": {
     "date_range_auto_detect": true,

@@ -81,12 +81,34 @@ def _generate_single_chart(args: Tuple) -> Tuple[str, str]:
     try:
         if chart_type == 'bar_horizontal':
             chart_engine.create_bar_horizontal(df, **params)
+        elif chart_type == 'bar_vertical':
+            chart_engine.create_bar_vertical(df, **params)
         elif chart_type == 'pie':
             chart_engine.create_pie(df, **params)
-        elif chart_type == 'multi_column':
+        elif chart_type == 'multi_column' or chart_type == 'column_clustered':
             chart_engine.create_multi_column(df, **params)
         elif chart_type == 'line':
             chart_engine.create_line(df, **params)
+        elif chart_type == 'scatter':
+            chart_engine.create_scatter(df, **params)
+        elif chart_type == 'area':
+            chart_engine.create_area(df, **params)
+        elif chart_type == 'histogram':
+            chart_engine.create_histogram(df, **params)
+        elif chart_type == 'boxplot':
+            chart_engine.create_boxplot(df, **params)
+        elif chart_type == 'bubble':
+            chart_engine.create_bubble(df, **params)
+        elif chart_type == 'errorbar':
+            chart_engine.create_errorbar(df, **params)
+        elif chart_type == 'polar':
+            chart_engine.create_polar(df, **params)
+        elif chart_type == 'violin':
+            chart_engine.create_violin(df, **params)
+        elif chart_type == 'waterfall':
+            chart_engine.create_waterfall(df, **params)
+        elif chart_type == 'funnel':
+            chart_engine.create_funnel(df, **params)
         elif chart_type == 'heatmap':
             # 热力图特殊处理：动态提取产品列
             if params.get('columns') is None:

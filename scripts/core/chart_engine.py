@@ -315,6 +315,329 @@ class ChartEngine:
         
         return fig
     
+    # ========== 扩展图表类型 ==========
+    
+    def create_scatter(self, df: pd.DataFrame, x_field: str, y_field: str,
+                       title: str = '', output_path: str = None,
+                       figsize: Tuple[int, int] = (10, 6),
+                       color: str = None, size: int = 50) -> str:
+        """散点图 - 相关性分析"""
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        x = df[x_field].tolist()
+        y = df[y_field].tolist()
+        
+        color = color or self.colors.get('primary', '#1F4E79')
+        ax.scatter(x, y, c=color, alpha=0.6, s=size, edgecolors='white', linewidth=0.5)
+        
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+        ax.set_xlabel(x_field, fontsize=11)
+        ax.set_ylabel(y_field, fontsize=11)
+        ax.grid(True, alpha=0.3)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        plt.tight_layout()
+        
+        if output_path:
+            fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+            logger.info(f"散点图已保存：{output_path}")
+            plt.close(fig)
+            return output_path
+        
+        return fig
+    
+    def create_area(self, df: pd.DataFrame, x_field: str, y_fields: List[str],
+                    title: str = '', output_path: str = None,
+                    figsize: Tuple[int, int] = (10, 6)) -> str:
+        """面积图 - 累积趋势"""
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        x = df[x_field].tolist()
+        colors = self.colors.get('chart_palettes', {}).get('default', ['#1F4E79', '#2E75B6', '#3498DB'])
+        
+        ax.stackplot(x, [df[y].tolist() for y in y_fields], labels=y_fields, colors=colors[:len(y_fields)], alpha=0.8)
+        
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        ax.legend(loc='upper left', framealpha=0.95)
+        ax.grid(True, alpha=0.3)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        plt.tight_layout()
+        
+        if output_path:
+            fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+            logger.info(f"面积图已保存：{output_path}")
+            plt.close(fig)
+            return output_path
+        
+        return fig
+    
+    def create_histogram(self, df: pd.DataFrame, field: str,
+                         title: str = '', output_path: str = None,
+                         figsize: Tuple[int, int] = (10, 6),
+                         bins: int = 20,
+                         color: str = None) -> str:
+        """直方图 - 分布分析"""
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        data = df[field].dropna().tolist()
+        color = color or self.colors.get('primary', '#1F4E79')
+        
+        ax.hist(data, bins=bins, color=color, alpha=0.7, edgecolor='white', linewidth=0.5)
+        
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+        ax.set_xlabel(field, fontsize=11)
+        ax.set_ylabel('频数', fontsize=11)
+        ax.grid(True, alpha=0.3, axis='y')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        plt.tight_layout()
+        
+        if output_path:
+            fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+            logger.info(f"直方图已保存：{output_path}")
+            plt.close(fig)
+            return output_path
+        
+        return fig
+    
+    def create_boxplot(self, df: pd.DataFrame, category_field: str, value_field: str,
+                       title: str = '', output_path: str = None,
+                       figsize: Tuple[int, int] = (10, 6)) -> str:
+        """箱线图 - 分布分析"""
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        categories = df[category_field].unique()
+        data = [df[df[category_field] == cat][value_field].dropna().tolist() for cat in categories]
+        
+        bp = ax.boxplot(data, labels=categories, patch_artist=True,
+                       boxprops=dict(facecolor=self.colors.get('primary', '#1F4E79'), alpha=0.3),
+                       medianprops=dict(color='#E74C3C', linewidth=2),
+                       whiskerprops=dict(color='#2C3E50'),
+                       capprops=dict(color='#2C3E50'))
+        
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+        ax.set_xlabel('')
+        ax.set_ylabel(value_field, fontsize=11)
+        ax.grid(True, alpha=0.3, axis='y')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+        
+        plt.tight_layout()
+        
+        if output_path:
+            fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+            logger.info(f"箱线图已保存：{output_path}")
+            plt.close(fig)
+            return output_path
+        
+        return fig
+    
+    def create_bubble(self, df: pd.DataFrame, x_field: str, y_field: str, size_field: str,
+                      title: str = '', output_path: str = None,
+                      figsize: Tuple[int, int] = (10, 6),
+                      color: str = None,
+                      size_multiplier: float = 10) -> str:
+        """气泡图 - 三维数据对比"""
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        x = df[x_field].tolist()
+        y = df[y_field].tolist()
+        sizes = (df[size_field] / df[size_field].max() * 50 * size_multiplier).tolist()
+        color = color or self.colors.get('primary', '#1F4E79')
+        
+        scatter = ax.scatter(x, y, s=sizes, c=color, alpha=0.6, edgecolors='white', linewidth=0.5)
+        
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+        ax.set_xlabel(x_field, fontsize=11)
+        ax.set_ylabel(y_field, fontsize=11)
+        ax.grid(True, alpha=0.3)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        plt.tight_layout()
+        
+        if output_path:
+            fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+            logger.info(f"气泡图已保存：{output_path}")
+            plt.close(fig)
+            return output_path
+        
+        return fig
+    
+    def create_errorbar(self, df: pd.DataFrame, x_field: str, y_field: str, error_field: str,
+                        title: str = '', output_path: str = None,
+                        figsize: Tuple[int, int] = (10, 6),
+                        color: str = None) -> str:
+        """误差棒图 - 带误差范围"""
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        x = df[x_field].tolist()
+        y = df[y_field].tolist()
+        yerr = df[error_field].tolist()
+        color = color or self.colors.get('primary', '#1F4E79')
+        
+        ax.errorbar(x, y, yerr=yerr, fmt='o', color=color, ecolor='#E74C3C',
+                   elinewidth=2, capsize=5, markersize=8, alpha=0.7)
+        
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+        ax.set_xlabel(x_field, fontsize=11)
+        ax.set_ylabel(y_field, fontsize=11)
+        ax.grid(True, alpha=0.3)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        plt.tight_layout()
+        
+        if output_path:
+            fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+            logger.info(f"误差棒图已保存：{output_path}")
+            plt.close(fig)
+            return output_path
+        
+        return fig
+    
+    def create_polar(self, df: pd.DataFrame, angle_field: str, radius_field: str,
+                     title: str = '', output_path: str = None,
+                     figsize: Tuple[int, int] = (8, 8),
+                     color: str = None) -> str:
+        """极坐标图/雷达图"""
+        fig, ax = plt.subplots(figsize=figsize, subplot_kw={'projection': 'polar'})
+        
+        angles = np.radians(df[angle_field].tolist())
+        radii = df[radius_field].tolist()
+        color = color or self.colors.get('primary', '#1F4E79')
+        
+        ax.plot(angles, radii, linewidth=2, color=color, marker='o', markersize=8)
+        ax.fill(angles, radii, alpha=0.25, color=color)
+        
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        
+        if output_path:
+            fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+            logger.info(f"极坐标图已保存：{output_path}")
+            plt.close(fig)
+            return output_path
+        
+        return fig
+    
+    def create_violin(self, df: pd.DataFrame, category_field: str, value_field: str,
+                      title: str = '', output_path: str = None,
+                      figsize: Tuple[int, int] = (10, 6)) -> str:
+        """小提琴图 - 分布密度"""
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        categories = df[category_field].unique()
+        data = [df[df[category_field] == cat][value_field].dropna().tolist() for cat in categories]
+        
+        parts = ax.violinplot(data, showmeans=True, showmedians=True)
+        
+        for pc in parts['bodies']:
+            pc.set_facecolor(self.colors.get('primary', '#1F4E79'))
+            pc.set_edgecolor('black')
+            pc.set_alpha(0.7)
+        
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+        ax.set_xlabel('')
+        ax.set_ylabel(value_field, fontsize=11)
+        ax.set_xticks(range(1, len(categories) + 1))
+        ax.set_xticklabels(categories)
+        ax.grid(True, alpha=0.3, axis='y')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+        
+        plt.tight_layout()
+        
+        if output_path:
+            fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+            logger.info(f"小提琴图已保存：{output_path}")
+            plt.close(fig)
+            return output_path
+        
+        return fig
+    
+    def create_waterfall(self, df: pd.DataFrame, category_field: str, value_field: str,
+                         title: str = '', output_path: str = None,
+                         figsize: Tuple[int, int] = (10, 6)) -> str:
+        """瀑布图 - 增减变化"""
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        categories = df[category_field].tolist()
+        values = df[value_field].tolist()
+        
+        colors = ['#27AE60' if v > 0 else '#E74C3C' for v in values]
+        
+        cumulative = 0
+        bars = []
+        for i, (cat, val) in enumerate(zip(categories, values)):
+            bars.append(ax.bar(i, val, bottom=cumulative if val > 0 else cumulative + val,
+                              color=colors[i], alpha=0.8, edgecolor='white'))
+            cumulative += val
+        
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        ax.set_xticks(range(len(categories)))
+        ax.set_xticklabels(categories)
+        ax.grid(True, alpha=0.3, axis='y')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+        
+        plt.tight_layout()
+        
+        if output_path:
+            fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+            logger.info(f"瀑布图已保存：{output_path}")
+            plt.close(fig)
+            return output_path
+        
+        return fig
+    
+    def create_funnel(self, df: pd.DataFrame, stage_field: str, value_field: str,
+                      title: str = '', output_path: str = None,
+                      figsize: Tuple[int, int] = (8, 10)) -> str:
+        """漏斗图 - 流程转化"""
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        stages = df[stage_field].tolist()
+        values = df[value_field].tolist()
+        max_value = max(values)
+        
+        colors = self.colors.get('chart_palettes', {}).get('sequential', ['#1F4E79', '#2E75B6', '#3498DB', '#5DADE2', '#85C1E9'])
+        
+        for i, (stage, value) in enumerate(zip(stages, values)):
+            width = (value / max_value) * 100
+            left = (100 - width) / 2
+            ax.barh(i, width, left=left, height=0.8, color=colors[i % len(colors)], alpha=0.8, edgecolor='white')
+            ax.text(50, i, f'{value:,.0f}', ha='center', va='center', fontsize=11, fontweight='bold', color='#2C3E50')
+            ax.text(50, i, f'{stage}', ha='center', va='bottom', fontsize=10, color='#7F8C8D', transform=ax.transData)
+        
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+        ax.set_xlim(0, 100)
+        ax.set_ylim(-0.5, len(stages) - 0.5)
+        ax.set_axis_off()
+        
+        plt.tight_layout()
+        
+        if output_path:
+            fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+            logger.info(f"漏斗图已保存：{output_path}")
+            plt.close(fig)
+            return output_path
+        
+        return fig
+    
     def clear_temp(self):
         """清理临时文件"""
         import shutil
