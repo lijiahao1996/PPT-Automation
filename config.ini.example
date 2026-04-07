@@ -1,0 +1,30 @@
+# 帆软 PPT 报告生成系统 - 配置文件模板
+# 复制此文件为 config.ini 并填写真实值
+
+[fanruan]
+# 帆软账号
+username = YOUR_USERNAME
+password = YOUR_PASSWORD_HERE  # ← 替换为你的密码
+data_url = https://demo.fanruan.com/webroot/decision#/datacenter/config/table/5bad5de2769141e8bcada4e0df0e5b5d
+
+[api_keys]
+# Qwen API Key（阿里云百炼）
+# 获取地址：https://bailian.console.aliyun.com/
+qwen_api_key = sk-YOUR_API_KEY_HERE  # ← 替换为你的 API Key
+
+[paths]
+# 路径配置（一般不需要修改）
+# 支持相对路径和绝对路径
+# 如果留空，将自动使用当前目录
+work_dir = 
+output_dir = 
+scripts_dir = 
+artifacts_dir = 
+logs_dir = 
+
+[advanced]
+# 高级配置（可选）
+# 会话有效期（天）
+session_max_age = 7
+# 日志级别（INFO, DEBUG, WARNING, ERROR）
+log_level = INFO

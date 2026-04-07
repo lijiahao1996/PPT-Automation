@@ -9,11 +9,46 @@
 
 ## 🚀 快速开始
 
-### 一键运行
+### 1️⃣ 首次配置
+
+**首次运行前，需要配置 API Key 和账号密码**：
+
+```bash
+# 方法 1：复制模板（推荐）
+copy config.ini.example config.ini
+
+# 方法 2：手动创建
+# 创建 config.ini 文件，参考 config.ini.example 填写
+```
+
+**编辑 `config.ini`，填写以下必填项**：
+
+```ini
+[fanruan]
+username = 13021020077
+password = YOUR_PASSWORD_HERE  # ← 替换为你的帆软密码
+
+[api_keys]
+qwen_api_key = sk-YOUR_API_KEY_HERE  # ← 替换为你的 Qwen API Key
+```
+
+**获取 API Key**：
+1. 访问：https://bailian.console.aliyun.com/
+2. 登录阿里云账号
+3. 创建 API Key
+4. 复制到 config.ini
+
+---
+
+### 2️⃣ 一键运行
 
 **Windows**: 双击 `启动器.bat`
 
 **PowerShell**: `.\Run.ps1`
+
+**EXE**: 双击 `PPT 生成.exe`
+
+ℹ️ **提示**: 首次运行时，如果 `config.ini` 不存在，会自动从 `config.ini.example` 创建并提示你填写。
 
 ### 执行流程
 
@@ -41,7 +76,8 @@ output/销售分析报告_YYYYMMDD_HHMMSS_v1.pptx ⭐
 n8n/
 ├── 启动器.bat                        # 一键启动 ⭐
 ├── Run.ps1                          # 主执行脚本
-├── config.ini                       # 配置文件 ⭐
+├── config.ini                       # 配置文件 ⭐（需手动创建）
+├── config.ini.example               # 配置模板 ⭐
 ├── README.md                        # 本文件
 │
 └── docs/                            # 【文档目录】

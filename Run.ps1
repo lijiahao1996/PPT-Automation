@@ -1,10 +1,47 @@
 # Auto Run Script - Enterprise Version
 # Support both EXE bundled and direct PowerShell execution
+# Auto-generate config.ini from template if not exists
 
 Write-Host "========================================" -ForegroundColor Green
 Write-Host "  FanRuan Auto Run - Enterprise Edition" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
+
+# ========== Check and Generate config.ini ==========
+$scriptDir = if ($env:EXE_BASE_DIR) { $env:EXE_WORK_DIR } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+$configFile = Join-Path $scriptDir "config.ini"
+$configTemplate = Join-Path $scriptDir "config.ini.example"
+
+if (-not (Test-Path $configFile)) {
+    Write-Host "[INFO] config.ini not found, creating from template..." -ForegroundColor Yellow
+    
+    if (Test-Path $configTemplate) {
+        Copy-Item $configTemplate $configFile
+        Write-Host "[OK] config.ini created from template" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "========================================" -ForegroundColor Yellow
+        Write-Host "  ACTION REQUIRED" -ForegroundColor Yellow
+        Write-Host "========================================" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "Please edit config.ini and fill in:" -ForegroundColor White
+        Write-Host "  1. [fanruan] password - Your FanRuan account password" -ForegroundColor Cyan
+        Write-Host "  2. [api_keys] qwen_api_key - Your Qwen API key" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "Then run again." -ForegroundColor White
+        Write-Host ""
+        Write-Host "Template location: $configTemplate" -ForegroundColor Gray
+        Write-Host "Config location: $configFile" -ForegroundColor Gray
+        Write-Host "========================================" -ForegroundColor Yellow
+        Write-Host ""
+        Read-Host "Press Enter to exit"
+        exit 0
+    } else {
+        Write-Host "[ERROR] config.ini.example template not found!" -ForegroundColor Red
+        Write-Host "Please create config.ini manually" -ForegroundColor Yellow
+        Read-Host "Press Enter to exit"
+        exit 1
+    }
+}
 
 # Determine directories (support EXE bundled)
 if ($env:EXE_BASE_DIR) {

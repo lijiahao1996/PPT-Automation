@@ -9,9 +9,11 @@ venv/
 *.egg-info/
 
 # 配置文件（包含敏感信息）
+# 使用 config.ini.example 作为模板
 config.ini
 .env
 *.key
+*.pem
 
 # ========== 输出文件管理 ==========
 # 最终文件（保留，不提交）
