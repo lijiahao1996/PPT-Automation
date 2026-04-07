@@ -440,7 +440,7 @@ del /Q C:\Users\50319\Desktop\n8n\logs\*.log
 
 ```bash
 # 帆软账号
-FANRUAN_USERNAME=13021020077
+FANRUAN_USERNAME=your_username
 FANRUAN_PASSWORD=your_password
 
 # Qwen API Key
