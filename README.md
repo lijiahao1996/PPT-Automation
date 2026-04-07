@@ -46,7 +46,7 @@ http://localhost:8501
 **编辑 `config.ini`**：
 ```ini
 [fanruan]
-username = 13021020077
+username = YOUR_USERNAME_HERE
 password = YOUR_PASSWORD_HERE  # ← 替换为你的密码
 
 [api_keys]
