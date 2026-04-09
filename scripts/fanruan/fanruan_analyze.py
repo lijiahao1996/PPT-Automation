@@ -108,6 +108,7 @@ def clean_and_analyze():
     logger.info("\n[5/6] 二次统计计算（配置化）...")
     
     # 执行统计引擎
+    results = {}
     try:
         engine = StatsEngine(base_dir=WORK_DIR)
         results = engine.run_all(df, output_path=None)  # 先不保存，手动保存
@@ -115,15 +116,13 @@ def clean_and_analyze():
     except Exception as e:
         logger.error(f"      [ERROR] 统计引擎执行失败：{e}")
         logger.info(f"      [INFO] 回退到硬编码统计模式...")
-        # 这里保留原有硬编码逻辑作为后备
-        # ...（原有代码保持不变）
-        results = {}  # 简化处理
+        results = None  # 标记需要使用硬编码后备
     
     # 6. 保存统计汇总
     logger.info("\n[6/6] 保存统计汇总...")
     
     # 使用统计引擎的结果保存
-    if results:
+    if results is not None and len(results) > 0:
         with pd.ExcelWriter(SUMMARY_FILE, engine='openpyxl') as writer:
             for sheet_name, df_result in results.items():
                 # Excel Sheet 名称长度限制 31 字符
@@ -132,11 +131,80 @@ def clean_and_analyze():
         logger.info(f"      [OK] 统计汇总：{SUMMARY_FILE}")
         logger.info(f"      [OK] 共 {len(results)} 个 Sheet")
     else:
-        # 后备方案：原有硬编码逻辑
+        # 后备方案：硬编码统计逻辑
+        logger.info(f"      [INFO] 使用硬编码统计模式...")
+        
+        # 核心 KPI
+        kpi_data = {
+            '指标': ['总销售额', '总订单数', '平均客单价', '最高单额', '最低单额'],
+            '数值': [
+                df['销售额'].sum(),
+                len(df),
+                df['销售额'].mean(),
+                df['销售额'].max(),
+                df['销售额'].min()
+            ],
+            '单位': ['元', '单', '元', '元', '元']
+        }
+        kpi_df = pd.DataFrame(kpi_data)
+        
+        # 销售员业绩
+        sales_by_person = df.groupby('销售员').agg({
+            '销售额': ['sum', 'count', 'mean']
+        }).reset_index()
+        sales_by_person.columns = ['销售员', '总销售额', '订单数', '客单价']
+        sales_by_person = sales_by_person.sort_values('总销售额', ascending=False)
+        
+        # 产品占比
+        product_stats = df.groupby('产品')['销售额'].sum().reset_index()
+        product_stats['占比'] = (product_stats['销售额'] / product_stats['销售额'].sum() * 100).round(1)
+        product_stats = product_stats.sort_values('销售额', ascending=False)
+        
+        # 城市排名
+        city_stats = df.groupby('城市').agg({
+            '销售额': 'sum',
+            '销售员': 'count'
+        }).reset_index()
+        city_stats.columns = ['城市', '总销售额', '订单数']
+        city_stats = city_stats.sort_values('总销售额', ascending=False)
+        
+        # 客户类型
+        customer_stats = df.groupby('客户属性').agg({
+            '销售额': 'sum',
+            '销售员': 'count'
+        }).reset_index()
+        customer_stats.columns = ['客户属性', '总销售额', '订单数']
+        customer_stats['客单价'] = (customer_stats['总销售额'] / customer_stats['订单数']).round(0)
+        
+        # 月度趋势
+        monthly_stats = df.groupby('年月').agg({
+            '销售额': 'sum',
+            '销售员': 'count'
+        }).reset_index()
+        monthly_stats.columns = ['年月', '总销售额', '订单数']
+        monthly_stats = monthly_stats.sort_values('年月')
+        
+        # 保存
         with pd.ExcelWriter(SUMMARY_FILE, engine='openpyxl') as writer:
             kpi_df.to_excel(writer, sheet_name='核心 KPI', index=False)
-            # ... 其他硬编码保存逻辑
+            sales_by_person.to_excel(writer, sheet_name='销售员业绩', index=False)
+            product_stats.to_excel(writer, sheet_name='产品占比', index=False)
+            city_stats.to_excel(writer, sheet_name='城市排名', index=False)
+            customer_stats.to_excel(writer, sheet_name='客户类型', index=False)
+            monthly_stats.to_excel(writer, sheet_name='月度趋势', index=False)
+        
         logger.info(f"      [OK] 统计汇总：{SUMMARY_FILE} (硬编码模式)")
+        logger.info(f"      [OK] 共 6 个 Sheet")
+        
+        # 更新 results 用于后续打印
+        results = {
+            '核心 KPI': kpi_df,
+            '销售员业绩': sales_by_person,
+            '产品占比': product_stats,
+            '城市排名': city_stats,
+            '客户类型': customer_stats,
+            '月度趋势': monthly_stats
+        }
     
     # 打印关键指标
     logger.info(f"\n{'='*60}")
