@@ -67,15 +67,18 @@ if (-not (Test-Path $artifactsDir)) { New-Item -ItemType Directory -Force -Path 
 
 Set-Location $workDir
 
-# Check for Excel files
+# Check for Excel files (with size validation)
 Write-Host "Checking data files..." -ForegroundColor Cyan
-$excelFiles = Get-ChildItem -Path $outputDir -Filter "*.xlsx" -ErrorAction SilentlyContinue
+$excelFiles = Get-ChildItem -Path $outputDir -Filter "*.xlsx" -ErrorAction SilentlyContinue | Where-Object { $_.Length -gt 10000 }  # 至少 10KB 才认为是有效文件
 
 if ($excelFiles.Count -gt 0) {
-    Write-Host "[OK] Found $($excelFiles.Count) Excel files, skip scraping" -ForegroundColor Green
+    Write-Host "[OK] Found $($excelFiles.Count) valid Excel files, skip scraping" -ForegroundColor Green
     $skipScrape = $true
 } else {
-    Write-Host "[INFO] No data files, starting scrape..." -ForegroundColor Yellow
+    if ($excelFiles.Count -gt 0) {
+        Write-Host "[WARN] Found empty/small Excel files (<10KB), will re-scrape..." -ForegroundColor Yellow
+    }
+    Write-Host "[INFO] No valid data files, starting scrape..." -ForegroundColor Yellow
     $skipScrape = $false
 }
 
