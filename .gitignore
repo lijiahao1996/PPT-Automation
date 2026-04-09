@@ -16,19 +16,26 @@ config.ini
 *.pem
 
 # ========== 输出文件管理 ==========
-# 最终文件（保留，不提交）
+# 输出文件（运行时生成，不提交）
 output/*.xlsx
 output/*.pptx
+output/*.json
 
-# 临时文件（不提交）
+# 临时文件（运行时生成，不提交）
 artifacts/*
 !artifacts/.gitkeep
 
-# 原始数据（如需要可手动提交）
+# 原始数据（敏感数据，不提交）
+# 如需共享数据样本，请手动添加脱敏版本
 # output/帆软销售明细.xlsx
 
-# 日志
-*.log
+# 日志（运行时生成，不提交）
+logs/*.log
+logs/*.txt
+
+# 错误截图（调试用，不提交）
+*.png
+!resources/images/*.png
 
 # IDE
 .vscode/

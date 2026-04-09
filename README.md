@@ -2,7 +2,7 @@
 
 > 📊 **架构**: 模板引擎 + 图表引擎 + AI 洞察  
 > **版本**: 4.5 Enterprise  
-> **最后更新**: 2026-04-08
+> **最后更新**: 2026-04-10
 
 ---
 
@@ -76,28 +76,47 @@ PPT 生成.exe
 
 ```
 n8n/
-├── Run.bat                 # 一键运行
+├── Run.bat                 # 一键运行（入口）
 ├── Run.ps1                 # 主执行脚本
-├── config.ini              # 配置文件
+├── config.ini              # 配置文件（需填写账号/API Key）
 ├── config.ini.example      # 配置模板
 ├── README.md               # 项目文档
 ├── .gitignore              # Git 配置
 │
 ├── scripts/                # 核心脚本
-│   ├── config_tool/        # 📊 配置工具
-│   │   ├── app.py
-│   │   ├── streamlit.bat
-│   │   └── README.md
-│   ├── core/               # 核心模块
+│   ├── config_tool/        # 📊 配置工具（Streamlit GUI）
+│   │   ├── app.py          # 主应用
+│   │   ├── app_modular.py  # 模块化版本
+│   │   ├── streamlit.bat   # 启动脚本
+│   │   └── tabs/           # 配置页面
+│   ├── core/               # 核心引擎
+│   │   ├── data_loader.py      # 数据加载器
+│   │   ├── stats_engine.py     # 统计引擎（配置化）
+│   │   ├── chart_engine.py     # 图表引擎
+│   │   ├── template_engine.py  # PPT 模板引擎
+│   │   └── validator.py        # 数据校验器
 │   ├── ai/                 # AI 模块
+│   │   └── insight_generator.py  # Qwen API 洞察生成
 │   └── fanruan/            # 帆软模块
+│       ├── fanruan_login.py    # 登录脚本
+│       ├── fanruan_scrape.py   # 数据抓取
+│       └── fanruan_analyze.py  # 数据清洗 + 统计
 │
-├── templates/              # PPT 模板
-├── skills/                 # AI 规范
-├── docs/                   # 文档
-├── output/                 # 输出目录
+├── templates/              # PPT 模板 + 配置
+│   ├── 销售分析报告_标准模板.pptx
+│   ├── placeholders.json   # 占位符配置
+│   └── stats_rules.json    # 统计规则配置
+│
+├── skills/                 # AI Skill 规范
+│   └── data-insight/
+│       ├── SKILL.md            # 洞察生成规范
+│       └── skill_builder.py    # SKILL.md 生成器
+│
+├── docs/                   # 架构文档
+├── resources/              # 资源文件（图片/视频）
+├── output/                 # 输出目录（PPTX/XLSX）
 ├── logs/                   # 日志目录
-└── artifacts/              # 临时文件
+└── artifacts/              # 临时文件（会话/中间数据）
 ```
 
 ---
@@ -229,6 +248,34 @@ A: 运行 `pip install streamlit`
 
 ---
 
-**最后更新**: 2026-04-08  
+## 🔧 技术栈
+
+| 模块 | 技术 |
+|------|------|
+| 浏览器自动化 | Playwright |
+| 数据处理 | Pandas, NumPy |
+| 图表生成 | Matplotlib |
+| PPT 生成 | python-pptx |
+| AI 洞察 | Qwen API (阿里云百炼) |
+| 配置工具 | Streamlit |
+
+---
+
+## 📝 更新日志
+
+### v4.5 (2026-04-10)
+- ✅ 完全配置化：图表/洞察/占位符全部从 JSON 配置读取
+- ✅ 动态 SKILL.md 生成：每次运行自动同步最新配置
+- ✅ 并行图表生成：支持多线程加速
+- ✅ 配置工具 GUI：Streamlit 图形化配置界面
+- ✅ 清理优化：移除临时文件和缓存
+
+### v4.4 (2026-04-09)
+- 洞察配置优化
+- 占位符修复
+
+---
+
+**最后更新**: 2026-04-10  
 **版本**: 4.5 Enterprise  
 **状态**: ✅ 生产就绪

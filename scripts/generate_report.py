@@ -222,6 +222,56 @@ def _build_text_replacements_from_config(placeholders: Dict, data_loader, insigh
         else:
             replacements[full_key] = config.get('default', '')
     
+    # 1.5 处理 DATE 类型占位符
+    date_placeholders = placeholders.get('placeholders', {}).get('dates', {})
+    for key, config in date_placeholders.items():
+        full_key = f'[{key}]'
+        # 使用配置的默认值（已在 Tab 4 中设置好格式）
+        replacements[full_key] = config.get('default', today)
+        logger.debug(f"      映射日期变量：{full_key} <- {config.get('default', today)}")
+    
+    # 1.6 处理 IMAGE 类型占位符（只记录路径，不替换文本，由后续插入逻辑处理）
+    image_placeholders = placeholders.get('placeholders', {}).get('images', {})
+    for key, config in image_placeholders.items():
+        full_key = f'[{key}]'
+        img_path = config.get('path', '')
+        if img_path:
+            # 如果是相对路径，转换为绝对路径
+            if not os.path.isabs(img_path):
+                img_path = os.path.join(BASE_DIR, img_path)
+            if os.path.exists(img_path):
+                # 不添加到 replacements，由后续插入逻辑处理
+                logger.debug(f"      记录图片变量：{full_key} <- {img_path}")
+            else:
+                logger.warning(f"      图片文件不存在：{img_path}")
+        else:
+            pass  # 空路径，后续插入逻辑会跳过
+    
+    # 1.7 处理 VIDEO 类型占位符（只记录路径，不替换文本，由后续插入逻辑处理）
+    video_placeholders = placeholders.get('placeholders', {}).get('videos', {})
+    for key, config in video_placeholders.items():
+        full_key = f'[{key}]'
+        video_path = config.get('path', '')
+        if video_path:
+            # 如果是相对路径，转换为绝对路径
+            if not os.path.isabs(video_path):
+                video_path = os.path.join(BASE_DIR, video_path)
+            if os.path.exists(video_path):
+                # 不添加到 replacements，由后续插入逻辑处理
+                logger.debug(f"      记录视频变量：{full_key} <- {video_path}")
+            else:
+                logger.warning(f"      视频文件不存在：{video_path}")
+        else:
+            pass  # 空路径，后续插入逻辑会跳过
+    
+    # 1.8 处理 LINK 类型占位符（不替换文本，由后续超链接逻辑处理）
+    link_placeholders = placeholders.get('placeholders', {}).get('links', {})
+    for key, config in link_placeholders.items():
+        full_key = f'[{key}]'
+        link_url = config.get('url', '')
+        # 不添加到 replacements，由后续超链接逻辑处理
+        logger.debug(f"      记录链接变量：{full_key} <- {link_url}")
+    
     # 2. 处理 INSIGHT 类型占位符
     # 洞察与图表一一对应
     insight_placeholders = placeholders.get('placeholders', {}).get('insights', {})
@@ -443,41 +493,125 @@ def generate_report(template_name: str = None, output_name: str = None,
         
         logger.info(f"      [OK] 图表占位符已替换 ({replaced_count} 个图表)")
         
-        # 生成并填充异常订单表格
-        if '异常订单' in data_summary and len(data_summary['异常订单']) > 0:
-            df = data_summary['异常订单']
-            table_created = False
+        # ========== 动态处理所有 TABLE 类型变量 ==========
+        table_placeholders = placeholders.get('placeholders', {}).get('tables', {})
+        for table_key, table_config in table_placeholders.items():
+            table_name = f'[{table_key}]'
+            data_source = table_config.get('data_source', '')
             
-            for slide_idx, slide in enumerate(prs.slides):
-                if table_created:
-                    break
-                for shape in slide.shapes:
-                    if hasattr(shape, 'text_frame'):
-                        for paragraph in shape.text_frame.paragraphs:
-                            if '[TABLE:abnormal_orders]' in paragraph.text:
-                                left = shape.left
-                                top = shape.top
-                                width = shape.width
-                                height = shape.height
-                                
-                                sp = shape.element
-                                sp.getparent().remove(sp)
-                                
-                                rows = len(df) + 1
-                                cols = len(df.columns)
-                                table = slide.shapes.add_table(rows, cols, left, top, width, height).table
-                                
-                                # 动态提取表头（从 DataFrame 列名）
-                                for i, col_name in enumerate(df.columns):
-                                    table.cell(0, i).text = col_name
-                                
-                                for i, (_, row) in enumerate(df.iterrows()):
-                                    for j in range(min(cols, len(row))):
-                                        table.cell(i+1, j).text = str(row.iloc[j])
-                                
-                                logger.info(f"      [OK] 已生成异常订单表格 (slide {slide_idx+1})")
-                                table_created = True
-                                break
+            if data_source and data_source in data_summary:
+                df = data_summary[data_source]
+                if len(df) > 0:
+                    table_created = False
+                    
+                    for slide_idx, slide in enumerate(prs.slides):
+                        if table_created:
+                            break
+                        for shape in slide.shapes:
+                            if hasattr(shape, 'text_frame'):
+                                for paragraph in shape.text_frame.paragraphs:
+                                    if table_name in paragraph.text:
+                                        left = shape.left
+                                        top = shape.top
+                                        width = shape.width
+                                        height = shape.height
+                                        
+                                        sp = shape.element
+                                        sp.getparent().remove(sp)
+                                        
+                                        rows = len(df) + 1
+                                        cols = len(df.columns)
+                                        table = slide.shapes.add_table(rows, cols, left, top, width, height).table
+                                        
+                                        # 动态提取表头（从 DataFrame 列名）
+                                        for i, col_name in enumerate(df.columns):
+                                            table.cell(0, i).text = col_name
+                                        
+                                        for i, (_, row) in enumerate(df.iterrows()):
+                                            for j in range(min(cols, len(row))):
+                                                table.cell(i+1, j).text = str(row.iloc[j])
+                                        
+                                        logger.info(f"      [OK] 已生成表格 {table_name} (slide {slide_idx+1})")
+                                        table_created = True
+                                        break
+            else:
+                logger.warning(f"      [WARN] 表格数据源不存在：{data_source}")
+        
+        # ========== 处理 IMAGE 类型变量（插入图片） ==========
+        image_placeholders = placeholders.get('placeholders', {}).get('images', {})
+        for img_key, img_config in image_placeholders.items():
+            img_name = f'[{img_key}]'
+            img_path = img_config.get('path', '')
+            
+            if img_path:
+                if not os.path.isabs(img_path):
+                    img_path = os.path.join(BASE_DIR, img_path)
+                
+                if os.path.exists(img_path):
+                    img_created = False
+                    
+                    for slide_idx, slide in enumerate(prs.slides):
+                        if img_created:
+                            break
+                        for shape in slide.shapes:
+                            if hasattr(shape, 'text_frame'):
+                                for paragraph in shape.text_frame.paragraphs:
+                                    if img_name in paragraph.text:
+                                        # 获取占位符位置
+                                        left = shape.left
+                                        top = shape.top
+                                        width = shape.width
+                                        height = shape.height
+                                        
+                                        # 删除占位符文本框
+                                        sp = shape.element
+                                        sp.getparent().remove(sp)
+                                        
+                                        # 插入图片
+                                        slide.shapes.add_picture(img_path, left, top, width, height)
+                                        logger.info(f"      [OK] 已插入图片 {img_name} (slide {slide_idx+1})")
+                                        img_created = True
+                                        break
+                else:
+                    logger.warning(f"      [WARN] 图片文件不存在：{img_path}")
+        
+        # ========== 处理 LINK 类型变量（添加超链接） ==========
+        link_placeholders = placeholders.get('placeholders', {}).get('links', {})
+        
+        if link_placeholders:
+            logger.info(f"      检测到 {len(link_placeholders)} 个链接变量")
+        
+        for link_key, link_config in link_placeholders.items():
+            link_name = f'[{link_key}]'
+            link_url = link_config.get('url', '')
+            
+            if link_url:
+                link_found = False
+                for slide_idx, slide in enumerate(prs.slides):
+                    if link_found:
+                        break
+                    for shape in slide.shapes:
+                        if link_found:
+                            break
+                        if hasattr(shape, 'text_frame'):
+                            for paragraph in shape.text_frame.paragraphs:
+                                if link_found:
+                                    break
+                                for run in paragraph.runs:
+                                    if link_name in run.text:
+                                        # 替换为链接文本
+                                        run.text = run.text.replace(link_name, link_url)
+                                        # 添加超链接（需要 python-pptx 支持）
+                                        try:
+                                            run.hyperlink.address = link_url
+                                            logger.info(f"      [OK] 已添加超链接 {link_name} (slide {slide_idx+1})")
+                                            link_found = True
+                                        except Exception as e:
+                                            logger.warning(f"      [WARN] 超链接添加失败：{e}")
+                                            link_found = True
+                
+                if not link_found:
+                    logger.warning(f"      [WARN] 未找到链接占位符 {link_name}，请检查 PPT 模板中是否有该文本")
         
         # 保存输出
         if output_name is None:

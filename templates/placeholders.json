@@ -215,6 +215,11 @@
         "data_source": "异常订单",
         "columns": null,
         "slide_index": 9
+      },
+      "TABLE:kpi_table": {
+        "description": "kpi指标表",
+        "data_source": "核心 KPI",
+        "slide_index": 3
       }
     },
     "text": {
@@ -228,15 +233,41 @@
         "default": "业绩复盘 · 洞察归因 · 策略建议",
         "slide_index": 0
       },
-      "TEXT:report_date": {
-        "description": "报告日期",
-        "format": "YYYY-MM-DD",
-        "slide_index": 0
-      },
       "KPI:cards": {
         "description": "核心 KPI 卡片内容",
         "default": "",
         "slide_index": 2
+      }
+    },
+    "dates": {
+      "DATE:report_date": {
+        "description": "报告生成日期",
+        "default": "2026-04-10",
+        "format": "%Y-%m-%d",
+        "slide_index": 0
+      }
+    },
+    "images": {
+      "IMAGE:logo": {
+        "description": "",
+        "path": "resources\\images\\Snipaste_2026-04-10_02-06-00.png",
+        "type": "logo",
+        "slide_index": 0
+      }
+    },
+    "videos": {
+      "VIDEO:video": {
+        "description": "",
+        "path": "resources\\videos\\12014118_1920_1080_50fps.mp4",
+        "slide_index": 3
+      }
+    },
+    "links": {
+      "LINK:url": {
+        "description": "",
+        "url": "https://www.ljh.cool",
+        "type": "url",
+        "slide_index": 0
       }
     }
   },
@@ -326,6 +357,36 @@
       "style": "建议导向",
       "word_count": 300,
       "custom_prompt": "请从以下 4 个维度生成落地策略：\n1. 客户运营策略：新老客分层运营、复购提升、LTV 优化\n2. 产品组合策略：爆品依赖降低、连带率提升、产品矩阵优化\n3. 团队管理策略：销售产能规划、激励机制、培训体系\n4. 营销节奏策略：活动节奏、渠道投放、促销时机"
-    }
+    },
+    "variables": [
+      {
+        "key": "conclusion",
+        "name": "结论说明",
+        "description": "AI 自动生成 4 条核心结论",
+        "dimensions": [
+          "业绩结构",
+          "增长亮点",
+          "核心短板",
+          "业务风险"
+        ],
+        "style": "数据驱动",
+        "word_count": 250,
+        "custom_prompt": "请从以下 4 个维度生成核心结论：\n1、业绩结构：分析销售、产品、客户、区域的集中度风险\n2、增长亮点：识别增长最快的指标和驱动因素\n3、核心短板：指出最明显的业务弱点和瓶颈\n4、业务风险：预警潜在的结构性风险和外部威胁"
+      },
+      {
+        "key": "strategy",
+        "name": "策略说明",
+        "description": "AI 自动生成 4 条落地策略\n",
+        "dimensions": [
+          "业绩结构",
+          "增长亮点",
+          "核心短板",
+          "业务风险"
+        ],
+        "style": "建议导向",
+        "word_count": 250,
+        "custom_prompt": "请从以下 4 个维度生成落地策略：\n1、客户运营策略：新老客分层运营、复购提升、LTV 优化\n2、产品组合策略：爆品依赖降低、连带率提升、产品矩阵优化\n3、团队管理策略：销售产能规划、激励机制、培训体系\n4、营销节奏策略：活动节奏、渠道投放、促销时机"
+      }
+    ]
   }
 }

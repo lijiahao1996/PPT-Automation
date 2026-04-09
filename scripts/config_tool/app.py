@@ -68,7 +68,7 @@ with st.sidebar:
     st.info("💡 **提示**:\n1. 先配置统计规则\n2. 生成测试数据\n3. 配置图表\n4. 导出配置")
 
 # 主功能选择
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(["📋 统计规则配置", "📈 图表配置", "💡 洞察配置", "🔖 PPT 变量", "📊 数据预览", "💾 导出配置", "⚙️ 自定义变量", "🎯 结论 & 策略"])
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["📋 统计规则配置", "📈 图表配置", "💡 洞察配置", "⚙️ 自定义变量", "🎯 结论 & 策略", "📊 数据概览", "🔖 PPT 变量"])
 
 # ========== Tab 1: 统计规则配置 ==========
 with tab1:
@@ -361,6 +361,16 @@ with tab2:
                 options=available_sheets,
                 help="选择要使用的 Excel Sheet（来自统计汇总文件）"
             )
+            
+            # 数据源预览 - 选中后直接显示前 5 行
+            if data_source:
+                try:
+                    df_preview = pd.read_excel(summary_path, sheet_name=data_source, nrows=5)
+                    with st.expander(f"📊 预览数据源 '{data_source}' (前 5 行)", expanded=False):
+                        st.dataframe(df_preview, use_container_width=True)
+                        st.caption(f"共 {len(pd.read_excel(summary_path, sheet_name=data_source))} 行 × {len(df_preview.columns)} 列")
+                except Exception as e:
+                    st.warning(f"⚠️ 预览失败：{e}")
         else:
             data_source = st.text_input("数据源", placeholder="请先去生成数据", help="必须与统计规则中的名称一致", disabled=True)
     
@@ -369,6 +379,7 @@ with tab2:
         
         # 如果选择了数据源，尝试自动读取字段
         auto_fields_info = ""
+        available_fields = []
         if data_source and os.path.exists(summary_path):
             try:
                 df_temp = pd.read_excel(summary_path, sheet_name=data_source, nrows=1)
@@ -581,6 +592,16 @@ with tab2:
                             st.rerun()
     else:
         st.info("暂无图表配置，请添加")
+    
+    # 统一保存按钮
+    st.markdown("---")
+    if st.button("💾 保存所有图表配置", type="primary", use_container_width=True):
+        try:
+            with open(placeholders_file, 'w', encoding='utf-8') as f:
+                json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+            st.success(f"✅ 已保存：{placeholders_file}")
+        except Exception as e:
+            st.error(f"❌ 保存失败：{e}")
 
 # ========== Tab 3: 洞察配置 ==========
 with tab3:
@@ -660,10 +681,10 @@ with tab3:
             # 字数要求
             word_count = st.slider(
                 "字数要求",
-                min_value=50,
+                min_value=0,
                 max_value=300,
                 value=default_word_count,
-                step=50,
+                step=10,
                 key=f"words_{chart_key}"
             )
             
@@ -712,9 +733,9 @@ with tab3:
             with st.expander(f"💡 {chart_key}"):
                 st.json(insight_cfg)
 
-# ========== Tab 4: PPT 变量可视化 ==========
-with tab4:
-    st.header("🔖 PPT 变量可视化")
+# ========== Tab 7: PPT 变量总览 ==========
+with tab7:
+    st.header("🔖 PPT 变量总览")
     st.markdown("动态展示所有已配置的变量，方便在 PPT 模板中使用")
     
     # 加载配置
@@ -821,10 +842,22 @@ with tab4:
     ```
     [KPI:cards]
     ```
-    **说明**：自动生成 5 个核心 KPI 卡片（总销售额、总订单数、平均客单价、最高单额、最低单额）
+    **说明**：自动生成核心 KPI 卡片（从统计规则中识别 type="kpi" 的指标）
     """)
     
-    st.info("📌 KPI 卡片变量固定为 `[KPI:cards]`，自动生成 5 个指标")
+    # 动态读取 KPI 指标 - 从统计规则中查找 type="kpi" 的配置
+    kpi_metrics = []
+    stats_sheets = stats_config.get("stats_sheets", {})
+    for sheet_name, rule in stats_sheets.items():
+        if rule.get("type") == "kpi" and rule.get("enabled", True):
+            metrics = rule.get("metrics", [])
+            for m in metrics:
+                kpi_metrics.append(m.get("alias", m.get("field", "未知指标")))
+    
+    if kpi_metrics:
+        st.success(f"✅ 已识别 {len(kpi_metrics)} 个 KPI 指标：{', '.join(kpi_metrics[:10])}{'...' if len(kpi_metrics) > 10 else ''}")
+    else:
+        st.info("💡 暂无 KPI 指标，请在「📋 统计规则配置」中添加 type=\"kpi\" 的统计规则")
     
     st.markdown("---")
     st.subheader("📋 表格变量")
@@ -855,11 +888,15 @@ with tab4:
     st.subheader("🎯 特殊变量（AI 自动生成）")
     st.markdown("""💡 **提示**：结论和策略变量可在'🎯 结论 & 策略'标签页中自定义生成提示词""")
     
-    # 加载特殊变量配置
+    # 动态读取特殊变量配置 - 从结论&策略 tab 的配置中读取
     special_vars = placeholders_config.get('special_insights', {})
     
     conclusion_cfg = special_vars.get('conclusion', {})
     strategy_cfg = special_vars.get('strategy', {})
+    
+    # 获取动态配置的维度
+    conclusion_dims = conclusion_cfg.get('dimensions', ['业绩结构', '增长亮点', '核心短板', '业务风险'])
+    strategy_dims = strategy_cfg.get('dimensions', ['客户运营策略', '产品组合策略', '团队管理策略', '营销节奏策略'])
     
     col1, col2 = st.columns(2)
     
@@ -869,8 +906,9 @@ with tab4:
         ```
         {{INSIGHT:conclusion}}
         ```
-        **说明**：{conclusion_cfg.get('description', 'AI 自动生成 4 条核心结论')}
-        **生成提示**：{conclusion_cfg.get('custom_prompt', '业绩结构、增长亮点、核心短板、业务风险')}
+        **说明**：{conclusion_cfg.get('description', 'AI 自动生成核心结论')}
+        **分析维度**：{', '.join(conclusion_dims)}
+        **风格**：{conclusion_cfg.get('style', '数据驱动')} | **字数**：{conclusion_cfg.get('word_count', 300)}字
         """)
     
     with col2:
@@ -879,8 +917,9 @@ with tab4:
         ```
         {{INSIGHT:strategy}}
         ```
-        **说明**：{strategy_cfg.get('description', 'AI 自动生成 4 条落地策略')}
-        **生成提示**：{strategy_cfg.get('custom_prompt', '客户运营策略、产品组合策略、团队管理策略、营销节奏策略')}
+        **说明**：{strategy_cfg.get('description', 'AI 自动生成落地策略')}
+        **策略维度**：{', '.join(strategy_dims)}
+        **风格**：{strategy_cfg.get('style', '建议导向')} | **字数**：{strategy_cfg.get('word_count', 400)}字
         """)
     
     st.markdown("---")
@@ -889,106 +928,8 @@ with tab4:
 - 复制占位符到 PPT 模板中的文本框即可使用
 - 运行 `Run.bat` 时会自动替换为实际内容""")
 
-# ========== Tab 5: 数据预览 ==========
-with tab5:
-    st.header("📊 数据预览")
-    st.markdown("预览统计数据和配置效果")
-    
-    # 检查是否有统计数据
-    summary_file = os.path.join(output_dir, "销售统计汇总.xlsx")
-    
-    if os.path.exists(summary_file):
-        st.success("✅ 找到统计汇总文件")
-        
-        # 读取所有 Sheet
-        xls = pd.ExcelFile(summary_file)
-        sheet_names = xls.sheet_names
-        
-        selected_sheet = st.selectbox("选择 Sheet 预览", sheet_names)
-        
-        if selected_sheet:
-            df = pd.read_excel(summary_file, sheet_name=selected_sheet)
-            st.dataframe(df, use_container_width=True)
-            
-            st.markdown(f"##### 数据信息")
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("行数", len(df))
-            with col2:
-                st.metric("列数", len(df.columns))
-            with col3:
-                st.metric("字段", ", ".join(df.columns[:5]) + ("..." if len(df.columns) > 5 else ""))
-    else:
-        st.warning("⚠️ 未找到统计汇总文件，请先运行 Run.bat 生成数据")
-        
-        st.info("💡 **如何生成数据**:\n1. 配置统计规则\n2. 导出配置\n3. 运行 `Run.bat`\n4. 查看生成的 Excel 文件")
-
-# ========== Tab 6: 导出配置 ==========
-with tab6:
-    st.header("💾 导出配置")
-    st.markdown("保存配置文件并生成 PPT")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("保存统计规则")
-        
-        if st.button("💾 保存 stats_rules.json", type="primary", use_container_width=True):
-            try:
-                with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                    json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
-                st.success(f"✅ 已保存：{stats_rules_file}")
-                
-                # 显示文件内容预览
-                with st.expander("📄 查看文件内容"):
-                    st.json(st.session_state.stats_config)
-            except Exception as e:
-                st.error(f"❌ 保存失败：{e}")
-    
-    with col2:
-        st.subheader("保存完整配置")
-        
-        if st.button("💾 保存 placeholders.json", type="primary", use_container_width=True):
-            try:
-                with open(placeholders_file, 'w', encoding='utf-8') as f:
-                    json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
-                st.success(f"✅ 已保存：{placeholders_file}")
-                
-                # 显示文件内容预览
-                with st.expander("📄 查看文件内容"):
-                    st.json(placeholders_config)
-            except Exception as e:
-                st.error(f"❌ 保存失败：{e}")
-    
-    st.markdown("---")
-    st.subheader("🚀 下一步")
-    
-    st.markdown("""
-    ### 配置流程：
-    
-    1. **配置统计规则** - 在"📋 统计规则配置"标签页
-    2. **配置图表** - 在"📈 图表配置"标签页
-    3. **配置洞察** - 在"💡 洞察配置"标签页
-    4. **自定义变量** - 在"⚙️ 自定义变量"标签页（可选）
-    5. **查看变量** - 在"🔖 PPT 变量"标签页确认
-    6. **保存配置** - 点击上方的保存按钮
-    7. **生成 PPT** - 运行 `Run.bat`
-    
-    ### 快速命令：
-    ```bash
-    # 方式 1：双击运行
-    .\\启动器.bat
-    
-    # 方式 2：PowerShell
-    .\\Run.ps1
-    
-    # 方式 3：EXE
-    .\\PPT 生成.exe
-    ```
-    """)
-
-# ========== Tab 7: 自定义变量 ==========
-with tab7:
+# ========== Tab 4: 自定义变量 ==========
+with tab4:
     st.header("⚙️ 自定义变量")
     st.markdown("自定义 PPT 模板中的变量，完全自由配置")
     
@@ -1162,9 +1103,19 @@ with tab7:
     
     st.markdown("---")
     st.info("💡 **提示**：\n- 自定义变量后，在 PPT 模板中插入文本框，输入对应的占位符\n- 文本变量：`[TEXT:xxx]`\n- 表格变量：`[TABLE:xxx]`\n- 运行 `Run.bat` 时会自动替换")
+    
+    # 统一保存按钮
+    st.markdown("---")
+    if st.button("💾 保存所有自定义变量", type="primary", use_container_width=True):
+        try:
+            with open(placeholders_file, 'w', encoding='utf-8') as f:
+                json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+            st.success(f"✅ 已保存：{placeholders_file}")
+        except Exception as e:
+            st.error(f"❌ 保存失败：{e}")
 
-# ========== Tab 8: 结论 & 策略 ==========
-with tab8:
+# ========== Tab 5: 结论 & 策略 ==========
+with tab5:
     st.header("🎯 结论 & 策略配置")
     st.markdown("自定义 AI 生成的核心结论和落地策略的生成提示词")
     
@@ -1225,10 +1176,10 @@ with tab8:
         
         conclusion_words = st.slider(
             "字数要求",
-            min_value=200,
-            max_value=600,
+            min_value=0,
+            max_value=500,
             value=conclusion_cfg.get("word_count", 300),
-            step=50,
+            step=10,
             key="conclusion_words"
         )
     
@@ -1272,10 +1223,10 @@ with tab8:
         
         strategy_words = st.slider(
             "字数要求",
-            min_value=300,
-            max_value=800,
+            min_value=0,
+            max_value=500,
             value=strategy_cfg.get("word_count", 400),
-            step=50,
+            step=10,
             key="strategy_words"
         )
     
@@ -1321,6 +1272,98 @@ with tab8:
 - 结论和策略会在 AI 洞察生成时自动添加到 Prompt 中
 - 配置会同步更新到 `skills/data-insight/SKILL.md`
 - 运行 `Run.bat` 时会自动使用最新配置生成""")
+
+# ========== Tab 6: 数据概览 ==========
+with tab6:
+    st.header("📊 数据概览")
+    st.markdown("展示所有统计 Sheet 的概览信息（行数、列名、数据类型）")
+    
+    # 检查是否有统计数据
+    summary_file = os.path.join(output_dir, "销售统计汇总.xlsx")
+    
+    if os.path.exists(summary_file):
+        st.success("✅ 找到统计汇总文件")
+        
+        # 读取所有 Sheet 并展示概览
+        xls = pd.ExcelFile(summary_file)
+        sheet_names = xls.sheet_names
+        
+        st.markdown(f"##### 📋 共有 {len(sheet_names)} 个统计 Sheet")
+        
+        # 创建概览表格
+        overview_data = []
+        for sheet_name in sheet_names:
+            try:
+                df = pd.read_excel(summary_file, sheet_name=sheet_name, nrows=1)
+                row_count = len(pd.read_excel(summary_file, sheet_name=sheet_name))
+                col_count = len(df.columns)
+                columns_list = df.columns.tolist()
+                dtypes = df.dtypes.astype(str).tolist()
+                
+                overview_data.append({
+                    'Sheet 名称': sheet_name,
+                    '行数': row_count,
+                    '列数': col_count,
+                    '字段列表': ', '.join(columns_list[:5]) + ('...' if len(columns_list) > 5 else ''),
+                    '数据类型': ', '.join(dtypes[:5]) + ('...' if len(dtypes) > 5 else '')
+                })
+            except Exception as e:
+                overview_data.append({
+                    'Sheet 名称': sheet_name,
+                    '行数': '读取失败',
+                    '列数': '-',
+                    '字段列表': f'错误：{e}',
+                    '数据类型': '-'
+                })
+        
+        # 展示概览表格
+        overview_df = pd.DataFrame(overview_data)
+        st.dataframe(overview_df, use_container_width=True, hide_index=True)
+        
+        # 详细查看某个 Sheet
+        st.markdown("---")
+        st.subheader("🔍 详细查看")
+        
+        selected_sheet = st.selectbox("选择 Sheet 查看详细数据", sheet_names)
+        
+        if selected_sheet:
+            try:
+                df_detail = pd.read_excel(summary_file, sheet_name=selected_sheet)
+                st.dataframe(df_detail.head(100), use_container_width=True)
+                
+                st.markdown(f"##### 数据信息")
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric("总行数", len(df_detail))
+                with col2:
+                    st.metric("总列数", len(df_detail.columns))
+                with col3:
+                    st.metric("内存占用", f"{df_detail.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+                with col4:
+                    st.metric("空值总数", df_detail.isnull().sum().sum())
+                
+                # 字段详情
+                with st.expander("📊 查看字段详情"):
+                    field_info = []
+                    for col in df_detail.columns:
+                        field_info.append({
+                            '字段名': col,
+                            '数据类型': str(df_detail[col].dtype),
+                            '非空值': df_detail[col].notnull().sum(),
+                            '空值数': df_detail[col].isnull().sum(),
+                            '唯一值': df_detail[col].nunique()
+                        })
+                    st.dataframe(pd.DataFrame(field_info), use_container_width=True, hide_index=True)
+            except Exception as e:
+                st.error(f"❌ 读取失败：{e}")
+    else:
+        st.warning("⚠️ 未找到统计汇总文件")
+        
+        st.info("""💡 **如何生成数据**:
+1. 在「📋 统计规则配置」中配置统计规则
+2. 点击「🔄 保存配置并生成数据」按钮
+3. 运行 `Run.bat` 生成完整的 PPT 报告
+4. 返回此处查看生成的 Excel 文件""")
 
 # 页脚
 st.markdown("---")
