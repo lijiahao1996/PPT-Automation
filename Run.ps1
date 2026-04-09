@@ -67,18 +67,21 @@ if (-not (Test-Path $artifactsDir)) { New-Item -ItemType Directory -Force -Path 
 
 Set-Location $workDir
 
-# Check for Excel files (with size validation)
+# Check for raw data file (帆软销售明细.xlsx)
 Write-Host "Checking data files..." -ForegroundColor Cyan
-$excelFiles = Get-ChildItem -Path $outputDir -Filter "*.xlsx" -ErrorAction SilentlyContinue | Where-Object { $_.Length -gt 10000 }  # 至少 10KB 才认为是有效文件
+$rawDataFile = Join-Path $outputDir "帆软销售明细.xlsx"
 
-if ($excelFiles.Count -gt 0) {
-    Write-Host "[OK] Found $($excelFiles.Count) valid Excel files, skip scraping" -ForegroundColor Green
-    $skipScrape = $true
-} else {
-    if ($excelFiles.Count -gt 0) {
-        Write-Host "[WARN] Found empty/small Excel files (<10KB), will re-scrape..." -ForegroundColor Yellow
+if (Test-Path $rawDataFile) {
+    $fileSize = (Get-Item $rawDataFile).Length
+    if ($fileSize -gt 10000) {  # 至少 10KB 才认为是有效文件
+        Write-Host "[OK] Raw data file exists ($([math]::Round($fileSize/1KB, 1)) KB), skip scraping" -ForegroundColor Green
+        $skipScrape = $true
+    } else {
+        Write-Host "[WARN] Raw data file is empty/small ($fileSize bytes), will re-scrape..." -ForegroundColor Yellow
+        $skipScrape = $false
     }
-    Write-Host "[INFO] No valid data files, starting scrape..." -ForegroundColor Yellow
+} else {
+    Write-Host "[INFO] Raw data file not found, starting scrape..." -ForegroundColor Yellow
     $skipScrape = $false
 }
 
