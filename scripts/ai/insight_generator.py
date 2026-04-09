@@ -65,6 +65,15 @@ class InsightGenerator:
                 return config.get('placeholders', {}).get('insights', {})
         return None
     
+    def _load_special_insights_config(self) -> Optional[Dict]:
+        """加载特殊洞察配置（结论 & 策略）"""
+        placeholders_path = os.path.join(self.base_dir, 'templates', 'placeholders.json')
+        if os.path.exists(placeholders_path):
+            with open(placeholders_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                return config.get('special_insights', {})
+        return None
+    
     def generate(self, data_summary: Dict, output_path: str = None) -> List[str]:
         """
         生成 AI 洞察
@@ -74,7 +83,7 @@ class InsightGenerator:
             output_path: 保存洞察 JSON 的路径
         
         Returns:
-            List[str]: 10 条洞察
+            List[str]: 洞察列表
         """
         logger.info("开始生成 AI 洞察...")
         
@@ -146,9 +155,11 @@ class InsightGenerator:
                 "请确保 Skill 文件存在，AI 洞察生成依赖此规范。"
             )
         
-        # 动态加载图表配置
+        # 动态加载图表和洞察配置
         charts_config = self._load_charts_config()
+        insights_config = self._load_insights_config()
         chart_count = len(charts_config) if charts_config else 0
+        insight_count = len(insights_config) if insights_config else chart_count
         
         return f"""你是一位专业的商业数据分析师，专门为销售分析报告生成 PPT 洞察文案。
 
@@ -158,8 +169,8 @@ class InsightGenerator:
 
 【重要】
 1. 直接输出 JSON 数组，不要任何其他文字
-2. JSON 数组的元素数量 = 图表数量（当前{chart_count}个图表）
-3. 每条洞察对应一个图表，按图表顺序输出
+2. JSON 数组的元素数量 = 洞察配置数量 +2（当前{insight_count}个洞察 + 结论 + 策略 = 共{insight_count+2}条）
+3. 每条洞察对应一个图表/数据表，按配置顺序输出
 4. 洞察内容必须基于提供的数据，不能虚构"""
     
     def _build_user_prompt(self, data_context: str) -> str:
@@ -167,6 +178,7 @@ class InsightGenerator:
         # 动态加载图表配置
         charts_config = self._load_charts_config()
         insights_config = self._load_insights_config()
+        special_insights_config = self._load_special_insights_config()
         
         chart_info = "\n\n【图表配置】\n"
         if charts_config:
@@ -187,8 +199,32 @@ class InsightGenerator:
                 if insight_cfg.get('custom_prompt'):
                     insight_config_info += f"- 自定义提示：{insight_cfg.get('custom_prompt')}\n"
         
-        chart_count = len(charts_config) if charts_config else 0
-        total_count = chart_count + 2  # +2 为结论和策略
+        # 添加特殊洞察配置（结论 & 策略）
+        special_config_info = ""
+        if special_insights_config:
+            special_config_info = "\n\n【特殊洞察配置】\n"
+            
+            conclusion_cfg = special_insights_config.get('conclusion', {})
+            if conclusion_cfg:
+                special_config_info += f"\n### 核心结论\n"
+                special_config_info += f"- 分析维度：{', '.join(conclusion_cfg.get('dimensions', []))}\n"
+                special_config_info += f"- 洞察风格：{conclusion_cfg.get('style', '数据驱动')}\n"
+                special_config_info += f"- 字数要求：{conclusion_cfg.get('word_count', 300)}字\n"
+                if conclusion_cfg.get('custom_prompt'):
+                    special_config_info += f"- 自定义提示：{conclusion_cfg.get('custom_prompt')}\n"
+            
+            strategy_cfg = special_insights_config.get('strategy', {})
+            if strategy_cfg:
+                special_config_info += f"\n### 落地策略\n"
+                special_config_info += f"- 策略维度：{', '.join(strategy_cfg.get('dimensions', []))}\n"
+                special_config_info += f"- 洞察风格：{strategy_cfg.get('style', '建议导向')}\n"
+                special_config_info += f"- 字数要求：{strategy_cfg.get('word_count', 400)}字\n"
+                if strategy_cfg.get('custom_prompt'):
+                    special_config_info += f"- 自定义提示：{strategy_cfg.get('custom_prompt')}\n"
+        
+        # 使用 insights 配置数量（包括 kpi_summary, abnormal 等额外洞察）
+        insight_count = len(insights_config) if insights_config else len(charts_config)
+        total_count = insight_count + 2  # +2 为结论和策略
         
         return f"""请根据以下销售数据，生成符合上述规范的商业洞察。
 
@@ -196,12 +232,13 @@ class InsightGenerator:
 {data_context}
 {chart_info}
 {insight_config_info}
+{special_config_info}
 记住：
 1. JSON 数组中每条只包含纯洞察内容，不要任何前缀
-2. 洞察数量 = 图表数量 +2（当前{chart_count}个图表 + 结论 + 策略 = 共{total_count}条）
-3. 前{chart_count}条：每条洞察对应一个图表，按顺序分析
-4. 第{chart_count + 1}条：核心结论（4 条结构化洞察，用\\n\\n 分隔）
-5. 第{chart_count + 2}条：落地策略（4 条结构化策略，用\\n\\n 分隔）
+2. 洞察数量 = 洞察配置数量 +2（当前{insight_count}个洞察 + 结论 + 策略 = 共{total_count}条）
+3. 前{insight_count}条：每条洞察对应一个图表/数据表，按配置顺序分析
+4. 第{insight_count + 1}条：核心结论（4 条结构化洞察，用\\n\\n 分隔）
+5. 第{insight_count + 2}条：落地策略（4 条结构化策略，用\\n\\n 分隔）
 6. 根据配置的洞察配置生成对应内容"""
     
     def _call_api(self, system_prompt: str, user_prompt: str) -> Optional[str]:
@@ -257,10 +294,10 @@ class InsightGenerator:
             
             logger.info(f"AI 返回原始数据：{len(insights_raw)} 项")
             
-            # 动态加载图表配置，确定期望的洞察数量
-            charts_config = self._load_charts_config()
-            chart_count = len(charts_config) if charts_config else 0
-            expected_count = chart_count + 2  # 图表 + 结论 + 策略
+            # 动态加载洞察配置，确定期望的洞察数量
+            insights_config = self._load_insights_config()
+            insight_count = len(insights_config) if insights_config else 0
+            expected_count = insight_count + 2  # 洞察 + 结论 + 策略
             
             # 展平嵌套数组
             insights = []
@@ -277,10 +314,10 @@ class InsightGenerator:
                 else:
                     logger.warning(f"第{i+1}条：未知类型 {type(item)}")
             
-            # 动态检查洞察数量（允许 7-9 条）
-            if len(insights) < chart_count:
+            # 动态检查洞察数量
+            if len(insights) < insight_count:
                 raise ValueError(
-                    f"AI 返回的洞察数量异常：期望至少{chart_count}条，实际{len(insights)}条\n"
+                    f"AI 返回的洞察数量异常：期望至少{insight_count}条，实际{len(insights)}条\n"
                     f"原始返回：{insights_raw[:2]}...\n"
                     "请检查 API 配置或联系管理员。"
                 )
@@ -294,5 +331,3 @@ class InsightGenerator:
                 f"原始响应：{response[:200]}...\n"
                 "请检查 API 配置或联系管理员。"
             )
-    
-    # 如果 API 失败，直接抛出异常

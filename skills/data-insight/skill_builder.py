@@ -29,6 +29,12 @@ def build_skill_from_config(stats_rules_path: str, placeholders_path: str, outpu
     # 提取图表配置
     charts = placeholders_config.get('placeholders', {}).get('charts', {})
     
+    # 提取洞察配置（可能包含额外的洞察变量如 kpi_summary, abnormal）
+    insights = placeholders_config.get('placeholders', {}).get('insights', {})
+    
+    # 提取特殊洞察配置（结论 & 策略）
+    special_insights = placeholders_config.get('special_insights', {})
+    
     # 生成数据结构表格
     data_tables = []
     for sheet_name, config in stats_sheets.items():
@@ -71,7 +77,7 @@ def build_skill_from_config(stats_rules_path: str, placeholders_path: str, outpu
         })
     
     # 生成 SKILL.md
-    skill_content = generate_skill_content(data_tables, chart_insight_mapping)
+    skill_content = generate_skill_content(data_tables, insights, special_insights)
     
     # 保存
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -83,7 +89,9 @@ def build_skill_from_config(stats_rules_path: str, placeholders_path: str, outpu
     print(f"   - Charts: {len(chart_insight_mapping)}")
 
 
-def generate_skill_content(data_tables: list, chart_insight_mapping: list) -> str:
+def generate_skill_content(data_tables: list, insights: dict, special_insights: dict) -> str:
+    """生成 SKILL.md 内容"""
+    insight_count = len(insights)
     """生成 SKILL.md 内容"""
     
     # 生成数据结构表格
@@ -92,17 +100,45 @@ def generate_skill_content(data_tables: list, chart_insight_mapping: list) -> st
         fields_str = "、".join(table['fields'])
         tables_md += f"| {table['name']} | {table['description']} | {fields_str} |\n"
     
-    # 生成图表 - 洞察映射
-    chart_insight_md = ""
-    for i, mapping in enumerate(chart_insight_mapping, 1):
-        chart_insight_md += f"#### 第{mapping['slide_index']}页：{mapping['title']}\n"
-        chart_insight_md += f"**图表 Key**: `{mapping['chart_key']}`\n"
-        chart_insight_md += f"**数据源**: {mapping['data_source']}\n"
-        chart_insight_md += f"**图表类型**: {mapping['chart_type']}\n"
-        chart_insight_md += f"**分析要点**:\n"
-        chart_insight_md += f"- 基于{mapping['data_source']}数据生成洞察\n"
-        chart_insight_md += f"- 分析趋势、对比、占比等业务含义\n"
-        chart_insight_md += f"- 给出具体数据和业务建议\n\n"
+    # 生成洞察映射（使用 insights 配置，可能包含额外的洞察变量）
+    insight_md = ""
+    for i, (insight_key, insight_cfg) in enumerate(insights.items(), 1):
+        chart_name = insight_key.replace('CHART:', '')
+        data_source = insight_cfg.get('data_source', '')
+        dimensions = insight_cfg.get('dimensions', [])
+        custom_prompt = insight_cfg.get('custom_prompt', '')
+        slide_index = insight_cfg.get('slide_index', 0)
+        
+        insight_md += f"#### 第{slide_index}页：{chart_name}\n"
+        insight_md += f"**洞察 Key**: `{insight_key}`\n"
+        insight_md += f"**数据源**: {data_source}\n"
+        insight_md += f"**分析维度**: {', '.join(dimensions)}\n"
+        if custom_prompt:
+            insight_md += f"**自定义提示**: {custom_prompt}\n"
+        insight_md += "\n"
+    
+    # 生成特殊洞察配置（结论 & 策略）
+    special_insight_md = ""
+    if special_insights:
+        conclusion_cfg = special_insights.get('conclusion', {})
+        if conclusion_cfg:
+            special_insight_md += "#### 核心结论（{{INSIGHT:conclusion}}）\n"
+            special_insight_md += f"**分析维度**: {', '.join(conclusion_cfg.get('dimensions', []))}\n"
+            special_insight_md += f"**洞察风格**: {conclusion_cfg.get('style', '数据驱动')}\n"
+            special_insight_md += f"**字数要求**: {conclusion_cfg.get('word_count', 300)}字\n"
+            if conclusion_cfg.get('custom_prompt'):
+                special_insight_md += f"**自定义提示**: {conclusion_cfg.get('custom_prompt')}\n"
+            special_insight_md += "\n"
+        
+        strategy_cfg = special_insights.get('strategy', {})
+        if strategy_cfg:
+            special_insight_md += "#### 落地策略（{{INSIGHT:strategy}}）\n"
+            special_insight_md += f"**策略维度**: {', '.join(strategy_cfg.get('dimensions', []))}\n"
+            special_insight_md += f"**洞察风格**: {strategy_cfg.get('style', '建议导向')}\n"
+            special_insight_md += f"**字数要求**: {strategy_cfg.get('word_count', 400)}字\n"
+            if strategy_cfg.get('custom_prompt'):
+                special_insight_md += f"**自定义提示**: {strategy_cfg.get('custom_prompt')}\n"
+            special_insight_md += "\n"
     
     # 生成完整的 SKILL.md
     skill_md = f"""---
@@ -197,11 +233,14 @@ generated_at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 ---
 
-## 📊 图表 - 洞察映射
+## 📊 洞察映射（共{insight_count}个）
 
 根据当前配置，需要生成以下洞察：
 
-{chart_insight_md}
+{insight_md}
+## 🎯 特殊洞察配置（可自定义）
+
+{special_insight_md}
 ---
 
 ## 🔧 技术实现要求

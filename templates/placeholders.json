@@ -75,6 +75,14 @@
         "y_field": "城市",
         "title": "客户属性与城市销售分析",
         "slide_index": 9
+      },
+      "CHART:age_scatter": {
+        "description": "",
+        "data_source": "客户年龄分布",
+        "chart_type": "scatter",
+        "title": "客户年龄与销售额分布分析",
+        "x_field": "年龄段",
+        "y_field": "总销售额"
       }
     },
     "insights": {
@@ -182,6 +190,23 @@
         "word_count": 150,
         "enabled": true,
         "custom_prompt": "分析客户 - 城市分布特征，识别重点市场"
+      },
+      "CHART:age_scatter": {
+        "dimensions": [
+          "分布分析",
+          "相关性分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "客单价",
+          "订单数"
+        ],
+        "baseline": "平均值",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": "重点分析哪个年龄段客户贡献最高，年轻客户（25-35 岁）与中年客户（36-50 岁）的消费差异，以及客户类型（新客/老客）在各年龄段的分布特征。指出潜在的年龄分层运营机会。\n"
       }
     },
     "tables": {
@@ -257,14 +282,18 @@
       "layout": "table_text"
     },
     "10": {
+      "name": "客户年龄分布",
+      "layout": "chart_text"
+    },
+    "11": {
       "name": "核心结论",
       "layout": "content"
     },
-    "11": {
+    "12": {
       "name": "落地策略",
       "layout": "content"
     },
-    "12": {
+    "13": {
       "name": "结束页",
       "layout": "title"
     }
@@ -272,5 +301,31 @@
   "report_settings": {
     "date_range_auto_detect": true,
     "date_range_format": "统计周期：{start} - {end} | 日期：{today}"
+  },
+  "special_insights": {
+    "conclusion": {
+      "description": "AI 自动生成 4 条核心结论",
+      "dimensions": [
+        "业绩结构",
+        "增长亮点",
+        "核心短板",
+        "业务风险"
+      ],
+      "style": "数据驱动",
+      "word_count": 200,
+      "custom_prompt": "请从以下 4 个维度生成核心结论：\n1. 业绩结构：分析销售、产品、客户、区域的集中度风险\n2. 增长亮点：识别增长最快的指标和驱动因素\n3. 核心短板：指出最明显的业务弱点和瓶颈\n4. 业务风险：预警潜在的结构性风险和外部威胁"
+    },
+    "strategy": {
+      "description": "AI 自动生成 4 条落地策略",
+      "dimensions": [
+        "客户运营策略",
+        "产品组合策略",
+        "团队管理策略",
+        "营销节奏策略"
+      ],
+      "style": "建议导向",
+      "word_count": 300,
+      "custom_prompt": "请从以下 4 个维度生成落地策略：\n1. 客户运营策略：新老客分层运营、复购提升、LTV 优化\n2. 产品组合策略：爆品依赖降低、连带率提升、产品矩阵优化\n3. 团队管理策略：销售产能规划、激励机制、培训体系\n4. 营销节奏策略：活动节奏、渠道投放、促销时机"
+    }
   }
 }

@@ -61,6 +61,9 @@ class StatsEngine:
         """
         logger.info("开始执行统计规则...")
         
+        # 数据预处理：转换数值字段为数字类型
+        df = self._preprocess_data(df)
+        
         results = {}
         
         for sheet_name, config in self.config['stats_sheets'].items():
@@ -229,6 +232,87 @@ class StatsEngine:
             outliers = pd.DataFrame(columns=columns + ['异常类型'])
         
         return outliers[columns] if len(outliers) > 0 else outliers
+    
+    def _preprocess_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        数据预处理：转换数值字段为数字类型，创建时间派生字段，处理字段别名
+        
+        Args:
+            df: 原始数据 DataFrame
+        
+        Returns:
+            预处理后的 DataFrame
+        """
+        df = df.copy()  # 避免修改原始数据
+        
+        # 1. 字段别名映射（配置中的字段名 → 实际数据中的字段名）
+        field_aliases = {
+            '年龄段': '客户年龄段',
+            '客户类型': '客户属性',
+            '销售员': '销售员',
+            '产品': '产品',
+            '城市': '城市',
+            '年月': None,  # 动态创建
+            '季度': None,  # 动态创建
+            '星期': None,  # 动态创建
+        }
+        
+        # 应用字段别名（创建短名别名）
+        for alias, real_field in field_aliases.items():
+            if real_field and real_field in df.columns and alias not in df.columns:
+                df[alias] = df[real_field]
+                logger.info(f"  已创建字段别名：{alias} <- {real_field}")
+        
+        # 2. 转换数值字段
+        numeric_fields = ['销售额', '订单数', '数量', '金额', '利润', '成本', '单价']
+        
+        for field in numeric_fields:
+            if field in df.columns:
+                try:
+                    df[field] = pd.to_numeric(
+                        df[field].astype(str).str.replace(',', '', regex=False),
+                        errors='coerce'
+                    )
+                    logger.info(f"  字段 '{field}' 已转换为数值类型")
+                except Exception as e:
+                    logger.warning(f"  字段 '{field}' 转换失败：{e}")
+        
+        # 3. 创建时间派生字段（如果存在时间字段）
+        time_field = None
+        for possible_field in ['订单时间', '时间', '日期', 'order_time', 'date']:
+            if possible_field in df.columns:
+                time_field = possible_field
+                break
+        
+        if time_field:
+            try:
+                df[time_field] = pd.to_datetime(df[time_field], errors='coerce')
+                
+                # 年月（用于月度趋势）
+                if '年月' not in df.columns:
+                    df['年月'] = df[time_field].dt.to_period('M').astype(str)
+                    logger.info("  已创建字段：年月")
+                
+                # 季度（用于季度对比）
+                if '季度' not in df.columns:
+                    df['季度'] = df[time_field].dt.to_period('Q').apply(lambda x: f"{x.year}年{int(x.quarter)}季度")
+                    logger.info("  已创建字段：季度")
+                
+                # 星期（用于星期分布）
+                if '星期' not in df.columns:
+                    weekday_map = {
+                        0: '周一', 1: '周二', 2: '周三', 3: '周四',
+                        4: '周五', 5: '周六', 6: '周日'
+                    }
+                    df['星期'] = df[time_field].dt.weekday.map(weekday_map)
+                    logger.info("  已创建字段：星期")
+                    
+            except Exception as e:
+                logger.warning(f"  时间字段处理失败：{e}")
+        else:
+            logger.warning("  未找到时间字段，跳过时间派生字段创建")
+        
+        return df
     
     def _aggregate(self, series: pd.Series, agg: str) -> Any:
         """执行聚合操作"""

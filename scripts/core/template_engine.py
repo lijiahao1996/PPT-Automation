@@ -204,12 +204,12 @@ class TemplateEngine:
             "slide_mapping": {}
         }
         
-        # 正则表达式匹配占位符
-        chart_pattern = re.compile(r'\[CHART:(\w+)\]')
+        # 正则表达式匹配占位符（兼容单方括号和双方括号）
+        chart_pattern = re.compile(r'\[\[?CHART:(\w+)\]\]?')
         insight_pattern = re.compile(r'\{\{INSIGHT:(\w+)\}\}')
-        table_pattern = re.compile(r'\[TABLE:(\w+)\]')
-        text_pattern = re.compile(r'\[TEXT:(\w+)\]')
-        kpi_pattern = re.compile(r'\[KPI:(\w+)\]')
+        table_pattern = re.compile(r'\[\[?TABLE:(\w+)\]\]?')
+        text_pattern = re.compile(r'\[\[?TEXT:(\w+)\]\]?')
+        kpi_pattern = re.compile(r'\[\[?KPI:(\w+)\]\]?')
         
         for slide_idx, slide in enumerate(prs.slides):
             slide_info = {
@@ -545,12 +545,29 @@ class TemplateEngine:
             paragraph.font.size = Pt(font_size)
     
     def find_placeholder_positions(self, prs: Presentation, placeholder_pattern: str) -> List[Dict]:
-        """查找占位符位置"""
+        """查找占位符位置（兼容单方括号和双方括号）"""
+        import re
         positions = []
-        chart_name = placeholder_pattern.strip('[]').split(':')[1] if ':' in placeholder_pattern else None
+        
+        # 提取图表名称
+        chart_name = None
+        if ':' in placeholder_pattern:
+            # 处理 [CHART:xxx] 或 [[CHART:xxx]]
+            clean_pattern = placeholder_pattern.strip('[]')
+            chart_name = clean_pattern.split(':')[1] if ':' in clean_pattern else None
+        
+        # 构建正则表达式（兼容单方括号和双方括号）
+        # 例如：[CHART:xxx] 或 [[CHART:xxx]]
+        if chart_name:
+            regex_pattern = rf'\[\[?CHART:{re.escape(chart_name)}\]\]?'
+        else:
+            regex_pattern = re.escape(placeholder_pattern)
+        
+        regex = re.compile(regex_pattern)
         
         for slide_idx, slide in enumerate(prs.slides):
             for shape_idx, shape in enumerate(slide.shapes):
+                # 检查 shape 名称
                 if chart_name and hasattr(shape, 'name') and shape.name == f"CHART:{chart_name}":
                     positions.append({
                         'slide_index': slide_idx, 'shape_index': shape_idx,
@@ -559,9 +576,12 @@ class TemplateEngine:
                         'shape': shape, 'slide': slide, 'by_name': True
                     })
                     continue
+                
+                # 检查文本框内容
                 if hasattr(shape, 'text_frame'):
                     for paragraph in shape.text_frame.paragraphs:
-                        if placeholder_pattern in paragraph.text:
+                        text = paragraph.text
+                        if regex.search(text):
                             positions.append({
                                 'slide_index': slide_idx, 'shape_index': shape_idx,
                                 'placeholder': placeholder_pattern, 'left': shape.left,
@@ -574,7 +594,7 @@ class TemplateEngine:
         """替换图表占位符"""
         positions = self.find_placeholder_positions(prs, placeholder)
         if not positions:
-            logger.warning(f"      未找到占位符：{placeholder}")
+            # 静默失败（可能是因为另一种括号格式已经成功替换）
             return False
         
         replaced_count = 0

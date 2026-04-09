@@ -61,55 +61,31 @@ logger, logs_dir = setup_logging()
 # ====================================
 
 # ========== 动态生成 SKILL.md ==========
-def build_skill_if_needed():
-    """如果图表配置变化，重新生成 SKILL.md"""
-    import hashlib
-    
+def build_skill_always():
+    """每次运行时都重新生成 SKILL.md（确保包含最新的 special_insights 配置）"""
     stats_rules_path = os.path.join(BASE_DIR, 'templates', 'stats_rules.json')
     placeholders_path = os.path.join(BASE_DIR, 'templates', 'placeholders.json')
     skill_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'SKILL.md')
     skill_builder_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'skill_builder.py')
     
-    # 检查是否需要重新生成
-    need_rebuild = False
-    reason = ""
-    
-    if not os.path.exists(skill_path):
-        need_rebuild = True
-        reason = "SKILL.md 不存在"
-    else:
-        try:
-            with open(placeholders_path, 'rb') as f:
-                placeholders_hash = hashlib.md5(f.read()).hexdigest()
-            
-            with open(skill_path, 'r', encoding='utf-8') as f:
-                skill_content = f.read()
-                if placeholders_hash not in skill_content:
-                    need_rebuild = True
-                    reason = "图表配置已更新"
-        except:
-            need_rebuild = True
-            reason = "检查失败"
-    
-    if need_rebuild:
-        logger.info(f"正在重新生成 SKILL.md ({reason})...")
-        try:
-            import importlib.util
-            spec = importlib.util.spec_from_file_location("skill_builder", skill_builder_path)
-            skill_builder = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(skill_builder)
-            
-            skill_builder.build_skill_from_config(
-                stats_rules_path=stats_rules_path,
-                placeholders_path=placeholders_path,
-                output_path=skill_path
-            )
-            logger.info("✅ SKILL.md 已重新生成")
-        except Exception as e:
-            logger.warning(f"⚠️ SKILL.md 生成失败：{e}，使用现有文件")
+    logger.info("正在重新生成 SKILL.md (包含最新的 special_insights 配置)...")
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("skill_builder", skill_builder_path)
+        skill_builder = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(skill_builder)
+        
+        skill_builder.build_skill_from_config(
+            stats_rules_path=stats_rules_path,
+            placeholders_path=placeholders_path,
+            output_path=skill_path
+        )
+        logger.info("✅ SKILL.md 已重新生成")
+    except Exception as e:
+        logger.warning(f"⚠️ SKILL.md 生成失败：{e}，使用现有文件")
 
-# 在生成报告前构建 SKILL
-build_skill_if_needed()
+# 在生成报告前构建 SKILL（每次都重新生成）
+build_skill_always()
 # ====================================
 
 
@@ -251,30 +227,43 @@ def _build_text_replacements_from_config(placeholders: Dict, data_loader, insigh
     insight_placeholders = placeholders.get('placeholders', {}).get('insights', {})
     charts = placeholders.get('placeholders', {}).get('charts', {})
     
+    # 使用 insights 配置数量（包括 kpi_summary, abnormal 等额外洞察）
+    insight_count = len(insight_placeholders)
+    
     # 图表洞察：与图表一一对应
     # insight_placeholders 的 key 是 CHART:xxx，需要转换为 {{INSIGHT:xxx}}
-    for i, (chart_key, chart_config) in enumerate(charts.items()):
-        # 从 chart_key 提取名称（如 CHART:sales_by_person -> sales_by_person）
-        chart_name = chart_key.replace('CHART:', '')
-        # PPT 模板中的占位符是 {{INSIGHT:sales_by_person}}
-        full_key = '{{INSIGHT:' + chart_name + '}}'
+    # 注意：insights 配置可能包含额外的洞察变量（如 kpi_summary, abnormal）
+    for i, (insight_key, insight_config) in enumerate(insight_placeholders.items()):
+        # 从 insight_key 提取名称（如 CHART:sales_by_person -> sales_by_person）
+        insight_name = insight_key.replace('CHART:', '')
+        # PPT 模板中的占位符是 {{INSIGHT:sales_by_person}}（可能带空格）
+        full_key = '{{INSIGHT:' + insight_name + '}}'
+        # 同时添加带空格的变体（兼容 PPT 模板中可能存在的空格）
+        full_key_with_space = '{{INSIGHT:' + insight_name + ' }}'
         
         if i < len(insights):
             replacements[full_key] = insights[i]
+            replacements[full_key_with_space] = insights[i]  # 兼容带空格的占位符
+            logger.debug(f"      映射洞察：{full_key} <- 第{i+1}条洞察")
         else:
             replacements[full_key] = ''
+            replacements[full_key_with_space] = ''
             logger.warning(f"      洞察数量不足：{full_key}")
     
     # 结论和策略：使用最后 2 条洞察（如果 AI 生成了的话）
-    if len(insights) >= len(charts) + 2:
-        replacements['{{INSIGHT:conclusion}}'] = insights[len(charts)]
-        replacements['{{INSIGHT:strategy}}'] = insights[len(charts) + 1]
+    # 注意：AI 返回的洞察数量 = 洞察配置数量 + 2（结论 + 策略）
+    if len(insights) >= insight_count + 2:
+        replacements['{{INSIGHT:conclusion}}'] = insights[insight_count]
+        replacements['{{INSIGHT:strategy}}'] = insights[insight_count + 1]
+        logger.debug(f"      映射结论：{{INSIGHT:conclusion}} <- 第{insight_count+1}条洞察")
+        logger.debug(f"      映射策略：{{INSIGHT:strategy}} <- 第{insight_count+2}条洞察")
     else:
         # 当前使用默认值，后期由 AI 生成
         replacements['{{INSIGHT:conclusion}}'] = ''
         replacements['{{INSIGHT:strategy}}'] = ''
+        logger.warning(f"      洞察数量不足，期望{insight_count+2}条，实际{len(insights)}条")
     
-    logger.info(f"      动态构建 {len(replacements)} 个文本占位符替换规则")
+    logger.info(f"      动态构建 {len(replacements)} 个文本占位符替换规则（{len(insight_placeholders)} 个洞察 + 结论 + 策略 + 文本变量）")
     return replacements
 
 
@@ -297,8 +286,9 @@ def _build_chart_placeholder_map_from_config(placeholders: Dict, chart_paths: Di
         chart_key = key.split(':')[1] if ':' in key else key
         
         if chart_key in chart_paths:
+            # 同时生成单方括号和双方括号的占位符（兼容不同模板）
             placeholder_map[f'[{key}]'] = chart_paths[chart_key]
-            logger.debug(f"      映射图表：[{key}] -> {chart_paths[chart_key]}")
+            placeholder_map[f'[[{key}]]'] = chart_paths[chart_key]  # 兼容双方括号
         else:
             logger.warning(f"      图表未生成：[{key}] (缺少数据：{config.get('data_source', '未知')})")
     
@@ -377,21 +367,32 @@ def generate_report(template_name: str = None, output_name: str = None,
                 }
                 # 只添加该图表类型需要的参数
                 chart_type = config.get('chart_type')
-                if chart_type in ['bar_horizontal', 'bar_vertical']:
+                if chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter', 'area', 'histogram', 'waterfall', 'funnel']:
                     if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
                     if config.get('y_field'): task_config['params']['y_field'] = config['y_field']
                 elif chart_type == 'pie':
                     if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
                     if config.get('value_field'): task_config['params']['value_field'] = config['value_field']
-                elif chart_type == 'line':
-                    if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
-                    if config.get('y_field'): task_config['params']['y_field'] = config['y_field']
                 elif chart_type in ['multi_column', 'column_clustered']:
                     if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
                     if config.get('series'): task_config['params']['series'] = config['series']
                 elif chart_type == 'heatmap':
                     if config.get('index_field'): task_config['params']['index_field'] = config['index_field']
                     if config.get('columns'): task_config['params']['columns'] = config['columns']
+                elif chart_type in ['boxplot', 'violin']:
+                    if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
+                    if config.get('value_field'): task_config['params']['value_field'] = config['value_field']
+                elif chart_type == 'bubble':
+                    if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
+                    if config.get('y_field'): task_config['params']['y_field'] = config['y_field']
+                    if config.get('size_field'): task_config['params']['size_field'] = config['size_field']
+                elif chart_type == 'errorbar':
+                    if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
+                    if config.get('y_field'): task_config['params']['y_field'] = config['y_field']
+                    if config.get('error_field'): task_config['params']['error_field'] = config['error_field']
+                elif chart_type == 'polar':
+                    if config.get('angle_field'): task_config['params']['angle_field'] = config['angle_field']
+                    if config.get('radius_field'): task_config['params']['radius_field'] = config['radius_field']
                 
                 if config.get('figsize'):
                     task_config['params']['figsize'] = tuple(config['figsize'])
@@ -425,7 +426,7 @@ def generate_report(template_name: str = None, output_name: str = None,
         
         # 动态构建文本替换字典（传入 data_loader 以获取实际 KPI 数据）
         text_replacements = _build_text_replacements_from_config(placeholders, data_loader, insights, today)
-        logger.info(f"      10 条洞察已全部添加到替换列表 (实际：{len(insights)} 条)")
+        logger.info(f"      {len(insights)} 条洞察已全部添加到替换列表")
         
         # 替换文本占位符
         template_engine.replace_text_placeholders(prs, text_replacements)
@@ -434,11 +435,13 @@ def generate_report(template_name: str = None, output_name: str = None,
         # 动态构建图表占位符映射（只循环一次）
         placeholder_map = _build_chart_placeholder_map_from_config(placeholders, chart_paths)
         
+        replaced_count = 0
         for placeholder, chart_path in placeholder_map.items():
             if chart_path and os.path.exists(chart_path):
-                template_engine.replace_with_chart(prs, placeholder, chart_path)
+                if template_engine.replace_with_chart(prs, placeholder, chart_path):
+                    replaced_count += 1
         
-        logger.info("      [OK] 图表占位符已替换")
+        logger.info(f"      [OK] 图表占位符已替换 ({replaced_count} 个图表)")
         
         # 生成并填充异常订单表格
         if '异常订单' in data_summary and len(data_summary['异常订单']) > 0:

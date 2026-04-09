@@ -296,6 +296,32 @@
       ],
       "sort_by": "总销售额",
       "sort_asc": false
+    },
+    "客户年龄分布": {
+      "description": "客户年龄与销售额分布分析",
+      "type": "distribution",
+      "enabled": true,
+      "group_by": [
+        "年龄段",
+        "客户类型"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        },
+        {
+          "field": "销售额",
+          "agg": "mean",
+          "alias": "客单价"
+        }
+      ]
     }
   },
   "global_settings": {
