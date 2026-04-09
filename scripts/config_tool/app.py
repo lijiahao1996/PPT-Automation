@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 PPT 配置工具 - Streamlit 应用
 图形化配置 stats_rules.json 和 placeholders.json
@@ -68,7 +68,7 @@ with st.sidebar:
     st.info("💡 **提示**:\n1. 先配置统计规则\n2. 生成测试数据\n3. 配置图表\n4. 导出配置")
 
 # 主功能选择
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["📋 统计规则配置", "📈 图表配置", "💡 洞察配置", "⚙️ 自定义变量", "🎯 结论 & 策略", "📊 数据概览", "🔖 PPT 变量"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📋 统计规则配置", "📈 图表配置", "💡 洞察配置", "⚙️ 自定义变量", "🎯 结论 & 策略"])
 
 # ========== Tab 1: 统计规则配置 ==========
 with tab1:
@@ -1154,50 +1154,212 @@ with tab4:
         st.info("暂无自定义表格变量")
     
     st.markdown("---")
-    st.info("💡 **提示**：\n- 自定义变量后，在 PPT 模板中插入文本框，输入对应的占位符\n- 文本变量：`[TEXT:xxx]`\n- 表格变量：`[TABLE:xxx]`\n- 运行 `Run.bat` 时会自动替换")
     
-    # 统一保存按钮
-    st.markdown("---")
-    if st.button("💾 保存所有自定义变量", type="primary", use_container_width=True):
-        try:
+    # ========== 添加日期变量 ==========
+    st.subheader("📅 添加自定义日期变量")
+    
+    col_d1, col_d2 = st.columns(2)
+    
+    with col_d1:
+        date_var_key = st.text_input("变量 Key", placeholder="例如：report_date", help="占位符：[DATE:report_date]")
+        date_var_desc = st.text_input("描述", placeholder="例如：报告生成日期")
+    
+    with col_d2:
+        date_var_default = st.text_input("默认值", placeholder="例如：2026-04-10")
+        date_var_format = st.text_input("日期格式", placeholder="%Y-%m-%d", value="%Y-%m-%d")
+        date_var_page = st.number_input("PPT 页码", min_value=0, max_value=20, value=0, key="date_page")
+    
+    if st.button("➕ 添加日期变量", key="add_date_btn"):
+        if not date_var_key:
+            st.error("❌ 请填写变量 Key")
+        else:
+            full_key = f"DATE:{date_var_key}"
+            
+            if "placeholders" not in placeholders_config:
+                placeholders_config["placeholders"] = {}
+            if "dates" not in placeholders_config["placeholders"]:
+                placeholders_config["placeholders"]["dates"] = {}
+            
+            placeholders_config["placeholders"]["dates"][full_key] = {
+                "description": date_var_desc,
+                "default": date_var_default,
+                "format": date_var_format,
+                "slide_index": date_var_page
+            }
+            
             with open(placeholders_file, 'w', encoding='utf-8') as f:
                 json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
-            st.success(f"✅ 已保存：{placeholders_file}")
-        except Exception as e:
-            st.error(f"❌ 保存失败：{e}")
+            
+            st.success(f"✅ 已添加：[{full_key}]")
+            st.rerun()
+    
+    st.markdown("---")
+    st.subheader("📅 已配置的日期变量")
+    
+    date_vars = placeholders_config.get('placeholders', {}).get('dates', {})
+    if date_vars:
+        for var_key, var_cfg in date_vars.items():
+            with st.expander(f"📅 [{var_key}] - {var_cfg.get('description', '')}"):
+                st.json(var_cfg)
+                if st.button("🗑️ 删除", key=f"del_{var_key}"):
+                    del placeholders_config["placeholders"]["dates"][var_key]
+                    with open(placeholders_file, 'w', encoding='utf-8') as f:
+                        json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                    st.success(f"✅ 已删除：[{var_key}]")
+                    st.rerun()
+    else:
+        st.info("暂无日期变量")
+    
+    st.markdown("---")
+    
+    # ========== 添加图片变量 ==========
+    st.subheader("🖼️ 添加自定义图片变量")
+    
+    col_i1, col_i2 = st.columns(2)
+    
+    with col_i1:
+        img_var_key = st.text_input("变量 Key", placeholder="例如：logo", help="占位符：[IMAGE:logo]")
+        img_var_desc = st.text_input("描述", placeholder="例如：公司 Logo")
+        img_var_type = st.selectbox("图片类型", options=["logo", "product", "chart", "background", "other"], index=0)
+    
+    with col_i2:
+        img_var_path = st.text_input("图片路径", placeholder="例如：resources/images/logo.png")
+        img_var_page = st.number_input("PPT 页码", min_value=0, max_value=20, value=0, key="img_page")
+    
+    if st.button("➕ 添加图片变量", key="add_img_btn"):
+        if not img_var_key:
+            st.error("❌ 请填写变量 Key")
+        else:
+            full_key = f"IMAGE:{img_var_key}"
+            
+            if "placeholders" not in placeholders_config:
+                placeholders_config["placeholders"] = {}
+            if "images" not in placeholders_config["placeholders"]:
+                placeholders_config["placeholders"]["images"] = {}
+            
+            placeholders_config["placeholders"]["images"][full_key] = {
+                "description": img_var_desc,
+                "path": img_var_path,
+                "type": img_var_type,
+                "slide_index": img_var_page
+            }
+            
+            with open(placeholders_file, 'w', encoding='utf-8') as f:
+                json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+            
+            st.success(f"✅ 已添加：[{full_key}]")
+            st.rerun()
+    
+    st.markdown("---")
+    st.subheader("🖼️ 已配置的图片变量")
+    
+    img_vars = placeholders_config.get('placeholders', {}).get('images', {})
+    if img_vars:
+        for var_key, var_cfg in img_vars.items():
+            with st.expander(f"🖼️ [{var_key}] - {var_cfg.get('description', '')}"):
+                st.json(var_cfg)
+                if st.button("🗑️ 删除", key=f"del_{var_key}"):
+                    del placeholders_config["placeholders"]["images"][var_key]
+                    with open(placeholders_file, 'w', encoding='utf-8') as f:
+                        json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                    st.success(f"✅ 已删除：[{var_key}]")
+                    st.rerun()
+    else:
+        st.info("暂无图片变量")
+    
+    st.markdown("---")
+    
+    # ========== 添加链接变量 ==========
+    st.subheader("🔗 添加自定义链接变量")
+    
+    col_l1, col_l2 = st.columns(2)
+    
+    with col_l1:
+        link_var_key = st.text_input("变量 Key", placeholder="例如：website", help="占位符：[LINK:website]")
+        link_var_desc = st.text_input("描述", placeholder="例如：公司官网")
+        link_var_type = st.selectbox("链接类型", options=["url", "email", "file"], index=0)
+    
+    with col_l2:
+        link_var_url = st.text_input("链接地址", placeholder="例如：https://www.example.com")
+        link_var_page = st.number_input("PPT 页码", min_value=0, max_value=20, value=0, key="link_page")
+    
+    if st.button("➕ 添加链接变量", key="add_link_btn"):
+        if not link_var_key or not link_var_url:
+            st.error("❌ 请填写变量 Key 和链接地址")
+        else:
+            full_key = f"LINK:{link_var_key}"
+            
+            if "placeholders" not in placeholders_config:
+                placeholders_config["placeholders"] = {}
+            if "links" not in placeholders_config["placeholders"]:
+                placeholders_config["placeholders"]["links"] = {}
+            
+            placeholders_config["placeholders"]["links"][full_key] = {
+                "description": link_var_desc,
+                "url": link_var_url,
+                "type": link_var_type,
+                "slide_index": link_var_page
+            }
+            
+            with open(placeholders_file, 'w', encoding='utf-8') as f:
+                json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+            
+            st.success(f"✅ 已添加：[{full_key}]")
+            st.rerun()
+    
+    st.markdown("---")
+    st.subheader("🔗 已配置的链接变量")
+    
+    link_vars = placeholders_config.get('placeholders', {}).get('links', {})
+    if link_vars:
+        for var_key, var_cfg in link_vars.items():
+            with st.expander(f"🔗 [{var_key}] - {var_cfg.get('description', '')}"):
+                st.json(var_cfg)
+                if st.button("🗑️ 删除", key=f"del_{var_key}"):
+                    del placeholders_config["placeholders"]["links"][var_key]
+                    with open(placeholders_file, 'w', encoding='utf-8') as f:
+                        json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                    st.success(f"✅ 已删除：[{var_key}]")
+                    st.rerun()
+    else:
+        st.info("暂无链接变量")
+    
+    st.markdown("---")
+    st.info("💡 **提示**：\n- 所有变量添加/删除时自动保存，无需手动保存\n- 文本变量：`[TEXT:xxx]` | 日期：`[DATE:xxx]` | 图片：`[IMAGE:xxx]` | 链接：`[LINK:xxx]` | 表格：`[TABLE:xxx]`")
 
 # ========== Tab 5: 结论 & 策略 ==========
 with tab5:
     st.header("🎯 结论 & 策略配置")
-    st.markdown("自定义 AI 生成的核心结论和落地策略的生成提示词")
+    st.markdown("自定义 AI 生成的核心结论和落地策略（支持自定义 Skill 和变量）")
     
     # 加载配置
     if os.path.exists(placeholders_file):
         with open(placeholders_file, 'r', encoding='utf-8') as f:
             placeholders_config = json.load(f)
     else:
-        placeholders_config = {"placeholders": {}}
+        placeholders_config = {"placeholders": {}, "special_insights": {}}
     
     # 初始化 special_insights
     if "special_insights" not in placeholders_config:
         placeholders_config["special_insights"] = {
             "conclusion": {
-                "description": "AI 自动生成 4 条核心结论",
+                "description": "AI 自动生成核心结论",
                 "dimensions": ["业绩结构", "增长亮点", "核心短板", "业务风险"],
                 "style": "数据驱动",
                 "word_count": 300,
-                "custom_prompt": "请从以下 4 个维度生成核心结论：\n1. 业绩结构：分析销售、产品、客户、区域的集中度风险\n2. 增长亮点：识别增长最快的指标和驱动因素\n3. 核心短板：指出最明显的业务弱点和瓶颈\n4. 业务风险：预警潜在的结构性风险和外部威胁"
+                "custom_prompt": ""
             },
             "strategy": {
-                "description": "AI 自动生成 4 条落地策略",
+                "description": "AI 自动生成落地策略",
                 "dimensions": ["客户运营策略", "产品组合策略", "团队管理策略", "营销节奏策略"],
                 "style": "建议导向",
                 "word_count": 400,
-                "custom_prompt": "请从以下 4 个维度生成落地策略：\n1. 客户运营策略：新老客分层运营、复购提升、LTV 优化\n2. 产品组合策略：爆品依赖降低、连带率提升、产品矩阵优化\n3. 团队管理策略：销售产能规划、激励机制、培训体系\n4. 营销节奏策略：活动节奏、渠道投放、促销时机"
+                "custom_prompt": ""
             }
         }
     
     st.subheader("📝 核心结论配置")
+    st.caption("💡 修改后自动保存")
     
     conclusion_cfg = placeholders_config["special_insights"].get("conclusion", {})
     
@@ -1206,16 +1368,18 @@ with tab5:
     with col1:
         conclusion_desc = st.text_area(
             "结论说明",
-            value=conclusion_cfg.get("description", "AI 自动生成 4 条核心结论"),
+            value=conclusion_cfg.get("description", "AI 自动生成核心结论"),
             height=60,
-            key="conclusion_desc"
+            key="conclusion_desc",
+            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
         )
         
         conclusion_dimensions = st.multiselect(
-            "分析维度（4 条）",
+            "分析维度（可选 4 条）",
             options=["业绩结构", "增长亮点", "核心短板", "业务风险", "趋势分析", "对比分析", "占比分析", "异常检测"],
             default=conclusion_cfg.get("dimensions", ["业绩结构", "增长亮点", "核心短板", "业务风险"]),
-            key="conclusion_dims"
+            key="conclusion_dims",
+            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
         )
     
     with col2:
@@ -1223,28 +1387,32 @@ with tab5:
             "洞察风格",
             options=["数据驱动", "问题导向", "建议导向", "平衡型"],
             index=["数据驱动", "问题导向", "建议导向", "平衡型"].index(conclusion_cfg.get("style", "数据驱动")) if conclusion_cfg.get("style") in ["数据驱动", "问题导向", "建议导向", "平衡型"] else 3,
-            key="conclusion_style"
+            key="conclusion_style",
+            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
         )
         
         conclusion_words = st.slider(
             "字数要求",
-            min_value=0,
+            min_value=100,
             max_value=500,
             value=conclusion_cfg.get("word_count", 300),
-            step=10,
-            key="conclusion_words"
+            step=50,
+            key="conclusion_words",
+            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
         )
     
     conclusion_prompt = st.text_area(
-        "自定义生成提示词",
+        "自定义生成提示词（可选，留空使用默认）",
         value=conclusion_cfg.get("custom_prompt", ""),
         height=150,
-        placeholder="请输入结论生成的详细提示词，包括分析维度、格式要求等",
-        key="conclusion_prompt"
+        placeholder="请输入结论生成的详细提示词，包括分析维度、格式要求等。留空则使用默认提示词。",
+        key="conclusion_prompt",
+        on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
     )
     
     st.markdown("---")
     st.subheader("📝 落地策略配置")
+    st.caption("💡 修改后自动保存")
     
     strategy_cfg = placeholders_config["special_insights"].get("strategy", {})
     
@@ -1253,16 +1421,18 @@ with tab5:
     with col3:
         strategy_desc = st.text_area(
             "策略说明",
-            value=strategy_cfg.get("description", "AI 自动生成 4 条落地策略"),
+            value=strategy_cfg.get("description", "AI 自动生成落地策略"),
             height=60,
-            key="strategy_desc"
+            key="strategy_desc",
+            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
         )
         
         strategy_dimensions = st.multiselect(
-            "策略维度（4 条）",
+            "策略维度（可选 4 条）",
             options=["客户运营策略", "产品组合策略", "团队管理策略", "营销节奏策略", "渠道拓展", "数字化转型", "供应链优化", "风控体系"],
             default=strategy_cfg.get("dimensions", ["客户运营策略", "产品组合策略", "团队管理策略", "营销节奏策略"]),
-            key="strategy_dims"
+            key="strategy_dims",
+            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
         )
     
     with col4:
@@ -1270,157 +1440,66 @@ with tab5:
             "洞察风格",
             options=["数据驱动", "问题导向", "建议导向", "平衡型"],
             index=["数据驱动", "问题导向", "建议导向", "平衡型"].index(strategy_cfg.get("style", "建议导向")) if strategy_cfg.get("style") in ["数据驱动", "问题导向", "建议导向", "平衡型"] else 2,
-            key="strategy_style"
+            key="strategy_style",
+            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
         )
         
         strategy_words = st.slider(
             "字数要求",
-            min_value=0,
-            max_value=500,
+            min_value=200,
+            max_value=600,
             value=strategy_cfg.get("word_count", 400),
-            step=10,
-            key="strategy_words"
+            step=50,
+            key="strategy_words",
+            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
         )
     
     strategy_prompt = st.text_area(
-        "自定义生成提示词",
+        "自定义生成提示词（可选，留空使用默认）",
         value=strategy_cfg.get("custom_prompt", ""),
         height=150,
-        placeholder="请输入策略生成的详细提示词，包括策略维度、可执行性要求等",
-        key="strategy_prompt"
+        placeholder="请输入策略生成的详细提示词，包括策略维度、可执行性要求等。留空则使用默认提示词。",
+        key="strategy_prompt",
+        on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
     )
     
     st.markdown("---")
+    st.subheader("🔖 结论策略变量")
+    st.info("""
+    **结论变量**：`{{INSIGHT:conclusion}}`
     
-    if st.button("💾 保存结论 & 策略配置", type="primary", use_container_width=True):
-        placeholders_config["special_insights"] = {
+    **策略变量**：`{{INSIGHT:strategy}}`
+    
+    💡 **提示**：
+    - 在 PPT 模板中插入文本框，输入上述占位符
+    - 运行 `Run.bat` 时 AI 会根据配置自动生成内容
+    - 所有修改会自动保存到 `placeholders.json` 和 `skills/data-insight/SKILL.md`
+    """)
+    
+    # 实时保存函数
+    def save_conclusion_strategy(p_file, p_config):
+        """实时保存结论策略配置"""
+        p_config["special_insights"] = {
             "conclusion": {
-                "description": conclusion_desc,
-                "dimensions": conclusion_dimensions,
-                "style": conclusion_style,
-                "word_count": conclusion_words,
-                "custom_prompt": conclusion_prompt
+                "description": st.session_state.get("conclusion_desc", "AI 自动生成核心结论"),
+                "dimensions": st.session_state.get("conclusion_dims", ["业绩结构", "增长亮点", "核心短板", "业务风险"]),
+                "style": st.session_state.get("conclusion_style", "数据驱动"),
+                "word_count": st.session_state.get("conclusion_words", 300),
+                "custom_prompt": st.session_state.get("conclusion_prompt", "")
             },
             "strategy": {
-                "description": strategy_desc,
-                "dimensions": strategy_dimensions,
-                "style": strategy_style,
-                "word_count": strategy_words,
-                "custom_prompt": strategy_prompt
+                "description": st.session_state.get("strategy_desc", "AI 自动生成落地策略"),
+                "dimensions": st.session_state.get("strategy_dims", ["客户运营策略", "产品组合策略", "团队管理策略", "营销节奏策略"]),
+                "style": st.session_state.get("strategy_style", "建议导向"),
+                "word_count": st.session_state.get("strategy_words", 400),
+                "custom_prompt": st.session_state.get("strategy_prompt", "")
             }
         }
         
-        with open(placeholders_file, 'w', encoding='utf-8') as f:
-            json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
-        
-        st.success("✅ 已保存结论 & 策略配置")
-        st.balloons()
-        
-        with st.expander("📄 查看配置预览"):
-            st.json(placeholders_config["special_insights"])
-    
-    st.markdown("---")
-    st.info("""💡 **提示**：
-- 结论和策略会在 AI 洞察生成时自动添加到 Prompt 中
-- 配置会同步更新到 `skills/data-insight/SKILL.md`
-- 运行 `Run.bat` 时会自动使用最新配置生成""")
+        try:
+            with open(p_file, 'w', encoding='utf-8') as f:
+                json.dump(p_config, f, ensure_ascii=False, indent=2)
+            st.toast("🎯 结论策略配置已自动保存", icon="✅")
+        except Exception as e:
+            st.toast(f"保存失败：{e}", icon="❌")
 
-# ========== Tab 6: 数据概览 ==========
-with tab6:
-    st.header("📊 数据概览")
-    st.markdown("展示所有统计 Sheet 的概览信息（行数、列名、数据类型）")
-    
-    # 检查是否有统计数据
-    summary_file = os.path.join(output_dir, "销售统计汇总.xlsx")
-    
-    if os.path.exists(summary_file):
-        st.success("✅ 找到统计汇总文件")
-        
-        # 读取所有 Sheet 并展示概览
-        xls = pd.ExcelFile(summary_file)
-        sheet_names = xls.sheet_names
-        
-        st.markdown(f"##### 📋 共有 {len(sheet_names)} 个统计 Sheet")
-        
-        # 创建概览表格
-        overview_data = []
-        for sheet_name in sheet_names:
-            try:
-                df = pd.read_excel(summary_file, sheet_name=sheet_name, nrows=1)
-                row_count = len(pd.read_excel(summary_file, sheet_name=sheet_name))
-                col_count = len(df.columns)
-                columns_list = df.columns.tolist()
-                dtypes = df.dtypes.astype(str).tolist()
-                
-                overview_data.append({
-                    'Sheet 名称': sheet_name,
-                    '行数': row_count,
-                    '列数': col_count,
-                    '字段列表': ', '.join(columns_list[:5]) + ('...' if len(columns_list) > 5 else ''),
-                    '数据类型': ', '.join(dtypes[:5]) + ('...' if len(dtypes) > 5 else '')
-                })
-            except Exception as e:
-                overview_data.append({
-                    'Sheet 名称': sheet_name,
-                    '行数': '读取失败',
-                    '列数': '-',
-                    '字段列表': f'错误：{e}',
-                    '数据类型': '-'
-                })
-        
-        # 展示概览表格
-        overview_df = pd.DataFrame(overview_data)
-        st.dataframe(overview_df, use_container_width=True, hide_index=True)
-        
-        # 详细查看某个 Sheet
-        st.markdown("---")
-        st.subheader("🔍 详细查看")
-        
-        selected_sheet = st.selectbox("选择 Sheet 查看详细数据", sheet_names)
-        
-        if selected_sheet:
-            try:
-                df_detail = pd.read_excel(summary_file, sheet_name=selected_sheet)
-                st.dataframe(df_detail.head(100), use_container_width=True)
-                
-                st.markdown(f"##### 数据信息")
-                col1, col2, col3, col4 = st.columns(4)
-                with col1:
-                    st.metric("总行数", len(df_detail))
-                with col2:
-                    st.metric("总列数", len(df_detail.columns))
-                with col3:
-                    st.metric("内存占用", f"{df_detail.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
-                with col4:
-                    st.metric("空值总数", df_detail.isnull().sum().sum())
-                
-                # 字段详情
-                with st.expander("📊 查看字段详情"):
-                    field_info = []
-                    for col in df_detail.columns:
-                        field_info.append({
-                            '字段名': col,
-                            '数据类型': str(df_detail[col].dtype),
-                            '非空值': df_detail[col].notnull().sum(),
-                            '空值数': df_detail[col].isnull().sum(),
-                            '唯一值': df_detail[col].nunique()
-                        })
-                    st.dataframe(pd.DataFrame(field_info), use_container_width=True, hide_index=True)
-            except Exception as e:
-                st.error(f"❌ 读取失败：{e}")
-    else:
-        st.warning("⚠️ 未找到统计汇总文件")
-        
-        st.info("""💡 **如何生成数据**:
-1. 在「📋 统计规则配置」中配置统计规则
-2. 点击「🔄 保存配置并生成数据」按钮
-3. 运行 `Run.bat` 生成完整的 PPT 报告
-4. 返回此处查看生成的 Excel 文件""")
-
-# 页脚
-st.markdown("---")
-st.markdown("""
-<div style='text-align: center; color: #666;'>
-    <p>📊 PPT 报告配置工具 v1.0 | 让配置更简单</p>
-</div>
-""", unsafe_allow_html=True)
