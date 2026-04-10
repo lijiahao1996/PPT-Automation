@@ -355,20 +355,15 @@ class StatsEngine:
         """保存结果到 Excel"""
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         
-        # 修复 openpyxl 3.1.5 兼容性问题
-        try:
-            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
-                for sheet_name, df in results.items():
-                    safe_name = sheet_name[:31]
-                    df.to_excel(writer, sheet_name=safe_name, index=False)
-        except Exception as e:
-            # 如果 openpyxl 引擎失败，尝试使用默认引擎
-            import warnings
-            warnings.filterwarnings('ignore')
-            with pd.ExcelWriter(output_path) as writer:
-                for sheet_name, df in results.items():
-                    safe_name = sheet_name[:31]
-                    df.to_excel(writer, sheet_name=safe_name, index=False)
+        # 使用默认引擎（避免 openpyxl 3.1.5 兼容性问题）
+        import warnings
+        warnings.filterwarnings('ignore', category=DeprecationWarning)
+        
+        with pd.ExcelWriter(output_path) as writer:
+            for sheet_name, df in results.items():
+                # Excel Sheet 名称长度限制 31 字符
+                safe_name = sheet_name[:31]
+                df.to_excel(writer, sheet_name=safe_name, index=False)
         
         logger.info(f"统计结果已保存：{output_path}")
 

@@ -127,7 +127,7 @@ def clean_and_analyze():
     
     # 使用统计引擎的结果保存
     if results is not None and len(results) > 0:
-        with pd.ExcelWriter(SUMMARY_FILE, engine='openpyxl') as writer:
+        with pd.ExcelWriter(SUMMARY_FILE, ) as writer:
             for sheet_name, df_result in results.items():
                 # Excel Sheet 名称长度限制 31 字符
                 safe_name = sheet_name[:31]
@@ -189,7 +189,7 @@ def clean_and_analyze():
         monthly_stats = monthly_stats.sort_values('年月')
         
         # 保存
-        with pd.ExcelWriter(SUMMARY_FILE, engine='openpyxl') as writer:
+        with pd.ExcelWriter(SUMMARY_FILE, ) as writer:
             kpi_df.to_excel(writer, sheet_name='核心 KPI', index=False)
             sales_by_person.to_excel(writer, sheet_name='销售员业绩', index=False)
             product_stats.to_excel(writer, sheet_name='产品占比', index=False)
@@ -225,4 +225,5 @@ def clean_and_analyze():
 if __name__ == "__main__":
     success = clean_and_analyze()
     exit(0 if success else 1)
+
 
