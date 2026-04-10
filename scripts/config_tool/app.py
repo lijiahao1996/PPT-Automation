@@ -624,16 +624,6 @@ with tab2:
                             st.rerun()
     else:
         st.info("暂无图表配置，请添加")
-    
-    # 统一保存按钮
-    st.markdown("---")
-    if st.button("💾 保存所有图表配置", type="primary", use_container_width=True):
-        try:
-            with open(placeholders_file, 'w', encoding='utf-8') as f:
-                json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
-            st.success(f"✅ 已保存：{placeholders_file}")
-        except Exception as e:
-            st.error(f"❌ 保存失败：{e}")
 
 # ========== Tab 3: 洞察配置 ==========
 with tab3:
@@ -654,13 +644,21 @@ with tab3:
     
     # 为每个图表配置洞察要点（折叠 + 实时保存）
     st.subheader("配置洞察分析要点")
-    st.caption("💡 点击展开编辑，修改后自动保存")
+    st.caption("💡 未配置的图表默认展开，已配置的自动收起")
     
     insights_config = {}
     
     for i, (chart_key, chart_cfg) in enumerate(charts_config.items(), 1):
         # 尝试加载已有配置
         existing = existing_insights.get(chart_key, {})
+        
+        # 判断是否已配置（有自定义提示词或修改过默认值）
+        is_configured = bool(existing) and (existing.get("custom_prompt") or 
+                                            existing.get("dimensions") != ["趋势分析", "对比分析"] or
+                                            existing.get("style") != "平衡型")
+        
+        # 从未配置的默认展开，已配置的默认收起
+        expanded = not is_configured
         
         # 从已有配置或默认值加载
         default_dimensions = existing.get("dimensions", ["趋势分析", "对比分析"])
@@ -672,7 +670,7 @@ with tab3:
         default_prompt = existing.get("custom_prompt", "")
         
         # 使用折叠容器
-        with st.expander(f"📊 {i}. {chart_cfg.get('title', chart_key)}", expanded=False):
+        with st.expander(f"📊 {i}. {chart_cfg.get('title', chart_key)}", expanded=expanded):
             col1, col2 = st.columns([2, 1])
             
             with col1:
@@ -962,6 +960,7 @@ with tab4:
     
     # ========== 添加日期变量 ==========
     st.subheader("📅 添加自定义日期变量")
+    st.caption("💡 使用日历选择日期，自动格式化保存")
     
     col_d1, col_d2 = st.columns(2)
     
@@ -970,15 +969,20 @@ with tab4:
         date_var_desc = st.text_input("描述", placeholder="例如：报告生成日期")
     
     with col_d2:
-        date_var_default = st.text_input("默认值", placeholder="例如：2026-04-10")
-        date_var_format = st.text_input("日期格式", placeholder="%Y-%m-%d", value="%Y-%m-%d")
+        # 使用日历选择器
+        date_var_default_calendar = st.date_input("选择日期", value=None, key="date_calendar")
+        date_var_format = st.selectbox("日期格式", options=["%Y-%m-%d", "%Y年%m月%d日", "%Y/%m/%d", "%m-%d", "%Y-%m"], index=0)
         date_var_page = st.number_input("PPT 页码", min_value=0, max_value=20, value=0, key="date_page")
     
     if st.button("➕ 添加日期变量", key="add_date_btn"):
         if not date_var_key:
             st.error("❌ 请填写变量 Key")
+        elif date_var_default_calendar is None:
+            st.error("❌ 请选择日期")
         else:
             full_key = f"DATE:{date_var_key}"
+            # 根据格式转换日期
+            date_str = date_var_default_calendar.strftime(date_var_format)
             
             if "placeholders" not in placeholders_config:
                 placeholders_config["placeholders"] = {}
@@ -987,7 +991,7 @@ with tab4:
             
             placeholders_config["placeholders"]["dates"][full_key] = {
                 "description": date_var_desc,
-                "default": date_var_default,
+                "default": date_str,
                 "format": date_var_format,
                 "slide_index": date_var_page
             }
@@ -995,7 +999,7 @@ with tab4:
             with open(placeholders_file, 'w', encoding='utf-8') as f:
                 json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
             
-            st.success(f"✅ 已添加：[{full_key}]")
+            st.success(f"✅ 已添加：[{full_key}]（日期：{date_str}）")
             st.rerun()
     
     st.markdown("---")
@@ -1019,6 +1023,7 @@ with tab4:
     
     # ========== 添加图片变量 ==========
     st.subheader("🖼️ 添加自定义图片变量")
+    st.caption("💡 支持上传图片，自动保存到 resources/images 目录")
     
     col_i1, col_i2 = st.columns(2)
     
@@ -1028,12 +1033,48 @@ with tab4:
         img_var_type = st.selectbox("图片类型", options=["logo", "product", "chart", "background", "other"], index=0)
     
     with col_i2:
-        img_var_path = st.text_input("图片路径", placeholder="例如：resources/images/logo.png")
         img_var_page = st.number_input("PPT 页码", min_value=0, max_value=20, value=0, key="img_page")
+    
+    # 图片上传方式选择
+    img_upload_method = st.radio("图片上传方式", options=["📁 上传本地图片", "🔗 使用已有图片路径"], index=0, key=f"img_upload_{len(img_vars) if 'img_vars' in locals() else 0}")
+    
+    if img_upload_method == "📁 上传本地图片":
+        # 确保 resources/images 目录存在
+        images_dir = os.path.join(base_dir, "resources", "images")
+        os.makedirs(images_dir, exist_ok=True)
+        
+        uploaded_file = st.file_uploader("选择图片文件", type=["png", "jpg", "jpeg", "gif", "webp"], key=f"img_upload_{len(img_vars) if 'img_vars' in locals() else 0}")
+        
+        if uploaded_file is not None:
+            # 保存文件到 resources/images
+            import shutil
+            file_name = uploaded_file.name
+            # 如果文件名已存在，添加时间戳
+            base_name, ext = os.path.splitext(file_name)
+            counter = 1
+            while os.path.exists(os.path.join(images_dir, file_name)):
+                file_name = f"{base_name}_{counter}{ext}"
+                counter += 1
+            
+            dest_path = os.path.join(images_dir, file_name)
+            with open(dest_path, "wb") as f:
+                shutil.copyfileobj(uploaded_file, f)
+            
+            # 相对路径
+            relative_path = f"resources/images/{file_name}"
+            st.success(f"✅ 图片已上传：{relative_path}")
+            
+            img_var_path = relative_path
+        else:
+            img_var_path = None
+    else:
+        img_var_path = st.text_input("图片路径", placeholder="例如：resources/images/logo.png")
     
     if st.button("➕ 添加图片变量", key="add_img_btn"):
         if not img_var_key:
             st.error("❌ 请填写变量 Key")
+        elif not img_var_path:
+            st.error("❌ 请上传图片或填写图片路径")
         else:
             full_key = f"IMAGE:{img_var_key}"
             
