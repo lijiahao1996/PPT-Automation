@@ -109,37 +109,46 @@ with tab1:
     }
     
     st.subheader("添加统计规则")
+    st.caption("💡 **必填字段**：统计表格名称、统计类型、分组字段、统计指标")
     
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        sheet_name = st.text_input("统计表格名称", placeholder="例如：销售员业绩")
-        stat_type = st.selectbox("统计类型", options=list(stats_types.keys()), format_func=lambda x: stats_types[x])
+        sheet_name = st.text_input("统计表格名称 *", placeholder="例如：销售员业绩", help="必填：用于 Excel Sheet 名称")
+        stat_type = st.selectbox("统计类型 *", options=list(stats_types.keys()), format_func=lambda x: stats_types[x], help="必填：选择统计类型")
         enabled = st.checkbox("启用", value=True)
         description = st.text_area("描述", placeholder="例如：销售员业绩排名")
     
     with col2:
-        st.markdown("### 分组字段")
-        group_fields = st.text_area("分组字段\n（每行一个）", placeholder="销售员\n城市", height=100)
+        st.markdown("### 分组字段 *")
+        group_fields = st.text_area("分组字段\n（每行一个）", placeholder="销售员\n城市", height=100, help="必填：用于分组统计的字段")
         
-        st.markdown("### 统计指标")
+        st.markdown("### 统计指标 *")
         metrics_config = st.text_area("统计指标配置\n（JSON 格式）", 
                                      value='[{"field": "销售额", "agg": "sum", "alias": "总销售额"}]',
-                                     height=150)
+                                     height=150, help="必填：JSON 格式，定义统计指标")
     
     # 预览配置
     if st.button("➕ 添加统计规则"):
-        try:
-            metrics = json.loads(metrics_config)
-            groups = [g.strip() for g in group_fields.strip().split('\n') if g.strip()]
-            
-            rule = {
-                "description": description,
-                "type": stat_type,
-                "enabled": enabled,
-                "group_by": groups,
-                "metrics": metrics
-            }
+        # 验证必填字段
+        if not sheet_name:
+            st.error("❌ 请填写统计表格名称")
+        elif not group_fields.strip():
+            st.error("❌ 请填写分组字段")
+        elif not metrics_config.strip():
+            st.error("❌ 请填写统计指标配置")
+        else:
+            try:
+                metrics = json.loads(metrics_config)
+                groups = [g.strip() for g in group_fields.strip().split('\n') if g.strip()]
+                
+                rule = {
+                    "description": description,
+                    "type": stat_type,
+                    "enabled": enabled,
+                    "group_by": groups,
+                    "metrics": metrics
+                }
             
             if sheet_name not in st.session_state.stats_config["stats_sheets"]:
                 st.session_state.stats_config["stats_sheets"][sheet_name] = rule
@@ -374,6 +383,7 @@ with tab2:
             st.warning(f"⚠️ 读取统计汇总失败：{e}")
     
     st.subheader("添加图表配置")
+    st.caption("💡 **必填字段**：图表 Key、图表标题、图表类型、数据源")
     
     # 提示用户如果没有数据源，先去生成
     if not available_sheets:
@@ -382,16 +392,17 @@ with tab2:
     col1, col2 = st.columns(2)
     
     with col1:
-        chart_key = st.text_input("图表 Key", placeholder="例如：sales_by_person", help="用于 PPT 占位符：[CHART:xxx]")
-        chart_title = st.text_input("图表标题", placeholder="例如：销售员业绩表现分析")
-        chart_type = st.selectbox("图表类型", options=list(chart_types.keys()), format_func=lambda x: chart_types[x])
+        chart_key = st.text_input("图表 Key *", placeholder="例如：sales_by_person", help="必填：用于 PPT 占位符：[CHART:xxx]")
+        chart_title = st.text_input("图表标题 *", placeholder="例如：销售员业绩表现分析", help="必填：图表显示标题")
+        chart_type = st.selectbox("图表类型 *", options=list(chart_types.keys()), format_func=lambda x: chart_types[x], help="必填：选择图表类型")
         
         # 数据源改为下拉选择
         if available_sheets:
             data_source = st.selectbox(
-                "数据源",
+                "数据源 *",
                 options=available_sheets,
-                help="选择要使用的 Excel Sheet（来自统计汇总文件）"
+                help="必填：选择要使用的 Excel Sheet（来自统计汇总文件）",
+                index=None if not available_sheets else 0
             )
             
             # 数据源预览 - 选中后直接显示前 5 行
@@ -458,6 +469,63 @@ with tab2:
     if st.button("➕ 添加图表配置"):
         if not chart_key or not chart_title or not data_source:
             st.error("❌ 请填写必填字段")
+        else:
+            chart_config = {
+                "description": description,
+                "data_source": data_source,
+                "chart_type": chart_type,
+                "title": chart_title
+            }
+            
+            # 根据图表类型保存对应字段
+            if chart_type in ["bar_horizontal", "bar_vertical", "line", "scatter", "area", "histogram", "waterfall", "funnel", "bubble", "polar"]:
+                chart_config["x_field"] = x_field
+                chart_config["y_field"] = y_field
+                # 气泡图额外保存 size_field
+                if chart_type == "bubble" and 'size_field' in locals():
+                    chart_config["size_field"] = size_field
+                # 极坐标图使用 angle_field 和 radius_field 名称
+                if chart_type == "polar":
+                    chart_config["angle_field"] = x_field
+                    chart_config["radius_field"] = y_field
+            elif chart_type == "pie":
+                chart_config["category_field"] = x_field
+                chart_config["value_field"] = y_field
+            elif chart_type in ["boxplot", "violin"]:
+                chart_config["category_field"] = x_field
+                chart_config["value_field"] = y_field
+            elif chart_type in ["multi_column", "column_clustered"]:
+                # 解析 JSON 配置
+                try:
+                    json_config = json.loads(x_field) if x_field else {}
+                    if 'category_field' in json_config:
+                        chart_config["category_field"] = json_config['category_field']
+                    if 'series' in json_config:
+                        chart_config["series"] = json_config['series']
+                except json.JSONDecodeError:
+                    st.warning("⚠️ 字段配置格式错误，将保存为字符串")
+                    chart_config["category_field"] = x_field
+            elif chart_type == "heatmap":
+                # 解析 JSON 配置
+                try:
+                    json_config = json.loads(x_field) if x_field else {}
+                    if 'index_field' in json_config:
+                        chart_config["index_field"] = json_config['index_field']
+                    if 'columns' in json_config:
+                        chart_config["columns"] = json_config['columns']
+                except json.JSONDecodeError:
+                    st.warning("⚠️ 字段配置格式错误，将保存为字符串")
+                    chart_config["index_field"] = x_field
+            
+    # 添加按钮
+    if st.button("➕ 添加图表配置", key="add_chart_btn"):
+        # 验证必填字段
+        if not chart_key:
+            st.error("❌ 请填写图表 Key")
+        elif not chart_title:
+            st.error("❌ 请填写图表标题")
+        elif not data_source:
+            st.error("❌ 请选择数据源")
         else:
             chart_config = {
                 "description": description,
@@ -803,14 +871,15 @@ with tab4:
         }
     
     st.subheader("📝 添加自定义文本变量")
+    st.caption("💡 **必填字段**：变量 Key")
     
     col1, col2 = st.columns(2)
     
     with col1:
         custom_var_key = st.text_input(
-            "变量 Key",
+            "变量 Key *",
             placeholder="例如：custom_title",
-            help="用于 PPT 占位符：[TEXT:custom_title]"
+            help="必填：用于 PPT 占位符：[TEXT:custom_title]"
         )
         
         custom_var_desc = st.text_input(
@@ -960,17 +1029,17 @@ with tab4:
     
     # ========== 添加日期变量 ==========
     st.subheader("📅 添加自定义日期变量")
-    st.caption("💡 使用日历选择日期，自动格式化保存")
+    st.caption("💡 **必填字段**：变量 Key、日期")
     
     col_d1, col_d2 = st.columns(2)
     
     with col_d1:
-        date_var_key = st.text_input("变量 Key", placeholder="例如：report_date", help="占位符：[DATE:report_date]")
+        date_var_key = st.text_input("变量 Key *", placeholder="例如：report_date", help="必填：占位符：[DATE:report_date]")
         date_var_desc = st.text_input("描述", placeholder="例如：报告生成日期")
     
     with col_d2:
         # 使用日历选择器
-        date_var_default_calendar = st.date_input("选择日期", value=None, key="date_calendar")
+        date_var_default_calendar = st.date_input("选择日期 *", value=None, key="date_calendar", help="必填：选择日期")
         date_var_format = st.selectbox("日期格式", options=["%Y-%m-%d", "%Y年%m月%d日", "%Y/%m/%d", "%m-%d", "%Y-%m"], index=0)
         date_var_page = st.number_input("PPT 页码", min_value=0, max_value=20, value=0, key="date_page")
     
