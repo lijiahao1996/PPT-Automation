@@ -1,73 +1,35 @@
-# 帆软数据 → PPT 报告（企业版）
+# PPT 报告生成系统
 
 > 📊 **架构**: 模板引擎 + 图表引擎 + AI 洞察  
-> **版本**: 4.5 Enterprise  
-> **最后更新**: 2026-04-10
+> **版本**: 5.0 Web 版  
+> **最后更新**: 2026-04-11
 
 ---
 
 ## 🚀 快速开始
 
-### 📊 配置工具（推荐）⭐
+### 方式 1: Web 界面（推荐）
 
-**位置**：`scripts/config_tool/`
+1. **启动服务**
+   ```bash
+   cd C:\Users\50319\Desktop\n8n
+   python -m streamlit run scripts/config_tool/app.py --server.port 8501
+   ```
 
-**1. 安装依赖（首次使用）**：
-```bash
-pip install streamlit pandas openpyxl xlsxwriter
-```
+2. **访问界面**
+   - 打开浏览器：http://localhost:8501/
 
-**2. 启动工具**：
-```bash
-# 双击运行
-scripts\config_tool\streamlit.bat
+3. **使用流程**
+   - **Tab 1** 📋 统计规则配置 → 上传 Excel，配置统计规则
+   - **Tab 2** 📈 图表配置 → 配置图表
+   - **Tab 7** ⚙️ 项目配置 → 配置 API Key 等
+   - **Tab 8** 🚀 生成 PPT 报告 → 一键生成
 
-# 或命令行
-streamlit run scripts\config_tool\app.py
-```
-
-**3. 浏览器访问**：
-```
-http://localhost:8501
-```
-
-**4. 图形化配置**：
-- 📋 统计规则配置
-- 📈 图表配置
-- 📊 数据预览
-- 💾 导出配置
-
-**详细文档**：`scripts/config_tool/README.md`
-
----
-
-### ⚙️ 配置 API Key
-
-**编辑 `config.ini`**：
-```ini
-[fanruan]
-username = YOUR_USERNAME_HERE
-password = YOUR_PASSWORD_HERE  # ← 替换为你的密码
-
-[api_keys]
-qwen_api_key = sk-YOUR_API_KEY_HERE  # ← 替换为你的 API Key
-```
-
-**获取 API Key**：https://bailian.console.aliyun.com/
-
----
-
-### ▶️ 运行
+### 方式 2: 命令行
 
 ```bash
-# 双击运行
-Run.bat
-
-# 或 PowerShell
-.\Run.ps1
-
-# 或 EXE
-PPT 生成.exe
+cd C:\Users\50319\Desktop\n8n
+.\Run.bat
 ```
 
 ---
@@ -76,206 +38,101 @@ PPT 生成.exe
 
 ```
 n8n/
-├── Run.bat                 # 一键运行（入口）
-├── Run.ps1                 # 主执行脚本
-├── config.ini              # 配置文件（需填写账号/API Key）
-├── config.ini.example      # 配置模板
-├── README.md               # 项目文档
-├── .gitignore              # Git 配置
-│
-├── scripts/                # 核心脚本
-│   ├── config_tool/        # 📊 配置工具（Streamlit GUI）
-│   │   ├── app.py          # 主应用
-│   │   ├── app_modular.py  # 模块化版本
-│   │   ├── streamlit.bat   # 启动脚本
-│   │   └── tabs/           # 配置页面
-│   ├── core/               # 核心引擎
-│   │   ├── data_loader.py      # 数据加载器
-│   │   ├── stats_engine.py     # 统计引擎（配置化）
-│   │   ├── chart_engine.py     # 图表引擎
-│   │   ├── template_engine.py  # PPT 模板引擎
-│   │   └── validator.py        # 数据校验器
-│   ├── ai/                 # AI 模块
-│   │   └── insight_generator.py  # Qwen API 洞察生成
-│   └── fanruan/            # 帆软模块
-│       ├── fanruan_login.py    # 登录脚本
-│       ├── fanruan_scrape.py   # 数据抓取
-│       └── fanruan_analyze.py  # 数据清洗 + 统计
-│
-├── templates/              # PPT 模板 + 配置
-│   ├── 销售分析报告_标准模板.pptx
-│   ├── placeholders.json   # 占位符配置
-│   └── stats_rules.json    # 统计规则配置
-│
-├── skills/                 # AI Skill 规范
-│   └── data-insight/
-│       ├── SKILL.md            # 洞察生成规范
-│       └── skill_builder.py    # SKILL.md 生成器
-│
-├── docs/                   # 架构文档
-├── resources/              # 资源文件（图片/视频）
-├── output/                 # 输出目录（PPTX/XLSX）
-├── logs/                   # 日志目录
-└── artifacts/              # 临时文件（会话/中间数据）
+├── scripts/                 # 核心脚本
+│   ├── config_tool/         # Web 配置工具
+│   ├── core/                # 核心引擎
+│   ├── ai/                  # AI 模块
+│   └── fanruan/             # 帆软模块
+├── templates/               # PPT 模板
+├── skills/                  # AI Skill
+├── docs/                    # 文档
+├── resources/               # 资源文件
+├── output/                  # 输出目录
+├── artifacts/               # 临时文件
+├── logs/                    # 日志目录
+├── config.ini               # 配置文件
+├── Run.bat                  # 一键运行
+└── README.md                # 项目文档
 ```
 
 ---
 
-## 📊 配置工具 - 最佳实践 Demo
+## ⚙️ 配置说明
 
-### 场景：新增"客户城市分析"图表
+### 通过 Web 界面配置（推荐）
 
-**步骤 1：配置统计规则**
+1. 访问 http://localhost:8501/
+2. 进入 **"⚙️ 项目配置"** 页签
+3. 配置以下内容：
+   - **API Key 配置** - Qwen API Key（用于 AI 洞察）
+   - **路径配置** - 一般使用默认值即可
+   - **高级配置** - 会话有效期、日志级别
 
-打开配置工具 → 📋 统计规则配置
+### 配置文件
 
-```
-表格名称：客户城市分析
-统计类型：排名统计
-描述：客户属性与城市交叉分析
-分组字段：
-  客户属性
-  城市
-统计指标：
-  [
-    {"field": "销售额", "agg": "sum", "alias": "总销售额"},
-    {"field": "订单数", "agg": "count", "alias": "订单数"}
-  ]
-```
+`config.ini` 已通过 Web 界面管理，无需手动编辑。
 
-点击"添加统计规则"
+**必要配置**:
+- `qwen_api_key` - 阿里云百炼 Qwen API Key
+
+**可选配置**:
+- `output_dir` - 输出目录（默认：output）
+- `logs_dir` - 日志目录（默认：logs）
 
 ---
 
-**步骤 2：配置图表**
+## 📊 使用流程
 
-打开配置工具 → 📈 图表配置
+### 1. 上传数据
+进入 **"📋 统计规则配置"** 页签，上传 Excel 数据文件。
 
-```
-图表 Key：customer_city
-图表标题：客户属性与城市销售分析
-图表类型：横向条形图
-数据源：客户城市分析
-X 轴字段：总销售额
-Y 轴字段：城市
-描述：客户属性与城市交叉分析
-```
+### 2. 配置统计规则
+添加需要的统计规则（KPI、排名、占比等）。
 
-点击"添加图表配置"
+### 3. 配置图表
+进入 **"📈 图表配置"** 页签，为每个统计配置图表。
 
----
+### 4. 配置 AI 洞察
+进入 **"💡 洞察配置"** 页签，配置每个图表的 AI 分析维度。
 
-**步骤 3：导出配置**
-
-打开配置工具 → 💾 导出配置
-
-- 点击"保存 stats_rules.json"
-- 点击"保存 placeholders.json"
+### 5. 生成 PPT
+进入 **"🚀 生成 PPT 报告"** 页签，点击"▶️ 开始生成 PPT 报告"。
 
 ---
 
-**步骤 4：配置 PPT 模板**
+## 🔑 获取 API Key
 
-1. 打开 `templates/销售分析报告_标准模板.pptx`
-2. 找到要放置图表的页面
-3. 插入文本框
-4. 输入：`[CHART:customer_city]`
-5. 保存 PPT
-
----
-
-**步骤 5：运行生成**
-
-```bash
-Run.bat
-```
-
-**完成！** 🎉
+1. 访问：https://bailian.console.aliyun.com/
+2. 登录阿里云账号
+3. 创建 API Key
+4. 在 Web 界面的 **"⚙️ 项目配置"** 中填写
 
 ---
 
-## 📋 配置参考
+## 📝 日志查看
 
-### 图表类型
+日志文件位置：`logs/ppt_YYYYMMDD.log`
 
-| 类型 | 用途 | 需要字段 |
-|------|------|---------|
-| bar_horizontal | 横向条形图 | x_field, y_field |
-| bar_vertical | 纵向柱状图 | x_field, y_field |
-| pie | 环形饼图 | category_field, value_field |
-| column_clustered | 多列柱状图 | category_field, series |
-| line | 折线图 | x_field, y_field |
-| heatmap | 热力图 | index_field, columns |
-
-### 统计类型
-
-| 类型 | 用途 | 示例 |
-|------|------|------|
-| kpi | 核心指标汇总 | 总销售额、订单数 |
-| ranking | 排名统计 | 销售员 TOP10 |
-| composition | 占比分析 | 产品销售占比 |
-| comparison | 对比分析 | 新老客对比 |
-| trend | 趋势分析 | 月度销售趋势 |
-| distribution | 分布分析 | 星期分布 |
-| matrix | 矩阵分析 | 销售员 - 产品矩阵 |
-| outlier | 异常检测 | 异常订单 |
+例如：`logs/ppt_20260411.log`
 
 ---
 
 ## ❓ 常见问题
 
-**Q: 图表不显示？**  
-A: 检查数据源名称是否与统计规则一致
+**Q: Web 界面无法启动？**  
+A: 确保已安装 Streamlit：`pip install streamlit`
 
-**Q: 字段找不到？**  
-A: 在"数据预览"中查看实际生成的字段名
+**Q: API Key 在哪里获取？**  
+A: 阿里云百炼控制台：https://bailian.console.aliyun.com/
+
+**Q: 日志文件在哪里？**  
+A: `logs/` 目录下，按日期命名
 
 **Q: 如何修改配置？**  
-A: 展开配置项，点击"编辑"按钮
-
-**Q: streamlit 未安装？**  
-A: 运行 `pip install streamlit`
+A: 通过 Web 界面的 **"⚙️ 项目配置"** 页签
 
 ---
 
-## 📚 文档
-
-| 文档 | 位置 |
-|------|------|
-| 配置工具说明 | `scripts/config_tool/README.md` |
-| Git 配置指南 | `GIT_CONFIG_GUIDE.md` |
-| 项目文档 | `README.md` |
-
----
-
-## 🔧 技术栈
-
-| 模块 | 技术 |
-|------|------|
-| 浏览器自动化 | Playwright |
-| 数据处理 | Pandas, NumPy |
-| 图表生成 | Matplotlib |
-| PPT 生成 | python-pptx |
-| AI 洞察 | Qwen API (阿里云百炼) |
-| 配置工具 | Streamlit |
-
----
-
-## 📝 更新日志
-
-### v4.5 (2026-04-10)
-- ✅ 完全配置化：图表/洞察/占位符全部从 JSON 配置读取
-- ✅ 动态 SKILL.md 生成：每次运行自动同步最新配置
-- ✅ 并行图表生成：支持多线程加速
-- ✅ 配置工具 GUI：Streamlit 图形化配置界面
-- ✅ 清理优化：移除临时文件和缓存
-
-### v4.4 (2026-04-09)
-- 洞察配置优化
-- 占位符修复
-
----
-
-**最后更新**: 2026-04-10  
-**版本**: 4.5 Enterprise  
+**最后更新**: 2026-04-11  
+**版本**: 5.0 Web 版  
 **状态**: ✅ 生产就绪
