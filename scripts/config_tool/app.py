@@ -195,14 +195,8 @@ with tab1:
     
     # 检查是否已有数据文件
     if os.path.exists(raw_data_file):
-        try:
-            file_size = os.path.getsize(raw_data_file)
-            if file_size > 10000:  # >10KB
-                st.success(f"✅ 已找到数据文件：`帆软销售明细.xlsx` ({round(file_size/1024, 1)} KB)")
-            else:
-                st.warning(f"⚠️ 数据文件过小 ({file_size} bytes)，请重新上传")
-        except Exception:
-            pass
+        file_size = os.path.getsize(raw_data_file)
+        st.success(f"✅ 已找到数据文件：`帆软销售明细.xlsx` ({round(file_size/1024, 1)} KB)")
     else:
         st.info("💡 请先上传 Excel 数据文件，或运行 `Run.bat` 自动爬取数据")
     
@@ -280,7 +274,6 @@ with tab1:
                     st.stop()
                 
                 # 2. 检查原始数据文件
-                raw_data_file = summary_file
                 if not os.path.exists(raw_data_file):
                     st.error(f"❌ 数据文件不存在：{raw_data_file}\n\n💡 请先上传 Excel 文件或运行 `Run.bat` 爬取数据")
                     st.stop()
@@ -295,7 +288,7 @@ with tab1:
                 
                 # 执行统计引擎
                 stats_engine = StatsEngine(base_dir=base_dir)
-                output_path = os.path.join(output_dir, '销售统计汇总.xlsx')
+                output_path = summary_file
                 results = stats_engine.run_all(raw_df, output_path=output_path)
                 
                 # 验证文件已生成
