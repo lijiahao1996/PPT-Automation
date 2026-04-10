@@ -1035,15 +1035,16 @@ with tab4:
     with col_i2:
         img_var_page = st.number_input("PPT 页码", min_value=0, max_value=20, value=0, key="img_page")
     
-    # 图片上传方式选择
-    img_upload_method = st.radio("图片上传方式", options=["📁 上传本地图片", "🔗 使用已有图片路径"], index=0, key=f"img_upload_{len(img_vars) if 'img_vars' in locals() else 0}")
+    # 图片上传方式选择（使用 img_page 作为唯一 key）
+    img_upload_method = st.radio("图片上传方式", options=["📁 上传本地图片", "🔗 使用已有图片路径"], index=0, key=f"img_method_{img_var_page}")
     
     if img_upload_method == "📁 上传本地图片":
         # 确保 resources/images 目录存在
         images_dir = os.path.join(base_dir, "resources", "images")
         os.makedirs(images_dir, exist_ok=True)
         
-        uploaded_file = st.file_uploader("选择图片文件", type=["png", "jpg", "jpeg", "gif", "webp"], key=f"img_upload_{len(img_vars) if 'img_vars' in locals() else 0}")
+        # 使用 img_page 作为唯一 key
+        uploaded_file = st.file_uploader("选择图片文件", type=["png", "jpg", "jpeg", "gif", "webp"], key=f"img_file_{img_var_page}")
         
         if uploaded_file is not None:
             # 保存文件到 resources/images
