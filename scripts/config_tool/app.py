@@ -108,7 +108,74 @@ with tab1:
         "outlier": "⚠️ 异常检测 - 异常订单"
     }
     
-    st.subheader("添加统计规则")
+    st.subheader("📤 上传原始数据 Excel")
+    st.caption("💡 上传从帆软导出的销售明细数据，或手动整理的数据")
+    
+    # Excel 上传功能
+    uploaded_file = st.file_uploader(
+        "上传 Excel 文件",
+        type=["xlsx", "xls"],
+        help="上传帆软销售明细数据，文件名会自动保存为：output/帆软销售明细.xlsx"
+    )
+    
+    if uploaded_file is not None:
+        # 确保 output 目录存在
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # 保存文件
+        output_file = os.path.join(output_dir, "帆软销售明细.xlsx")
+        
+        try:
+            # 如果文件已存在，先删除
+            if os.path.exists(output_file):
+                try:
+                    os.remove(output_file)
+                except PermissionError:
+                    st.warning(f"⚠️ 文件被占用，请关闭 Excel/WPS 后重试")
+                    st.stop()
+            
+            # 保存上传的文件
+            with open(output_file, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            
+            # 验证文件
+            import pandas as pd
+            df = pd.read_excel(output_file, nrows=5)
+            file_size = os.path.getsize(output_file)
+            
+            st.success(f"✅ 上传成功！")
+            st.info(f"""📊 **文件信息**：
+            - 保存位置：`{output_file}`
+            - 文件大小：{round(file_size/1024, 1)} KB
+            - 列名：{', '.join(df.columns)}
+            - 预览：前 5 行数据已读取""")
+            
+            # 显示预览
+            with st.expander("📋 查看数据预览", expanded=False):
+                st.dataframe(df, use_container_width=True)
+            
+            st.rerun()
+            
+        except Exception as e:
+            st.error(f"❌ 上传失败：{e}")
+    
+    # 检查是否已有数据文件
+    raw_data_file = os.path.join(output_dir, "帆软销售明细.xlsx")
+    if os.path.exists(raw_data_file):
+        try:
+            file_size = os.path.getsize(raw_data_file)
+            if file_size > 10000:  # >10KB
+                st.success(f"✅ 已找到数据文件：`帆软销售明细.xlsx` ({round(file_size/1024, 1)} KB)")
+            else:
+                st.warning(f"⚠️ 数据文件过小 ({file_size} bytes)，请重新上传")
+        except Exception:
+            pass
+    else:
+        st.info("💡 请先上传 Excel 数据文件，或运行 `Run.bat` 自动爬取数据")
+    
+    st.markdown("---")
+    
+    st.subheader("📝 添加统计规则")
     st.caption("💡 **必填字段**：统计表格名称、统计类型、分组字段、统计指标")
     
     col1, col2 = st.columns([2, 1])
