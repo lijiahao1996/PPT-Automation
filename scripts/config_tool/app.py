@@ -1826,6 +1826,11 @@ with tab6:
 
 
 
+# ========== Tab 7: 项目配置 ==========
+with tab7:
+    from tabs.tab7_project_config import render_tab7
+    render_tab7(base_dir)
+
 # ========== Tab 8: 生成 PPT 报告 ==========
 with tab8:
     from tabs.tab8_generate_report import render_tab8
