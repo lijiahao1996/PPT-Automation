@@ -68,7 +68,7 @@ with st.sidebar:
     st.info("💡 **提示**:\n1. 先配置统计规则\n2. 生成测试数据\n3. 配置图表\n4. 导出配置")
 
 # 主功能选择
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📋 统计规则配置", "📈 图表配置", "💡 洞察配置", "⚙️ 自定义变量", "🎯 结论 & 策略"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📋 统计规则配置", "📈 图表配置", "💡 洞察配置", "⚙️ 自定义变量", "🤖 AI 综合洞察", "🔖 PPT 变量总览"])
 
 # ========== Tab 1: 统计规则配置 ==========
 with tab1:
@@ -469,63 +469,6 @@ with tab2:
     if st.button("➕ 添加图表配置"):
         if not chart_key or not chart_title or not data_source:
             st.error("❌ 请填写必填字段")
-        else:
-            chart_config = {
-                "description": description,
-                "data_source": data_source,
-                "chart_type": chart_type,
-                "title": chart_title
-            }
-            
-            # 根据图表类型保存对应字段
-            if chart_type in ["bar_horizontal", "bar_vertical", "line", "scatter", "area", "histogram", "waterfall", "funnel", "bubble", "polar"]:
-                chart_config["x_field"] = x_field
-                chart_config["y_field"] = y_field
-                # 气泡图额外保存 size_field
-                if chart_type == "bubble" and 'size_field' in locals():
-                    chart_config["size_field"] = size_field
-                # 极坐标图使用 angle_field 和 radius_field 名称
-                if chart_type == "polar":
-                    chart_config["angle_field"] = x_field
-                    chart_config["radius_field"] = y_field
-            elif chart_type == "pie":
-                chart_config["category_field"] = x_field
-                chart_config["value_field"] = y_field
-            elif chart_type in ["boxplot", "violin"]:
-                chart_config["category_field"] = x_field
-                chart_config["value_field"] = y_field
-            elif chart_type in ["multi_column", "column_clustered"]:
-                # 解析 JSON 配置
-                try:
-                    json_config = json.loads(x_field) if x_field else {}
-                    if 'category_field' in json_config:
-                        chart_config["category_field"] = json_config['category_field']
-                    if 'series' in json_config:
-                        chart_config["series"] = json_config['series']
-                except json.JSONDecodeError:
-                    st.warning("⚠️ 字段配置格式错误，将保存为字符串")
-                    chart_config["category_field"] = x_field
-            elif chart_type == "heatmap":
-                # 解析 JSON 配置
-                try:
-                    json_config = json.loads(x_field) if x_field else {}
-                    if 'index_field' in json_config:
-                        chart_config["index_field"] = json_config['index_field']
-                    if 'columns' in json_config:
-                        chart_config["columns"] = json_config['columns']
-                except json.JSONDecodeError:
-                    st.warning("⚠️ 字段配置格式错误，将保存为字符串")
-                    chart_config["index_field"] = x_field
-            
-    # 添加按钮
-    if st.button("➕ 添加图表配置", key="add_chart_btn"):
-        # 验证必填字段
-        if not chart_key:
-            st.error("❌ 请填写图表 Key")
-        elif not chart_title:
-            st.error("❌ 请填写图表标题")
-        elif not data_source:
-            st.error("❌ 请选择数据源")
         else:
             chart_config = {
                 "description": description,
@@ -1243,11 +1186,18 @@ with tab4:
     st.markdown("---")
     st.info("💡 **提示**：\n- 所有变量添加/删除时自动保存，无需手动保存\n- 文本变量：`[TEXT:xxx]` | 日期：`[DATE:xxx]` | 图片：`[IMAGE:xxx]` | 链接：`[LINK:xxx]` | 表格：`[TABLE:xxx]`")
 
-# ========== Tab 5: 结论 & 策略 ==========
+# ========== Tab 5: AI 综合洞察 ==========
 with tab5:
-    st.header("🎯 结论 & 策略配置")
-    st.markdown("自定义 AI 生成的洞察变量（支持自定义添加，不写死）")
-    st.caption("💡 可以添加任意数量的自定义洞察变量，每个变量对应一个 Skill 生成规则")
+    st.header("🤖 AI 综合洞察")
+    st.markdown("**配置 AI 综合分析规则，生成深度业务洞察**")
+    st.caption("💡 将统计数据、图表信息上传给 AI，自动生成综合结论、策略建议、业务洞察等")
+    
+    st.info("""📌 **使用说明**：
+    1. 添加洞察变量（如：核心结论、落地策略、业务总结、风险预警等）
+    2. 配置每个变量的分析维度、生成提示词
+    3. AI 会基于所有统计数据，按你的要求生成深度洞察
+    4. 在 PPT 模板中使用 `{{INSIGHT:变量 Key}}` 占位符
+    5. 运行 `Run.bat` 时自动生成内容""")
     
     # 加载配置
     if os.path.exists(placeholders_file):
@@ -1266,21 +1216,20 @@ with tab5:
     
     variables_list = placeholders_config["special_insights"]["variables"]
     
+    st.markdown("---")
     st.subheader("📝 添加自定义洞察变量")
-    st.caption("💡 例如：conclusion（核心结论）、strategy（落地策略）、summary（总结）等")
+    st.caption("💡 例如：conclusion（核心结论）、strategy（落地策略）、summary（总结）、abnormal（异常检测）等")
     
-    col_v1, col_v2, col_v3 = st.columns(3)
+    col_v1, col_v2 = st.columns(2)
     
     with col_v1:
         new_var_key = st.text_input("变量 Key *", placeholder="例如：conclusion", help="必填：用于占位符 {{INSIGHT:xxx}}")
         new_var_name = st.text_input("变量名称", placeholder="例如：核心结论", help="显示名称")
+        new_var_desc = st.text_area("变量说明", placeholder="例如：AI 自动生成 4 条核心结论", height=60)
     
     with col_v2:
-        new_var_desc = st.text_area("变量说明", placeholder="例如：AI 自动生成 4 条核心结论", height=60)
-        new_var_style = st.selectbox("洞察风格", options=["数据驱动", "问题导向", "建议导向", "平衡型"], index=0)
-    
-    with col_v3:
         new_var_dims = st.multiselect("分析维度", options=["业绩结构", "增长亮点", "核心短板", "业务风险", "趋势分析", "对比分析", "占比分析", "异常检测", "客户运营", "产品组合", "团队管理", "营销节奏"], default=["业绩结构", "增长亮点", "核心短板", "业务风险"])
+        new_var_style = st.selectbox("洞察风格", options=["数据驱动", "问题导向", "建议导向", "平衡型"], index=0)
         new_var_words = st.number_input("字数要求", min_value=100, max_value=1000, value=300, step=50)
     
     new_var_prompt = st.text_area("自定义生成提示词 *", placeholder="请输入详细的 AI 生成提示词，包括分析维度、格式要求、输出规范等", height=100, help="必填：AI 生成洞察的提示词")
@@ -1348,3 +1297,179 @@ with tab5:
                             var["name"] = edit_name
                             var["description"] = edit_desc
                             var["dimensions"] = edit_dims
+
+
+# ========== Tab 6: PPT 变量总览 ==========
+with tab6:
+    st.header("🔖 PPT 变量总览")
+    st.markdown("**动态展示所有已配置的变量，方便在 PPT 模板中使用**")
+    
+    # 加载配置
+    if os.path.exists(placeholders_file):
+        with open(placeholders_file, 'r', encoding='utf-8') as f:
+            placeholders_config = json.load(f)
+    else:
+        st.warning("⚠️ 配置文件不存在")
+        st.stop()
+    
+    # 统计变量数量
+    charts_count = len(placeholders_config.get('placeholders', {}).get('charts', {}))
+    insights_count = len(placeholders_config.get('placeholders', {}).get('insights', {}))
+    text_vars_count = len(placeholders_config.get('placeholders', {}).get('text', {}))
+    dates_count = len(placeholders_config.get('placeholders', {}).get('dates', {}))
+    images_count = len(placeholders_config.get('placeholders', {}).get('images', {}))
+    links_count = len(placeholders_config.get('placeholders', {}).get('links', {}))
+    tables_count = len(placeholders_config.get('placeholders', {}).get('tables', {}))
+    ai_vars_count = len(placeholders_config.get('special_insights', {}).get('variables', []))
+    total_count = charts_count + insights_count + text_vars_count + dates_count + images_count + links_count + tables_count + ai_vars_count
+    
+    st.metric("变量总数", total_count, f"图表{charts_count} + 洞察{insights_count} + 文本{text_vars_count} + 日期{dates_count} + 图片{images_count} + 链接{links_count} + 表格{tables_count} + AI 洞察{ai_vars_count}")
+    
+    st.markdown("---")
+    
+    # 图表变量
+    st.subheader("📊 图表变量")
+    st.markdown("**占位符格式**：`[CHART:xxx]`")
+    
+    charts = placeholders_config.get('placeholders', {}).get('charts', {})
+    if charts:
+        chart_data = []
+        for chart_key, chart_cfg in charts.items():
+            chart_data.append({
+                '占位符': f'[CHART:{chart_key.replace("CHART:", "")}]',
+                '图表标题': chart_cfg.get('title', ''),
+                '数据源': chart_cfg.get('data_source', ''),
+                '图表类型': chart_cfg.get('chart_type', ''),
+                'PPT 页码': chart_cfg.get('slide_index', '未设置')
+            })
+        st.dataframe(chart_data, use_container_width=True, hide_index=True)
+    else:
+        st.info("暂无图表配置")
+    
+    st.markdown("---")
+    
+    # AI 洞察变量
+    st.subheader("🤖 AI 洞察变量")
+    st.markdown("**占位符格式**：`{{{{INSIGHT:xxx}}}}`")
+    
+    ai_vars = placeholders_config.get('special_insights', {}).get('variables', [])
+    if ai_vars:
+        ai_data = []
+        for var in ai_vars:
+            ai_data.append({
+                '占位符': f'{{{{INSIGHT:{var.get("key", "")}}}}}',
+                '变量名称': var.get('name', ''),
+                '说明': var.get('description', ''),
+                '风格': var.get('style', ''),
+                '字数': f"{var.get('word_count', 0)}字"
+            })
+        st.dataframe(ai_data, use_container_width=True, hide_index=True)
+    else:
+        st.info("暂无 AI 洞察变量，请在'🤖 AI 综合洞察'页签添加")
+    
+    st.markdown("---")
+    
+    # 文本变量
+    st.subheader("📝 文本变量")
+    st.markdown("**占位符格式**：`[TEXT:xxx]`")
+    
+    text_vars = placeholders_config.get('placeholders', {}).get('text', {})
+    if text_vars:
+        text_data = []
+        for text_key, text_cfg in text_vars.items():
+            text_data.append({
+                '占位符': f'[{text_key}]',
+                '描述': text_cfg.get('description', ''),
+                '默认值': text_cfg.get('default', ''),
+                'PPT 页码': text_cfg.get('slide_index', '未设置')
+            })
+        st.dataframe(text_data, use_container_width=True, hide_index=True)
+    else:
+        st.info("暂无文本变量")
+    
+    st.markdown("---")
+    
+    # 日期变量
+    st.subheader("📅 日期变量")
+    st.markdown("**占位符格式**：`[DATE:xxx]`")
+    
+    date_vars = placeholders_config.get('placeholders', {}).get('dates', {})
+    if date_vars:
+        date_data = []
+        for date_key, date_cfg in date_vars.items():
+            date_data.append({
+                '占位符': f'[{date_key}]',
+                '描述': date_cfg.get('description', ''),
+                '默认值': date_cfg.get('default', ''),
+                '格式': date_cfg.get('format', '')
+            })
+        st.dataframe(date_data, use_container_width=True, hide_index=True)
+    else:
+        st.info("暂无日期变量")
+    
+    st.markdown("---")
+    
+    # 图片变量
+    st.subheader("🖼️ 图片变量")
+    st.markdown("**占位符格式**：`[IMAGE:xxx]`")
+    
+    img_vars = placeholders_config.get('placeholders', {}).get('images', {})
+    if img_vars:
+        img_data = []
+        for img_key, img_cfg in img_vars.items():
+            img_data.append({
+                '占位符': f'[{img_key}]',
+                '描述': img_cfg.get('description', ''),
+                '路径': img_cfg.get('path', ''),
+                '类型': img_cfg.get('type', '')
+            })
+        st.dataframe(img_data, use_container_width=True, hide_index=True)
+    else:
+        st.info("暂无图片变量")
+    
+    st.markdown("---")
+    
+    # 链接变量
+    st.subheader("🔗 链接变量")
+    st.markdown("**占位符格式**：`[LINK:xxx]`")
+    
+    link_vars = placeholders_config.get('placeholders', {}).get('links', {})
+    if link_vars:
+        link_data = []
+        for link_key, link_cfg in link_vars.items():
+            link_data.append({
+                '占位符': f'[{link_key}]',
+                '描述': link_cfg.get('description', ''),
+                '链接地址': link_cfg.get('url', ''),
+                '类型': link_cfg.get('type', '')
+            })
+        st.dataframe(link_data, use_container_width=True, hide_index=True)
+    else:
+        st.info("暂无链接变量")
+    
+    st.markdown("---")
+    
+    # 表格变量
+    st.subheader("📋 表格变量")
+    st.markdown("**占位符格式**：`[TABLE:xxx]`")
+    
+    table_vars = placeholders_config.get('placeholders', {}).get('tables', {})
+    if table_vars:
+        table_data = []
+        for table_key, table_cfg in table_vars.items():
+            table_data.append({
+                '占位符': f'[{table_key}]',
+                '描述': table_cfg.get('description', ''),
+                '数据源': table_cfg.get('data_source', ''),
+                'PPT 页码': table_cfg.get('slide_index', '未设置')
+            })
+        st.dataframe(table_data, use_container_width=True, hide_index=True)
+    else:
+        st.info("暂无表格变量")
+    
+    st.markdown("---")
+    st.info("""💡 **提示**：
+    - 以上所有变量均为动态配置，实际显示您已配置的变量
+    - 复制占位符到 PPT 模板中的文本框即可使用
+    - 运行 `Run.bat` 时会自动替换为实际内容
+    """)
