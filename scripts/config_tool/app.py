@@ -149,24 +149,24 @@ with tab1:
                     "group_by": groups,
                     "metrics": metrics
                 }
-            
-            if sheet_name not in st.session_state.stats_config["stats_sheets"]:
-                st.session_state.stats_config["stats_sheets"][sheet_name] = rule
                 
-                # 自动保存到文件
-                try:
-                    with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                        json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
-                    st.success(f"✅ 已添加统计规则：{sheet_name} （已自动保存）")
-                except Exception as e:
-                    st.error(f"❌ 保存失败：{e}")
-                    st.success(f"✅ 已添加统计规则：{sheet_name}")
-                
-                st.rerun()  # 刷新页面显示更新
-            else:
-                st.warning(f"⚠️ 统计规则已存在：{sheet_name}")
-        except json.JSONDecodeError as e:
-            st.error(f"❌ 指标配置格式错误：{e}")
+                if sheet_name not in st.session_state.stats_config["stats_sheets"]:
+                    st.session_state.stats_config["stats_sheets"][sheet_name] = rule
+                    
+                    # 自动保存到文件
+                    try:
+                        with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                            json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
+                        st.success(f"✅ 已添加统计规则：{sheet_name} （已自动保存）")
+                    except Exception as e:
+                        st.error(f"❌ 保存失败：{e}")
+                        st.success(f"✅ 已添加统计规则：{sheet_name}")
+                    
+                    st.rerun()  # 刷新页面显示更新
+                else:
+                    st.warning(f"⚠️ 统计规则已存在：{sheet_name}")
+            except json.JSONDecodeError as e:
+                st.error(f"❌ 指标配置格式错误：{e}")
     
     # 操作按钮区域
     st.markdown("---")
@@ -1347,4 +1347,4 @@ with tab5:
                         if st.button("💾 保存修改", key=f"save_edit_{var_key}"):
                             var["name"] = edit_name
                             var["description"] = edit_desc
-                            var["dimensions"] = edit_dims
+                            var["dimensions"] = edit_dims
