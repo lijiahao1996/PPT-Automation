@@ -749,6 +749,33 @@ with tab3:
                 on_change=lambda: save_insights_auto(charts_config, placeholders_file, placeholders_config)
             )
             
+            # 操作按钮
+            col_btn1, col_btn2 = st.columns(2)
+            with col_btn1:
+                if st.button("🗑️ 删除洞察", key=f"del_insight_{chart_key}"):
+                    if chart_key in placeholders_config["placeholders"]["insights"]:
+                        del placeholders_config["placeholders"]["insights"][chart_key]
+                        with open(placeholders_file, 'w', encoding='utf-8') as f:
+                            json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                        st.success(f"✅ 已删除：{chart_key}")
+                        st.rerun()
+            
+            with col_btn2:
+                if st.button("💾 保存此洞察", key=f"save_insight_{chart_key}"):
+                    placeholders_config["placeholders"]["insights"][chart_key] = {
+                        "dimensions": analysis_dimensions,
+                        "metrics": [m.strip() for m in key_metrics.split('\n') if m.strip()],
+                        "baseline": baseline,
+                        "style": insight_style,
+                        "word_count": word_count,
+                        "enabled": enabled,
+                        "custom_prompt": custom_prompt
+                    }
+                    with open(placeholders_file, 'w', encoding='utf-8') as f:
+                        json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                    st.success(f"✅ 已保存：{chart_key}")
+                    st.rerun()
+            
             # 保存配置
             insights_config[chart_key] = {
                 "dimensions": analysis_dimensions,
@@ -783,16 +810,6 @@ with tab3:
             st.toast("📊 洞察配置已自动保存", icon="✅")
         except Exception as e:
             st.toast(f"保存失败：{e}", icon="❌")
-    
-    # 显示配置预览（折叠）
-    st.markdown("---")
-    st.subheader("📋 洞察配置预览")
-    
-    if insights_config:
-        with st.expander("📋 点击查看/复制配置预览", expanded=False):
-            for chart_key, insight_cfg in insights_config.items():
-                with st.expander(f"💡 {chart_key}"):
-                    st.json(insight_cfg)
 
 # ========== Tab 4: 自定义变量 ==========
 with tab4:
@@ -881,6 +898,38 @@ with tab4:
                 with st.expander(f"📝 [{var_key}] - {var_cfg.get('description', '')}"):
                     st.json(var_cfg)
                     
+                    # 编辑功能
+                    edit_key = f"edit_text_{var_key}"
+                    if st.button("✏️ 编辑", key=edit_key):
+                        st.session_state[f"editing_{var_key}"] = True
+                    
+                    if st.session_state.get(f"editing_{var_key}", False):
+                        st.markdown("#### 编辑变量")
+                        
+                        edit_desc = st.text_input("变量描述", value=var_cfg.get('description', ''), key=f"edit_desc_{var_key}")
+                        edit_default = st.text_area("默认值", value=var_cfg.get('default', ''), height=60, key=f"edit_default_{var_key}")
+                        edit_page = st.number_input("PPT 页码", min_value=0, max_value=20, value=var_cfg.get('slide_index', 0), key=f"edit_page_{var_key}")
+                        
+                        col_e1, col_e2 = st.columns(2)
+                        with col_e1:
+                            if st.button("💾 保存修改", key=f"save_edit_{var_key}"):
+                                var_cfg['description'] = edit_desc
+                                var_cfg['default'] = edit_default
+                                var_cfg['slide_index'] = edit_page
+                                
+                                with open(placeholders_file, 'w', encoding='utf-8') as f:
+                                    json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                                
+                                st.success("✅ 已保存修改")
+                                st.session_state[f"editing_{var_key}"] = False
+                                st.rerun()
+                        
+                        with col_e2:
+                            if st.button("❌ 取消编辑", key=f"cancel_edit_{var_key}"):
+                                st.session_state[f"editing_{var_key}"] = False
+                                st.rerun()
+                    
+                    # 删除按钮
                     if st.button(f"🗑️ 删除", key=f"delete_{var_key}"):
                         del placeholders_config["placeholders"]["text"][var_key]
                         
@@ -957,6 +1006,38 @@ with tab4:
             with st.expander(f"📋 [{var_key}] - {var_cfg.get('description', '')}"):
                 st.json(var_cfg)
                 
+                # 编辑功能
+                edit_key = f"edit_table_{var_key}"
+                if st.button("✏️ 编辑", key=edit_key):
+                    st.session_state[f"editing_{var_key}"] = True
+                
+                if st.session_state.get(f"editing_{var_key}", False):
+                    st.markdown("#### 编辑表格变量")
+                    
+                    edit_desc = st.text_input("表格描述", value=var_cfg.get('description', ''), key=f"edit_desc_{var_key}")
+                    edit_source = st.text_input("数据源", value=var_cfg.get('data_source', ''), key=f"edit_source_{var_key}")
+                    edit_page = st.number_input("PPT 页码", min_value=0, max_value=20, value=var_cfg.get('slide_index', 0), key=f"edit_page_{var_key}")
+                    
+                    col_e1, col_e2 = st.columns(2)
+                    with col_e1:
+                        if st.button("💾 保存修改", key=f"save_edit_{var_key}"):
+                            var_cfg['description'] = edit_desc
+                            var_cfg['data_source'] = edit_source
+                            var_cfg['slide_index'] = edit_page
+                            
+                            with open(placeholders_file, 'w', encoding='utf-8') as f:
+                                json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                            
+                            st.success("✅ 已保存修改")
+                            st.session_state[f"editing_{var_key}"] = False
+                            st.rerun()
+                    
+                    with col_e2:
+                        if st.button("❌ 取消编辑", key=f"cancel_edit_{var_key}"):
+                            st.session_state[f"editing_{var_key}"] = False
+                            st.rerun()
+                
+                # 删除按钮
                 if st.button(f"🗑️ 删除", key=f"delete_table_{var_key}"):
                     del placeholders_config["placeholders"]["tables"][var_key]
                     
@@ -1022,6 +1103,37 @@ with tab4:
         for var_key, var_cfg in date_vars.items():
             with st.expander(f"📅 [{var_key}] - {var_cfg.get('description', '')}"):
                 st.json(var_cfg)
+                
+                # 编辑功能
+                edit_key = f"edit_date_{var_key}"
+                if st.button("✏️ 编辑", key=edit_key):
+                    st.session_state[f"editing_{var_key}"] = True
+                
+                if st.session_state.get(f"editing_{var_key}", False):
+                    st.markdown("#### 编辑日期变量")
+                    edit_desc = st.text_input("描述", value=var_cfg.get('description', ''), key=f"edit_desc_{var_key}")
+                    edit_default = st.text_input("默认值", value=var_cfg.get('default', ''), key=f"edit_default_{var_key}")
+                    edit_format = st.text_input("日期格式", value=var_cfg.get('format', ''), key=f"edit_format_{var_key}")
+                    edit_page = st.number_input("PPT 页码", min_value=0, max_value=20, value=var_cfg.get('slide_index', 0), key=f"edit_page_{var_key}")
+                    
+                    col_e1, col_e2 = st.columns(2)
+                    with col_e1:
+                        if st.button("💾 保存修改", key=f"save_edit_{var_key}"):
+                            var_cfg['description'] = edit_desc
+                            var_cfg['default'] = edit_default
+                            var_cfg['format'] = edit_format
+                            var_cfg['slide_index'] = edit_page
+                            with open(placeholders_file, 'w', encoding='utf-8') as f:
+                                json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                            st.success("✅ 已保存修改")
+                            st.session_state[f"editing_{var_key}"] = False
+                            st.rerun()
+                    with col_e2:
+                        if st.button("❌ 取消编辑", key=f"cancel_edit_{var_key}"):
+                            st.session_state[f"editing_{var_key}"] = False
+                            st.rerun()
+                
+                # 删除按钮
                 if st.button("🗑️ 删除", key=f"del_{var_key}"):
                     del placeholders_config["placeholders"]["dates"][var_key]
                     with open(placeholders_file, 'w', encoding='utf-8') as f:
@@ -1117,6 +1229,37 @@ with tab4:
         for var_key, var_cfg in img_vars.items():
             with st.expander(f"🖼️ [{var_key}] - {var_cfg.get('description', '')}"):
                 st.json(var_cfg)
+                
+                # 编辑功能
+                edit_key = f"edit_img_{var_key}"
+                if st.button("✏️ 编辑", key=edit_key):
+                    st.session_state[f"editing_{var_key}"] = True
+                
+                if st.session_state.get(f"editing_{var_key}", False):
+                    st.markdown("#### 编辑图片变量")
+                    edit_desc = st.text_input("描述", value=var_cfg.get('description', ''), key=f"edit_desc_{var_key}")
+                    edit_path = st.text_input("图片路径", value=var_cfg.get('path', ''), key=f"edit_path_{var_key}")
+                    edit_type = st.selectbox("图片类型", options=["logo", "product", "chart", "background", "other"], index=["logo", "product", "chart", "background", "other"].index(var_cfg.get('type', 'other')) if var_cfg.get('type') in ["logo", "product", "chart", "background", "other"] else 4, key=f"edit_type_{var_key}")
+                    edit_page = st.number_input("PPT 页码", min_value=0, max_value=20, value=var_cfg.get('slide_index', 0), key=f"edit_page_{var_key}")
+                    
+                    col_e1, col_e2 = st.columns(2)
+                    with col_e1:
+                        if st.button("💾 保存修改", key=f"save_edit_{var_key}"):
+                            var_cfg['description'] = edit_desc
+                            var_cfg['path'] = edit_path
+                            var_cfg['type'] = edit_type
+                            var_cfg['slide_index'] = edit_page
+                            with open(placeholders_file, 'w', encoding='utf-8') as f:
+                                json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                            st.success("✅ 已保存修改")
+                            st.session_state[f"editing_{var_key}"] = False
+                            st.rerun()
+                    with col_e2:
+                        if st.button("❌ 取消编辑", key=f"cancel_edit_{var_key}"):
+                            st.session_state[f"editing_{var_key}"] = False
+                            st.rerun()
+                
+                # 删除按钮
                 if st.button("🗑️ 删除", key=f"del_{var_key}"):
                     del placeholders_config["placeholders"]["images"][var_key]
                     with open(placeholders_file, 'w', encoding='utf-8') as f:
@@ -1174,6 +1317,37 @@ with tab4:
         for var_key, var_cfg in link_vars.items():
             with st.expander(f"🔗 [{var_key}] - {var_cfg.get('description', '')}"):
                 st.json(var_cfg)
+                
+                # 编辑功能
+                edit_key = f"edit_link_{var_key}"
+                if st.button("✏️ 编辑", key=edit_key):
+                    st.session_state[f"editing_{var_key}"] = True
+                
+                if st.session_state.get(f"editing_{var_key}", False):
+                    st.markdown("#### 编辑链接变量")
+                    edit_desc = st.text_input("描述", value=var_cfg.get('description', ''), key=f"edit_desc_{var_key}")
+                    edit_url = st.text_input("链接地址", value=var_cfg.get('url', ''), key=f"edit_url_{var_key}")
+                    edit_type = st.selectbox("链接类型", options=["url", "email", "file"], index=["url", "email", "file"].index(var_cfg.get('type', 'url')) if var_cfg.get('type') in ["url", "email", "file"] else 0, key=f"edit_type_{var_key}")
+                    edit_page = st.number_input("PPT 页码", min_value=0, max_value=20, value=var_cfg.get('slide_index', 0), key=f"edit_page_{var_key}")
+                    
+                    col_e1, col_e2 = st.columns(2)
+                    with col_e1:
+                        if st.button("💾 保存修改", key=f"save_edit_{var_key}"):
+                            var_cfg['description'] = edit_desc
+                            var_cfg['url'] = edit_url
+                            var_cfg['type'] = edit_type
+                            var_cfg['slide_index'] = edit_page
+                            with open(placeholders_file, 'w', encoding='utf-8') as f:
+                                json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                            st.success("✅ 已保存修改")
+                            st.session_state[f"editing_{var_key}"] = False
+                            st.rerun()
+                    with col_e2:
+                        if st.button("❌ 取消编辑", key=f"cancel_edit_{var_key}"):
+                            st.session_state[f"editing_{var_key}"] = False
+                            st.rerun()
+                
+                # 删除按钮
                 if st.button("🗑️ 删除", key=f"del_{var_key}"):
                     del placeholders_config["placeholders"]["links"][var_key]
                     with open(placeholders_file, 'w', encoding='utf-8') as f:
