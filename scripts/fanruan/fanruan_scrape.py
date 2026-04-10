@@ -24,12 +24,15 @@ config.read(config_path, encoding='utf-8')
 OUTPUT_DIR = config.get('paths', 'output_dir', fallback=os.path.join(WORK_DIR, "output"))
 ARTIFACTS_DIR = config.get('paths', 'artifacts_dir', fallback=os.path.join(WORK_DIR, "artifacts"))
 
+# 从 config.ini 读取文件名配置
+RAW_DATA_FILE_NAME = config.get('paths', 'raw_data_file', fallback='帆软销售明细.xlsx')
+
 # 确保目录存在
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 
-SESSION_FILE = os.path.join(ARTIFACTS_DIR, "fanruan_session.json")  # 移到 artifacts
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "帆软销售明细.xlsx")
+SESSION_FILE = os.path.join(ARTIFACTS_DIR, "fanruan_session.json")
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, RAW_DATA_FILE_NAME)  # 使用变量
 DATA_URL = config.get('fanruan', 'data_url', fallback="https://demo.fanruan.com/webroot/decision#/datacenter/config/table/5bad5de2769141e8bcada4e0df0e5b5d")
 # ============================
 

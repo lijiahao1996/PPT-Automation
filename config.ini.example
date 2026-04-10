@@ -22,6 +22,13 @@ scripts_dir =
 artifacts_dir = 
 logs_dir = 
 
+# 文件名配置（重要！两个文件名关联）
+# raw_data_file: 原始数据文件（从帆软爬取或手动上传）
+# summary_file: 统计汇总文件（由 raw_data_file 经过统计引擎生成）
+# 关系：summary_file 由 raw_data_file 生成，建议保持命名关联
+raw_data_file = 帆软销售明细.xlsx
+summary_file = 销售统计汇总.xlsx 
+
 [advanced]
 # 高级配置（可选）
 # 会话有效期（天）

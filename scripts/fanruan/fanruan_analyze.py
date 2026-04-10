@@ -1,4 +1,4 @@
-"""
+﻿"""
 帆软数据分析脚本（企业版）
 - 读取原始数据
 - 数据质量校验
@@ -32,6 +32,10 @@ OUTPUT_DIR = config.get('paths', 'output_dir', fallback=os.path.join(WORK_DIR, "
 ARTIFACTS_DIR = config.get('paths', 'artifacts_dir', fallback=os.path.join(WORK_DIR, "artifacts"))
 LOGS_DIR = config.get('paths', 'logs_dir', fallback=os.path.join(WORK_DIR, "logs"))
 
+# 从 config.ini 读取文件名配置
+RAW_DATA_FILE_NAME = config.get('paths', 'raw_data_file', fallback='帆软销售明细.xlsx')
+SUMMARY_FILE_NAME = config.get('paths', 'summary_file', fallback='销售统计汇总.xlsx')
+
 # 确保目录存在
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
@@ -48,9 +52,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-RAW_FILE = os.path.join(OUTPUT_DIR, "帆软销售明细.xlsx")
+RAW_FILE = os.path.join(OUTPUT_DIR, RAW_DATA_FILE_NAME)
 ANALYSIS_FILE = os.path.join(ARTIFACTS_DIR, "销售分析数据.xlsx")
-SUMMARY_FILE = os.path.join(OUTPUT_DIR, "销售统计汇总.xlsx")
+SUMMARY_FILE = os.path.join(OUTPUT_DIR, SUMMARY_FILE_NAME)
 # ============================
 
 
@@ -221,3 +225,4 @@ def clean_and_analyze():
 if __name__ == "__main__":
     success = clean_and_analyze()
     exit(0 if success else 1)
+

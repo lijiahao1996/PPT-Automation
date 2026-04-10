@@ -62,10 +62,26 @@ with st.sidebar:
     templates_dir = os.path.join(base_dir, "templates")
     output_dir = os.path.join(base_dir, "output")
     
+    # 从 config.ini 读取文件名配置
+    config_file = os.path.join(base_dir, "config.ini")
+    if os.path.exists(config_file):
+        import configparser
+        config = configparser.ConfigParser()
+        config.read(config_file, encoding='utf-8')
+        raw_data_file_name = config.get('paths', 'raw_data_file', fallback='帆软销售明细.xlsx')
+        summary_file_name = config.get('paths', 'summary_file', fallback='销售统计汇总.xlsx')
+    else:
+        raw_data_file_name = '帆软销售明细.xlsx'
+        summary_file_name = '销售统计汇总.xlsx'
+    
+    raw_data_file = os.path.join(output_dir, raw_data_file_name)
+    summary_file = os.path.join(output_dir, summary_file_name)
+    
     st.success(f"✅ 项目路径：{base_dir}")
+    st.info(f"📁 **文件配置**:\n- 原始数据：`{raw_data_file_name}`\n- 统计汇总：`{summary_file_name}`")
     
     st.markdown("---")
-    st.info("💡 **提示**:\n1. 先配置统计规则\n2. 生成测试数据\n3. 配置图表\n4. 导出配置")
+    st.info("💡 **提示**:\n1. 先配置统计规则\n2. 上传数据或爬取\n3. 生成统计汇总\n4. 配置图表\n5. 生成 PPT")
 
 # 主功能选择
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📋 统计规则配置", "📈 图表配置", "💡 洞察配置", "⚙️ 自定义变量", "🤖 AI 综合洞察", "🔖 PPT 变量总览"])
@@ -127,7 +143,7 @@ with tab1:
     uploaded_file = st.file_uploader(
         "上传 Excel 文件",
         type=["xlsx", "xls"],
-        help="上传帆软销售明细数据，文件名会自动保存为：output/帆软销售明细.xlsx"
+        help=f"上传帆软销售明细数据，文件名会自动保存为：output/{raw_data_file_name}"
     )
     
     if uploaded_file is not None:
@@ -135,7 +151,7 @@ with tab1:
         os.makedirs(output_dir, exist_ok=True)
         
         # 保存文件
-        output_file = os.path.join(output_dir, "帆软销售明细.xlsx")
+        output_file = raw_data_file
         
         try:
             # 如果文件已存在，先删除
@@ -170,7 +186,6 @@ with tab1:
             st.error(f"❌ 上传失败：{e}")
     
     # 检查是否已有数据文件
-    raw_data_file = os.path.join(output_dir, "帆软销售明细.xlsx")
     if os.path.exists(raw_data_file):
         try:
             file_size = os.path.getsize(raw_data_file)
@@ -257,7 +272,7 @@ with tab1:
                     st.stop()
                 
                 # 2. 检查原始数据文件
-                raw_data_file = os.path.join(output_dir, "帆软销售明细.xlsx")
+                raw_data_file = summary_file
                 if not os.path.exists(raw_data_file):
                     st.error(f"❌ 数据文件不存在：{raw_data_file}\n\n💡 请先上传 Excel 文件或运行 `Run.bat` 爬取数据")
                     st.stop()
@@ -386,7 +401,7 @@ with tab1:
     st.subheader("📊 数据概览（集成）")
     st.caption("快速查看统计汇总文件，无需切换页签")
     
-    summary_file = os.path.join(output_dir, "销售统计汇总.xlsx")
+    summary_file = summary_file
     
     if os.path.exists(summary_file):
         st.success("✅ 找到统计汇总文件")
@@ -1780,3 +1795,4 @@ with tab6:
     - 复制占位符到 PPT 模板中的文本框即可使用
     - 运行 `Run.bat` 时会自动替换为实际内容
     """)
+

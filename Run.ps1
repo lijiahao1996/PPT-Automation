@@ -69,7 +69,7 @@ Set-Location $workDir
 
 # Check for raw data file (甯嗚蒋閿€鍞槑缁?xlsx)
 Write-Host "Checking data files..." -ForegroundColor Cyan
-$rawDataFile = Join-Path $outputDir "帆软销售明细.xlsx"
+$rawDataFile = Join-Path $outputDir $rawDataFileName
 $skipScrape = $false
 
 # 閫昏緫锛氬鏋滄枃浠跺瓨鍦ㄤ笖鏈夋晥锛岀洿鎺ヨ烦杩囩埇鍙?
@@ -183,5 +183,6 @@ Write-Host "  Complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 Read-Host "Press Enter to exit"
+
 
 
