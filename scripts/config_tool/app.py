@@ -1327,30 +1327,42 @@ with tab6:
     
     st.markdown("---")
     
-    # 图表变量
-    st.subheader("📊 图表变量")
-    st.markdown("**占位符格式**：`[CHART:xxx]`")
+    # 图表变量 + 洞察变量（放在一起展示）
+    st.subheader("📊 图表变量 & AI 洞察")
+    st.markdown("**占位符格式**：`[CHART:xxx]` + `{{{{INSIGHT:xxx}}}}`")
+    st.caption("💡 每个图表可以配置对应的 AI 洞察，两者配合使用")
     
     charts = placeholders_config.get('placeholders', {}).get('charts', {})
-    if charts:
+    insights = placeholders_config.get('placeholders', {}).get('insights', {})
+    
+    if charts or insights:
         chart_data = []
         for chart_key, chart_cfg in charts.items():
+            chart_name = chart_key.replace("CHART:", "")
+            # 查找对应的洞察配置
+            insight_cfg = insights.get(chart_key, {})
+            insight_text = "✅ 已配置" if insight_cfg else "❌ 未配置"
+            
             chart_data.append({
-                '占位符': f'[CHART:{chart_key.replace("CHART:", "")}]',
+                '图表占位符': f'[CHART:{chart_name}]',
+                '洞察占位符': f'{{{{INSIGHT:{chart_name}}}}}',
                 '图表标题': chart_cfg.get('title', ''),
                 '数据源': chart_cfg.get('data_source', ''),
                 '图表类型': chart_cfg.get('chart_type', ''),
+                '洞察状态': insight_text,
                 'PPT 页码': chart_cfg.get('slide_index', '未设置')
             })
+        
         st.dataframe(chart_data, use_container_width=True, hide_index=True)
     else:
-        st.info("暂无图表配置")
+        st.info("暂无图表配置，请在'📈 图表配置'页签添加")
     
     st.markdown("---")
     
-    # AI 洞察变量
-    st.subheader("🤖 AI 洞察变量")
+    # AI 综合洞察变量（Tab 5 自定义的）
+    st.subheader("🤖 AI 综合洞察变量")
     st.markdown("**占位符格式**：`{{{{INSIGHT:xxx}}}}`")
+    st.caption("💡 自定义的综合分析变量（如核心结论、落地策略、业务总结等）")
     
     ai_vars = placeholders_config.get('special_insights', {}).get('variables', [])
     if ai_vars:
@@ -1360,12 +1372,13 @@ with tab6:
                 '占位符': f'{{{{INSIGHT:{var.get("key", "")}}}}}',
                 '变量名称': var.get('name', ''),
                 '说明': var.get('description', ''),
+                '分析维度': ', '.join(var.get('dimensions', [])),
                 '风格': var.get('style', ''),
                 '字数': f"{var.get('word_count', 0)}字"
             })
         st.dataframe(ai_data, use_container_width=True, hide_index=True)
     else:
-        st.info("暂无 AI 洞察变量，请在'🤖 AI 综合洞察'页签添加")
+        st.info("暂无 AI 综合洞察变量，请在'🤖 AI 综合洞察'页签添加")
     
     st.markdown("---")
     
