@@ -616,7 +616,18 @@ def generate_report(template_name: str = None, output_name: str = None,
         # 保存输出
         if output_name is None:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            output_name = f'销售分析报告_{timestamp}_v1.pptx'
+            # 基于原始数据文件名生成 PPT 报告名
+            import configparser
+            cfg = configparser.ConfigParser()
+            cfg.read(os.path.join(BASE_DIR, 'config.ini'), encoding='utf-8')
+            raw_data_file_name = cfg.get('paths', 'raw_data_file', fallback='帆软销售明细.xlsx')
+            raw_data_file = os.path.join(BASE_DIR, 'output', raw_data_file_name)
+            if os.path.exists(raw_data_file):
+                # 提取文件名（不含扩展名）
+                base_name = os.path.splitext(os.path.basename(raw_data_file))[0]
+                output_name = f'{base_name}_报告_{timestamp}_v1.pptx'
+            else:
+                output_name = f'销售分析报告_{timestamp}_v1.pptx'
         
         output_path = os.path.join(BASE_DIR, 'output', output_name)
         template_engine.save(prs, output_path)

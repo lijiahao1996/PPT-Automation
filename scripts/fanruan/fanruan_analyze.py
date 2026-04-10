@@ -34,7 +34,12 @@ LOGS_DIR = config.get('paths', 'logs_dir', fallback=os.path.join(WORK_DIR, "logs
 
 # 从 config.ini 读取文件名配置
 RAW_DATA_FILE_NAME = config.get('paths', 'raw_data_file', fallback='帆软销售明细.xlsx')
-SUMMARY_FILE_NAME = config.get('paths', 'summary_file', fallback='销售统计汇总.xlsx')
+
+# 统计汇总文件名：基于原始数据文件名 + _统计汇总
+if RAW_DATA_FILE_NAME.endswith('.xlsx'):
+    SUMMARY_FILE_NAME = RAW_DATA_FILE_NAME.replace('.xlsx', '_统计汇总.xlsx')
+else:
+    SUMMARY_FILE_NAME = RAW_DATA_FILE_NAME + '_统计汇总.xlsx'
 
 # 确保目录存在
 os.makedirs(OUTPUT_DIR, exist_ok=True)

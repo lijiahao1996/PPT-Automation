@@ -69,12 +69,17 @@ with st.sidebar:
         config = configparser.ConfigParser()
         config.read(config_file, encoding='utf-8')
         raw_data_file_name = config.get('paths', 'raw_data_file', fallback='帆软销售明细.xlsx')
-        summary_file_name = config.get('paths', 'summary_file', fallback='销售统计汇总.xlsx')
     else:
         raw_data_file_name = '帆软销售明细.xlsx'
-        summary_file_name = '销售统计汇总.xlsx'
     
     raw_data_file = os.path.join(output_dir, raw_data_file_name)
+    
+    # 统计汇总文件名：基于原始数据文件名 + _统计汇总
+    if raw_data_file_name.endswith('.xlsx'):
+        summary_file_name = raw_data_file_name.replace('.xlsx', '_统计汇总.xlsx')
+    else:
+        summary_file_name = raw_data_file_name + '_统计汇总.xlsx'
+    
     summary_file = os.path.join(output_dir, summary_file_name)
     
     st.success(f"✅ 项目路径：{base_dir}")
