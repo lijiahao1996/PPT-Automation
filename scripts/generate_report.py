@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 PPT 生成主流程 - 企业版
 模板引擎 + 图表引擎 + AI 洞察
@@ -61,14 +61,17 @@ logger, logs_dir = setup_logging()
 # ====================================
 
 # ========== 动态生成 SKILL.md ==========
-def build_skill_always():
+def build_skill_always(log_callback=None):
     """每次运行时都重新生成 SKILL.md（确保包含最新的 special_insights 配置）"""
     stats_rules_path = os.path.join(BASE_DIR, 'templates', 'stats_rules.json')
     placeholders_path = os.path.join(BASE_DIR, 'templates', 'placeholders.json')
     skill_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'SKILL.md')
     skill_builder_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'skill_builder.py')
     
-    logger.info("正在重新生成 SKILL.md (包含最新的 special_insights 配置)...")
+    if log_callback is None:
+        log_callback = lambda x: None
+    
+    log_callback("正在重新生成 SKILL.md (包含最新的 special_insights 配置)...")
     try:
         import importlib.util
         spec = importlib.util.spec_from_file_location("skill_builder", skill_builder_path)
@@ -80,13 +83,11 @@ def build_skill_always():
             placeholders_path=placeholders_path,
             output_path=skill_path
         )
-        logger.info("✅ SKILL.md 已重新生成")
+        log_callback("✅ SKILL.md 已重新生成")
     except Exception as e:
-        logger.warning(f"⚠️ SKILL.md 生成失败：{e}，使用现有文件")
+        log_callback(f"⚠️ SKILL.md 生成失败：{e}，使用现有文件")
 
-# 在生成报告前构建 SKILL（每次都重新生成）
-build_skill_always()
-# ====================================
+
 
 
 # 注意：图表配置已从 placeholders.json 读取
@@ -95,7 +96,9 @@ build_skill_always()
 
 def _generate_single_chart(args: Tuple) -> Tuple[str, str]:
     """生成单个图表（用于并行执行）"""
-    chart_key, config, data_summary, chart_engine, temp_dir = args
+    chart_key, config, data_summary, chart_engine, temp_dir, log_callback = args
+    if log_callback is None:
+        log_callback = lambda x: None
     
     if config['sheet'] not in data_summary:
         return (chart_key, None)
@@ -144,18 +147,18 @@ def _generate_single_chart(args: Tuple) -> Tuple[str, str]:
                 exclude_cols = ['销售员', 'Unnamed: 0', 'index']
                 product_cols = [col for col in df.columns if col not in exclude_cols]
                 params['columns'] = product_cols
-                logger.info(f"      [INFO] 热力图自动检测到 {len(product_cols)} 个产品：{product_cols}")
+                log_callback(f"      [INFO] 热力图自动检测到 {len(product_cols)} 个产品：{product_cols}")
             chart_engine.create_heatmap(df, **params)
         elif chart_type in ['multi_column', 'column_clustered']:
             chart_engine.create_multi_column(df, **params)
         else:
-            logger.warning(f"      [SKIP] 未知图表类型：{chart_type}")
+            log_callback(f"      [SKIP] 未知图表类型：{chart_type}")
             return (chart_key, None)
         
         return (chart_key, output_path)
     
     except Exception as e:
-        logger.error(f"      [ERROR] 生成图表 {chart_key} 失败：{e}")
+        log_callback(f"      [ERROR] 生成图表 {chart_key} 失败：{e}")
         return (chart_key, None)
 
 
@@ -170,11 +173,23 @@ def _get_date_range_from_data(data_loader) -> str:
             max_date = df['订单时间'].max().strftime('%Y年%m月%d日')
             return f'{min_date} - {max_date}'
     except Exception as e:
-        logger.warning(f"日期范围提取失败：{e}, 使用默认值")
+        log_callback(f"日期范围提取失败：{e}, 使用默认值")
     return "未知"
 
 
-def _build_text_replacements_from_config(placeholders: Dict, data_loader, insights: list, today: str) -> Dict:
+def _build_text_replacements_from_config(placeholders: Dict, data_loader, insights: list, today: str, log_callback=None) -> Dict:
+    """
+    从占位符配置动态构建文本替换字典
+    
+    Args:
+        placeholders: 占位符配置字典
+        data_loader: 数据加载器（用于获取实际 KPI 数据）
+        insights: AI 洞察列表（10 条）
+        today: 今天日期字符串
+        log_callback: 日志回调函数
+    """
+    if log_callback is None:
+        log_callback = lambda x: None
     """
     从占位符配置动态构建文本替换字典
     
@@ -215,9 +230,9 @@ def _build_text_replacements_from_config(placeholders: Dict, data_loader, insigh
                     f"最高单额：{kpi_dict.get('最高单额', {}).get('value', 0):,.0f} 元\n"
                     f"最低单额：{kpi_dict.get('最低单额', {}).get('value', 0):,.0f} 元"
                 )
-                logger.info("      [OK] KPI 卡片已从实际数据生成")
+                log_callback("      [OK] KPI 卡片已从实际数据生成")
             except Exception as e:
-                logger.warning(f"      [WARN] KPI 数据加载失败：{e}, 使用空值")
+                log_callback(f"      [WARN] KPI 数据加载失败：{e}, 使用空值")
                 replacements[full_key] = config.get('default', '')
         else:
             replacements[full_key] = config.get('default', '')
@@ -243,7 +258,7 @@ def _build_text_replacements_from_config(placeholders: Dict, data_loader, insigh
                 # 不添加到 replacements，由后续插入逻辑处理
                 logger.debug(f"      记录图片变量：{full_key} <- {img_path}")
             else:
-                logger.warning(f"      图片文件不存在：{img_path}")
+                log_callback(f"      图片文件不存在：{img_path}")
         else:
             pass  # 空路径，后续插入逻辑会跳过
     
@@ -260,7 +275,7 @@ def _build_text_replacements_from_config(placeholders: Dict, data_loader, insigh
                 # 不添加到 replacements，由后续插入逻辑处理
                 logger.debug(f"      记录视频变量：{full_key} <- {video_path}")
             else:
-                logger.warning(f"      视频文件不存在：{video_path}")
+                log_callback(f"      视频文件不存在：{video_path}")
         else:
             pass  # 空路径，后续插入逻辑会跳过
     
@@ -298,7 +313,7 @@ def _build_text_replacements_from_config(placeholders: Dict, data_loader, insigh
         else:
             replacements[full_key] = ''
             replacements[full_key_with_space] = ''
-            logger.warning(f"      洞察数量不足：{full_key}")
+            log_callback(f"      洞察数量不足：{full_key}")
     
     # 结论和策略：使用最后 2 条洞察（如果 AI 生成了的话）
     # 注意：AI 返回的洞察数量 = 洞察配置数量 + 2（结论 + 策略）
@@ -311,13 +326,15 @@ def _build_text_replacements_from_config(placeholders: Dict, data_loader, insigh
         # 当前使用默认值，后期由 AI 生成
         replacements['{{INSIGHT:conclusion}}'] = ''
         replacements['{{INSIGHT:strategy}}'] = ''
-        logger.warning(f"      洞察数量不足，期望{insight_count+2}条，实际{len(insights)}条")
+        log_callback(f"      洞察数量不足，期望{insight_count+2}条，实际{len(insights)}条")
     
-    logger.info(f"      动态构建 {len(replacements)} 个文本占位符替换规则（{len(insight_placeholders)} 个洞察 + 结论 + 策略 + 文本变量）")
+    log_callback(f"      动态构建 {len(replacements)} 个文本占位符替换规则（{len(insight_placeholders)} 个洞察 + 结论 + 策略 + 文本变量）")
     return replacements
 
 
-def _build_chart_placeholder_map_from_config(placeholders: Dict, chart_paths: Dict) -> Dict:
+def _build_chart_placeholder_map_from_config(placeholders: Dict, chart_paths: Dict, log_callback=None) -> Dict:
+    if log_callback is None:
+        log_callback = lambda x: None
     """
     从占位符配置动态构建图表占位符映射
     
@@ -340,14 +357,31 @@ def _build_chart_placeholder_map_from_config(placeholders: Dict, chart_paths: Di
             placeholder_map[f'[{key}]'] = chart_paths[chart_key]
             placeholder_map[f'[[{key}]]'] = chart_paths[chart_key]  # 兼容双方括号
         else:
-            logger.warning(f"      图表未生成：[{key}] (缺少数据：{config.get('data_source', '未知')})")
+            log_callback(f"      图表未生成：[{key}] (缺少数据：{config.get('data_source', '未知')})")
     
-    logger.info(f"      动态构建 {len(placeholder_map)} 个图表占位符映射")
+    log_callback(f"      动态构建 {len(placeholder_map)} 个图表占位符映射")
     return placeholder_map
 
 
 def generate_report(template_name: str = None, output_name: str = None, 
-                    parallel_charts: bool = True, regenerate_placeholders: bool = False):
+                    parallel_charts: bool = True, regenerate_placeholders: bool = False,
+                    log_callback=None):
+    """
+    生成销售分析报告
+    
+    Args:
+        template_name: 模板文件名（默认：销售分析报告_标准模板.pptx）
+        output_name: 输出文件名（默认：带时间戳的版本）
+        parallel_charts: 是否并行生成图表（默认 True）
+        regenerate_placeholders: 是否重新生成占位符配置（默认 False）
+        log_callback: 日志回调函数，用于实时输出到 Web 界面
+    """
+    # 如果没有提供 log_callback，使用默认 logger
+    if log_callback is None:
+        log_callback = logger.info
+    
+    # 在生成报告前构建 SKILL（每次都重新生成）
+    build_skill_always(log_callback)
     """
     生成销售分析报告
     
@@ -363,7 +397,7 @@ def generate_report(template_name: str = None, output_name: str = None,
     
     try:
         # ========== 1. 加载数据 ==========
-        logger.info("\n[1/5] 加载销售统计数据...")
+        log_callback("\n[1/5] 加载销售统计数据...")
         data_loader = DataLoader(BASE_DIR)
         
         # 自动查找统计汇总文件
@@ -375,34 +409,34 @@ def generate_report(template_name: str = None, output_name: str = None,
                 break
         
         data_summary = data_loader.load_summary(filename=summary_file)
-        logger.info(f"      已加载 {len(data_summary)} 个统计表（文件：{summary_file}）")
+        log_callback(f"      已加载 {len(data_summary)} 个统计表（文件：{summary_file}）")
         
         validator = PresetValidators.summary_data_validator(data_summary)
-        logger.info("      [OK] 数据校验通过")
+        log_callback("      [OK] 数据校验通过")
         
         # ========== 2. 初始化引擎 ==========
-        logger.info("\n[2/5] 初始化引擎...")
+        log_callback("\n[2/5] 初始化引擎...")
         chart_engine = ChartEngine(BASE_DIR)
         template_engine = TemplateEngine(BASE_DIR, auto_scan=True)
         insight_generator = InsightGenerator(BASE_DIR)
         
         # 可选：重新生成占位符配置
         if regenerate_placeholders and template_name:
-            logger.info("      [INFO] 重新生成占位符配置...")
+            log_callback("      [INFO] 重新生成占位符配置...")
             template_engine.regenerate_placeholders_from_template(template_name)
         
         # 获取占位符配置
         placeholders = template_engine.get_placeholder_config()
-        logger.info(f"      [OK] 引擎初始化完成 (占位符：{len(placeholders.get('placeholders', {}))} 类)")
+        log_callback(f"      [OK] 引擎初始化完成 (占位符：{len(placeholders.get('placeholders', {}))} 类)")
         
         # ========== 3. 生成 AI 洞察 ==========
-        logger.info("\n[3/5] 生成 AI 洞察...")
+        log_callback("\n[3/5] 生成 AI 洞察...")
         insights_file = os.path.join(BASE_DIR, 'artifacts', 'ai_insights.json')
         insights = insight_generator.generate(data_summary, insights_file)
-        logger.info(f"      [OK] 生成 {len(insights)} 条洞察")
+        log_callback(f"      [OK] 生成 {len(insights)} 条洞察")
         
         # ========== 4. 生成图表（支持并行） ==========
-        logger.info("\n[4/5] 生成图表...")
+        log_callback("\n[4/5] 生成图表...")
         temp_dir = os.path.join(BASE_DIR, 'artifacts', 'temp')
         os.makedirs(temp_dir, exist_ok=True)
         
@@ -412,7 +446,7 @@ def generate_report(template_name: str = None, output_name: str = None,
         chart_placeholders = placeholders.get('placeholders', {}).get('charts', {})
         
         if parallel_charts:
-            logger.info("      [INFO] 使用并行模式生成图表...")
+            log_callback("      [INFO] 使用并行模式生成图表...")
             tasks = []
             for key, config in chart_placeholders.items():
                 chart_key = key.split(':')[1] if ':' in key else key
@@ -456,7 +490,7 @@ def generate_report(template_name: str = None, output_name: str = None,
                 if config.get('figsize'):
                     task_config['params']['figsize'] = tuple(config['figsize'])
                 
-                tasks.append((chart_key, task_config, data_summary, chart_engine, temp_dir))
+                tasks.append((chart_key, task_config, data_summary, chart_engine, temp_dir, log_callback))
             
             with ThreadPoolExecutor(max_workers=6) as executor:
                 futures = {executor.submit(_generate_single_chart, task): task[0] for task in tasks}
@@ -465,15 +499,15 @@ def generate_report(template_name: str = None, output_name: str = None,
                     chart_key, path = future.result()
                     if path and os.path.exists(path):
                         chart_paths[chart_key] = path
-                        logger.info(f"      [OK] {chart_key}: {path}")
+                        log_callback(f"      [OK] {chart_key}: {path}")
         else:
             # 串行生成（略，同上）
-            logger.warning("      [WARN] 串行模式暂不支持动态配置，请使用并行模式")
+            log_callback("      [WARN] 串行模式暂不支持动态配置，请使用并行模式")
         
-        logger.info(f"      [OK] 共生成 {len(chart_paths)} 个图表")
+        log_callback(f"      [OK] 共生成 {len(chart_paths)} 个图表")
         
         # ========== 5. 填充模板（动态占位符） ==========
-        logger.info("\n[5/5] 填充 PPT 模板...")
+        log_callback("\n[5/5] 填充 PPT 模板...")
         
         if template_name is None:
             template_name = '销售分析报告_标准模板.pptx'
@@ -484,15 +518,15 @@ def generate_report(template_name: str = None, output_name: str = None,
         today = datetime.now().strftime('%Y-%m-%d')
         
         # 动态构建文本替换字典（传入 data_loader 以获取实际 KPI 数据）
-        text_replacements = _build_text_replacements_from_config(placeholders, data_loader, insights, today)
-        logger.info(f"      {len(insights)} 条洞察已全部添加到替换列表")
+        text_replacements = _build_text_replacements_from_config(placeholders, data_loader, insights, today, log_callback)
+        log_callback(f"      {len(insights)} 条洞察已全部添加到替换列表")
         
         # 替换文本占位符
         template_engine.replace_text_placeholders(prs, text_replacements)
-        logger.info("      [OK] 文本占位符已替换")
+        log_callback("      [OK] 文本占位符已替换")
         
         # 动态构建图表占位符映射（只循环一次）
-        placeholder_map = _build_chart_placeholder_map_from_config(placeholders, chart_paths)
+        placeholder_map = _build_chart_placeholder_map_from_config(placeholders, chart_paths, log_callback)
         
         replaced_count = 0
         for placeholder, chart_path in placeholder_map.items():
@@ -500,7 +534,7 @@ def generate_report(template_name: str = None, output_name: str = None,
                 if template_engine.replace_with_chart(prs, placeholder, chart_path):
                     replaced_count += 1
         
-        logger.info(f"      [OK] 图表占位符已替换 ({replaced_count} 个图表)")
+        log_callback(f"      [OK] 图表占位符已替换 ({replaced_count} 个图表)")
         
         # ========== 动态处理所有 TABLE 类型变量 ==========
         table_placeholders = placeholders.get('placeholders', {}).get('tables', {})
@@ -540,11 +574,11 @@ def generate_report(template_name: str = None, output_name: str = None,
                                             for j in range(min(cols, len(row))):
                                                 table.cell(i+1, j).text = str(row.iloc[j])
                                         
-                                        logger.info(f"      [OK] 已生成表格 {table_name} (slide {slide_idx+1})")
+                                        log_callback(f"      [OK] 已生成表格 {table_name} (slide {slide_idx+1})")
                                         table_created = True
                                         break
             else:
-                logger.warning(f"      [WARN] 表格数据源不存在：{data_source}")
+                log_callback(f"      [WARN] 表格数据源不存在：{data_source}")
         
         # ========== 处理 IMAGE 类型变量（插入图片） ==========
         image_placeholders = placeholders.get('placeholders', {}).get('images', {})
@@ -578,17 +612,17 @@ def generate_report(template_name: str = None, output_name: str = None,
                                         
                                         # 插入图片
                                         slide.shapes.add_picture(img_path, left, top, width, height)
-                                        logger.info(f"      [OK] 已插入图片 {img_name} (slide {slide_idx+1})")
+                                        log_callback(f"      [OK] 已插入图片 {img_name} (slide {slide_idx+1})")
                                         img_created = True
                                         break
                 else:
-                    logger.warning(f"      [WARN] 图片文件不存在：{img_path}")
+                    log_callback(f"      [WARN] 图片文件不存在：{img_path}")
         
         # ========== 处理 LINK 类型变量（添加超链接） ==========
         link_placeholders = placeholders.get('placeholders', {}).get('links', {})
         
         if link_placeholders:
-            logger.info(f"      检测到 {len(link_placeholders)} 个链接变量")
+            log_callback(f"      检测到 {len(link_placeholders)} 个链接变量")
         
         for link_key, link_config in link_placeholders.items():
             link_name = f'[{link_key}]'
@@ -613,14 +647,14 @@ def generate_report(template_name: str = None, output_name: str = None,
                                         # 添加超链接（需要 python-pptx 支持）
                                         try:
                                             run.hyperlink.address = link_url
-                                            logger.info(f"      [OK] 已添加超链接 {link_name} (slide {slide_idx+1})")
+                                            log_callback(f"      [OK] 已添加超链接 {link_name} (slide {slide_idx+1})")
                                             link_found = True
                                         except Exception as e:
-                                            logger.warning(f"      [WARN] 超链接添加失败：{e}")
+                                            log_callback(f"      [WARN] 超链接添加失败：{e}")
                                             link_found = True
                 
                 if not link_found:
-                    logger.warning(f"      [WARN] 未找到链接占位符 {link_name}，请检查 PPT 模板中是否有该文本")
+                    log_callback(f"      [WARN] 未找到链接占位符 {link_name}，请检查 PPT 模板中是否有该文本")
         
         # 保存输出
         if output_name is None:
@@ -654,12 +688,14 @@ def generate_report(template_name: str = None, output_name: str = None,
         return True
         
     except DataQualityError as e:
-        logger.error(f"数据质量校验失败：{e}")
+        log_callback(f"数据质量校验失败：{e}")
         print(f"\n[ERROR] 数据质量校验失败：{e}")
         return False
         
     except Exception as e:
-        logger.error(f"生成失败：{e}", exc_info=True)
+        log_callback(f"生成失败：{e}")
+        import traceback
+        log_callback(traceback.format_exc())
         print(f"\n[ERROR] 生成失败：{e}")
         return False
 
@@ -680,3 +716,4 @@ if __name__ == "__main__":
         regenerate_placeholders=regenerate
     )
     sys.exit(0 if success else 1)
+
