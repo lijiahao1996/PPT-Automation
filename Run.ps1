@@ -1,4 +1,4 @@
-# Auto Run Script - Enterprise Version
+﻿# Auto Run Script - Enterprise Version
 # Support both EXE bundled and direct PowerShell execution
 # Auto-generate config.ini from template if not exists
 
@@ -67,15 +67,15 @@ if (-not (Test-Path $artifactsDir)) { New-Item -ItemType Directory -Force -Path 
 
 Set-Location $workDir
 
-# Check for raw data file (帆软销售明细.xlsx)
+# Check for raw data file (甯嗚蒋閿€鍞槑缁?xlsx)
 Write-Host "Checking data files..." -ForegroundColor Cyan
 $rawDataFile = Join-Path $outputDir "帆软销售明细.xlsx"
 $skipScrape = $false
 
-# 逻辑：如果文件存在且有效，直接跳过爬取
+# 閫昏緫锛氬鏋滄枃浠跺瓨鍦ㄤ笖鏈夋晥锛岀洿鎺ヨ烦杩囩埇鍙?
 if (Test-Path $rawDataFile) {
     $fileSize = (Get-Item $rawDataFile).Length
-    if ($fileSize -gt 10000) {  # 至少 10KB 才认为是有效文件
+    if ($fileSize -gt 10000) {  # 鑷冲皯 10KB 鎵嶈涓烘槸鏈夋晥鏂囦欢
         Write-Host "[OK] Raw data file exists ($([math]::Round($fileSize/1KB, 1)) KB), skip scraping" -ForegroundColor Green
         Write-Host "      File: $rawDataFile" -ForegroundColor Gray
         $skipScrape = $true
@@ -183,3 +183,5 @@ Write-Host "  Complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 Read-Host "Press Enter to exit"
+
+
