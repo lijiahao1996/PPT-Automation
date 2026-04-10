@@ -97,7 +97,7 @@
         ],
         "baseline": "头部对比",
         "style": "平衡型",
-        "word_count": 150,
+        "word_count": 180,
         "enabled": true,
         "custom_prompt": "重点分析 TOP3 销售员的业绩贡献度和稳定性，指出潜在风险"
       },

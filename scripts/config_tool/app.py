@@ -1230,7 +1230,7 @@ with tab5:
     with col_v2:
         new_var_dims = st.multiselect("分析维度", options=["业绩结构", "增长亮点", "核心短板", "业务风险", "趋势分析", "对比分析", "占比分析", "异常检测", "客户运营", "产品组合", "团队管理", "营销节奏"], default=["业绩结构", "增长亮点", "核心短板", "业务风险"])
         new_var_style = st.selectbox("洞察风格", options=["数据驱动", "问题导向", "建议导向", "平衡型"], index=0)
-        new_var_words = st.number_input("字数要求", min_value=100, max_value=1000, value=300, step=50)
+        new_var_words = st.number_input("字数要求", min_value=50, max_value=500, value=300, step=50)
     
     new_var_prompt = st.text_area("自定义生成提示词 *", placeholder="请输入详细的 AI 生成提示词，包括分析维度、格式要求、输出规范等", height=100, help="必填：AI 生成洞察的提示词")
     
@@ -1288,7 +1288,7 @@ with tab5:
                     edit_desc = st.text_area("变量说明", value=var_desc, key=f"edit_desc_{var_key}")
                     edit_dims = st.multiselect("分析维度", options=["业绩结构", "增长亮点", "核心短板", "业务风险", "趋势分析", "对比分析", "占比分析", "异常检测", "客户运营", "产品组合", "团队管理", "营销节奏"], default=var.get("dimensions", []), key=f"edit_dims_{var_key}")
                     edit_style = st.selectbox("洞察风格", options=["数据驱动", "问题导向", "建议导向", "平衡型"], index=["数据驱动", "问题导向", "建议导向", "平衡型"].index(var.get("style", "平衡型")) if var.get("style") in ["数据驱动", "问题导向", "建议导向", "平衡型"] else 3, key=f"edit_style_{var_key}")
-                    edit_words = st.number_input("字数要求", min_value=100, max_value=1000, value=var.get("word_count", 300), step=50, key=f"edit_words_{var_key}")
+                    edit_words = st.number_input("字数要求", min_value=50, max_value=500, value=var.get("word_count", 300), step=50, key=f"edit_words_{var_key}")
                     edit_prompt = st.text_area("自定义生成提示词", value=var.get("custom_prompt", ""), height=100, key=f"edit_prompt_{var_key}")
                     
                     col_e1, col_e2 = st.columns(2)
