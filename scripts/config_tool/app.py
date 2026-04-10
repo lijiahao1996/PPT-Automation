@@ -1471,7 +1471,43 @@ with tab5:
                             var["name"] = edit_name
                             var["description"] = edit_desc
                             var["dimensions"] = edit_dims
-
+                            var["style"] = edit_style
+                            var["word_count"] = edit_words
+                            var["custom_prompt"] = edit_prompt
+                            
+                            # 保存到文件
+                            with open(placeholders_file, 'w', encoding='utf-8') as f:
+                                json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                            
+                            st.success("✅ 已保存修改")
+                            st.session_state[f"editing_var_{var_key}"] = False
+                            st.rerun()
+                    
+                    with col_e2:
+                        if st.button("❌ 取消编辑", key=f"cancel_edit_{var_key}"):
+                            st.session_state[f"editing_var_{var_key}"] = False
+                            st.rerun()
+                
+                # 删除按钮
+                if st.button("🗑️ 删除", key=f"del_var_{var_key}"):
+                    variables_list = [v for v in variables_list if v.get("key") != var_key]
+                    placeholders_config["special_insights"]["variables"] = variables_list
+                    
+                    with open(placeholders_file, 'w', encoding='utf-8') as f:
+                        json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                    
+                    st.success(f"✅ 已删除：{{{{INSIGHT:{var_key}}}}}")
+                    st.rerun()
+    else:
+        st.info("暂无 AI 综合洞察变量，请添加")
+    
+    st.markdown("---")
+    st.info("""💡 **使用方法**：
+    1. 添加自定义变量（如 conclusion、strategy、summary 等）
+    2. 在 PPT 模板中插入文本框，输入占位符 `{{{{INSIGHT:变量 Key}}}}`
+    3. 运行 `Run.bat` 时 AI 会根据配置的提示词自动生成内容
+    4. 所有修改会自动保存到 `placeholders.json` 和 `skills/data-insight/SKILL.md`
+    """)
 
 # ========== Tab 6: PPT 变量总览 ==========
 with tab6:

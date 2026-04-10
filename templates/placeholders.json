@@ -9,10 +9,9 @@
         "description": "销售员业绩横向条形图",
         "data_source": "销售员业绩",
         "chart_type": "bar_horizontal",
-        "x_field": "总销售额",
-        "y_field": "销售员",
         "title": "销售员业绩表现分析",
-        "slide_index": 3
+        "x_field": "总销售额",
+        "y_field": "销售员"
       },
       "CHART:product_pie": {
         "description": "产品销售占比环形图",
