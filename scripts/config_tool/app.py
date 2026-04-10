@@ -78,12 +78,23 @@ with tab1:
     # 加载现有配置到 session_state
     stats_rules_file = os.path.join(templates_dir, "stats_rules.json")
     
-    # 初始化 session_state
-    if 'stats_config' not in st.session_state:
+    # 初始化 session_state（每次刷新页面时检查文件是否更新）
+    if 'stats_config' not in st.session_state or 'stats_config_file' not in st.session_state or st.session_state.stats_config_file != stats_rules_file:
         if os.path.exists(stats_rules_file):
-            with open(stats_rules_file, 'r', encoding='utf-8') as f:
-                st.session_state.stats_config = json.load(f)
-            st.success("✅ 已加载现有配置")
+            try:
+                with open(stats_rules_file, 'r', encoding='utf-8') as f:
+                    st.session_state.stats_config = json.load(f)
+                st.session_state.stats_config_file = stats_rules_file
+                st.success("✅ 已加载现有配置")
+            except Exception as e:
+                st.error(f"❌ 加载配置失败：{e}")
+                st.session_state.stats_config = {
+                    "version": "1.0",
+                    "stats_sheets": {},
+                    "global_settings": {
+                        "date_range_auto_detect": True
+                    }
+                }
         else:
             st.session_state.stats_config = {
                 "version": "1.0",
@@ -92,6 +103,7 @@ with tab1:
                     "date_range_auto_detect": True
                 }
             }
+            st.session_state.stats_config_file = stats_rules_file
             st.info("📝 创建新配置")
     
     stats_config = st.session_state.stats_config
@@ -288,12 +300,8 @@ with tab1:
         except Exception as e:
             st.error(f"❌ 生成失败：{e}\n\n💡 请检查数据文件格式是否正确")
             import traceback
-            st.code(traceback.format_exc())
-            except Exception as e:
-                st.error(f"❌ 执行失败：{e}")
-                import traceback
-                with st.expander("📄 查看详细错误"):
-                    st.code(traceback.format_exc())
+            with st.expander("📄 查看详细错误"):
+                st.code(traceback.format_exc())
     
     # 显示现有规则
     st.markdown("---")
