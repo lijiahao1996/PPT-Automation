@@ -239,40 +239,56 @@ with tab1:
     st.markdown("---")
     st.subheader("💾 操作")
     
-    if st.button("🔄 保存配置并生成数据", type="primary", use_container_width=True, help="保存配置后立即执行统计引擎，生成 Excel Sheet"):
-            try:
-                # 1. 保存配置
-                with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                    json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
-                st.info("📝 配置已保存")
+    if st.button("🔄 保存配置并生成数据", type="primary", use_container_width=True, help="保存配置后立即执行统计引擎，生成销售统计汇总.xlsx"):
+        try:
+            # 1. 保存配置
+            with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
+            st.success("📝 配置已保存")
+            
+            # 2. 检查原始数据文件
+            raw_data_file = os.path.join(output_dir, "帆软销售明细.xlsx")
+            if not os.path.exists(raw_data_file):
+                st.error(f"❌ 数据文件不存在：{raw_data_file}\n\n💡 请先上传 Excel 文件或运行 `Run.bat` 爬取数据")
+                st.stop()
+            
+            # 3. 执行统计引擎生成数据
+            with st.spinner("⚙️ 正在执行统计引擎，生成销售统计汇总.xlsx..."):
+                # 导入统计引擎
+                sys.path.insert(0, os.path.join(base_dir, 'scripts'))
+                from core.stats_engine import StatsEngine
+                import pandas as pd
                 
-                # 2. 执行统计引擎生成数据
-                with st.spinner("⚙️ 正在执行统计引擎，生成 Excel Sheet..."):
-                    # 导入统计引擎
-                    sys.path.insert(0, os.path.join(base_dir, 'scripts'))
-                    from core.stats_engine import StatsEngine
-                    from core.data_loader import DataLoader
-                    
-                    # 加载原始数据
-                    data_loader = DataLoader(base_dir)
-                    raw_df = data_loader.load_raw_data('帆软销售明细.xlsx')
-                    
-                    # 执行统计引擎
-                    stats_engine = StatsEngine(base_dir=base_dir)
-                    output_path = os.path.join(output_dir, '销售统计汇总.xlsx')
-                    results = stats_engine.run_all(raw_df, output_path=output_path)
-                    
-                    st.success(f"✅ 已生成 {len(results)} 个统计 Sheet！")
-                    
-                    # 显示生成的 Sheet 列表
-                    with st.expander("📊 查看生成的 Sheet", expanded=True):
-                        for sheet_name, df in results.items():
-                            st.write(f"**{sheet_name}**: {len(df)} 行")
+                # 加载原始数据
+                raw_df = pd.read_excel(raw_data_file)
+                st.info(f"📊 已加载原始数据：{len(raw_df)} 行 × {len(raw_df.columns)} 列")
                 
-                st.success("🎉 配置保存并数据生成完成！现在可以去「📈 图表配置」页签配置图表了")
+                # 执行统计引擎
+                stats_engine = StatsEngine(base_dir=base_dir)
+                output_path = os.path.join(output_dir, '销售统计汇总.xlsx')
+                results = stats_engine.run_all(raw_df, output_path=output_path)
                 
-            except FileNotFoundError as e:
-                st.error(f"❌ 数据文件不存在：{e}\n\n💡 请先确保 output 目录中有 `帆软销售明细.xlsx` 文件")
+                st.success(f"✅ 已生成 {len(results)} 个统计 Sheet！")
+                
+                # 显示生成的 Sheet 列表
+                with st.expander("📊 查看生成的 Sheet", expanded=True):
+                    for sheet_name, df in results.items():
+                        st.write(f"**{sheet_name}**: {len(df)} 行")
+                        with st.expander(f"预览：{sheet_name}"):
+                            st.dataframe(df.head(), use_container_width=True)
+                
+                # 显示文件信息
+                file_size = os.path.getsize(output_path)
+                st.info(f"""📁 **保存位置**：\n`{output_path}`\n**文件大小**：{round(file_size/1024, 1)} KB""")
+            
+            st.success("🎉 配置保存并数据生成完成！现在可以去「📈 图表配置」页签配置图表了")
+            
+        except FileNotFoundError as e:
+            st.error(f"❌ 数据文件不存在：{e}\n\n💡 请先上传 Excel 文件或运行 `Run.bat` 爬取数据")
+        except Exception as e:
+            st.error(f"❌ 生成失败：{e}\n\n💡 请检查数据文件格式是否正确")
+            import traceback
+            st.code(traceback.format_exc())
             except Exception as e:
                 st.error(f"❌ 执行失败：{e}")
                 import traceback
