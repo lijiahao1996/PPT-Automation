@@ -158,27 +158,30 @@ def scrape():
             # 保存 Excel（带表头）
             os.makedirs(OUTPUT_DIR, exist_ok=True)
             
+            # 确定输出文件路径
+            output_path = OUTPUT_FILE
+            
             # 检查文件是否被占用
-            if os.path.exists(OUTPUT_FILE):
+            if os.path.exists(output_path):
                 try:
                     # 尝试删除旧文件
-                    os.remove(OUTPUT_FILE)
-                    print(f"      [INFO] 已删除旧文件：{OUTPUT_FILE}")
+                    os.remove(output_path)
+                    print(f"      [INFO] 已删除旧文件：{output_path}")
                 except PermissionError:
-                    print(f"      [WARN] 文件被占用，无法删除：{OUTPUT_FILE}")
+                    print(f"      [WARN] 文件被占用，无法删除：{output_path}")
                     print(f"      [INFO] 将保存为新文件名...")
                     import time
                     timestamp = int(time.time())
-                    OUTPUT_FILE = os.path.join(OUTPUT_DIR, f"帆软销售明细_{timestamp}.xlsx")
+                    output_path = os.path.join(OUTPUT_DIR, f"帆软销售明细_{timestamp}.xlsx")
             
             if field_names:
                 df = pd.DataFrame(final_rows, columns=field_names)
-                df.to_excel(OUTPUT_FILE, index=False, header=True)  # 保留表头
+                df.to_excel(output_path, index=False, header=True)  # 保留表头
             else:
                 df = pd.DataFrame(final_rows)
-                df.to_excel(OUTPUT_FILE, index=False, header=False)
+                df.to_excel(output_path, index=False, header=False)
             
-            print(f"      [OK] 保存成功：{OUTPUT_FILE}")
+            print(f"      [OK] 保存成功：{output_path}")
             print(f"      [OK] 共 {len(final_rows)} 行")
             
             # 预览

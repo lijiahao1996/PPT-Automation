@@ -72,25 +72,16 @@ Write-Host "Checking data files..." -ForegroundColor Cyan
 $rawDataFile = Join-Path $outputDir "帆软销售明细.xlsx"
 $skipScrape = $false
 
-# 检查文件是否存在且有效
+# 逻辑：如果文件存在且有效，直接跳过爬取
 if (Test-Path $rawDataFile) {
-    try {
-        # 尝试打开文件检查是否被占用
-        $testStream = [System.IO.File]::Open($rawDataFile, 'Open', 'Read', 'ReadWrite')
-        $testStream.Close()
-        
-        $fileSize = (Get-Item $rawDataFile).Length
-        if ($fileSize -gt 10000) {  # 至少 10KB 才认为是有效文件
-            Write-Host "[OK] Raw data file exists ($([math]::Round($fileSize/1KB, 1)) KB), skip scraping" -ForegroundColor Green
-            $skipScrape = $true
-        } else {
-            Write-Host "[WARN] Raw data file is empty/small ($fileSize bytes), will re-scrape..." -ForegroundColor Yellow
-            $skipScrape = $false
-        }
-    } catch {
-        Write-Host "[WARN] Raw data file is in use by another program, skip scraping" -ForegroundColor Yellow
-        Write-Host "      Please close Excel/WPS and try again if you want to re-scrape" -ForegroundColor Gray
+    $fileSize = (Get-Item $rawDataFile).Length
+    if ($fileSize -gt 10000) {  # 至少 10KB 才认为是有效文件
+        Write-Host "[OK] Raw data file exists ($([math]::Round($fileSize/1KB, 1)) KB), skip scraping" -ForegroundColor Green
+        Write-Host "      File: $rawDataFile" -ForegroundColor Gray
         $skipScrape = $true
+    } else {
+        Write-Host "[WARN] Raw data file is empty/small ($fileSize bytes), will re-scrape..." -ForegroundColor Yellow
+        $skipScrape = $false
     }
 } else {
     Write-Host "[INFO] Raw data file not found, starting scrape..." -ForegroundColor Yellow
