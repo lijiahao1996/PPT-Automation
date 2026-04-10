@@ -1246,7 +1246,8 @@ with tab4:
 # ========== Tab 5: 结论 & 策略 ==========
 with tab5:
     st.header("🎯 结论 & 策略配置")
-    st.markdown("自定义 AI 生成的核心结论和落地策略（支持自定义 Skill 和变量）")
+    st.markdown("自定义 AI 生成的洞察变量（支持自定义添加，不写死）")
+    st.caption("💡 可以添加任意数量的自定义洞察变量，每个变量对应一个 Skill 生成规则")
     
     # 加载配置
     if os.path.exists(placeholders_file):
@@ -1257,166 +1258,93 @@ with tab5:
     
     # 初始化 special_insights
     if "special_insights" not in placeholders_config:
-        placeholders_config["special_insights"] = {
-            "conclusion": {
-                "description": "AI 自动生成核心结论",
-                "dimensions": ["业绩结构", "增长亮点", "核心短板", "业务风险"],
-                "style": "数据驱动",
-                "word_count": 300,
-                "custom_prompt": ""
-            },
-            "strategy": {
-                "description": "AI 自动生成落地策略",
-                "dimensions": ["客户运营策略", "产品组合策略", "团队管理策略", "营销节奏策略"],
-                "style": "建议导向",
-                "word_count": 400,
-                "custom_prompt": ""
-            }
-        }
+        placeholders_config["special_insights"] = {"variables": []}
     
-    st.subheader("📝 核心结论配置")
-    st.caption("💡 修改后自动保存")
+    # 获取已有变量列表
+    if "variables" not in placeholders_config["special_insights"]:
+        placeholders_config["special_insights"]["variables"] = []
     
-    conclusion_cfg = placeholders_config["special_insights"].get("conclusion", {})
+    variables_list = placeholders_config["special_insights"]["variables"]
     
-    col1, col2 = st.columns(2)
+    st.subheader("📝 添加自定义洞察变量")
+    st.caption("💡 例如：conclusion（核心结论）、strategy（落地策略）、summary（总结）等")
     
-    with col1:
-        conclusion_desc = st.text_area(
-            "结论说明",
-            value=conclusion_cfg.get("description", "AI 自动生成核心结论"),
-            height=60,
-            key="conclusion_desc",
-            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
-        )
-        
-        conclusion_dimensions = st.multiselect(
-            "分析维度（可选 4 条）",
-            options=["业绩结构", "增长亮点", "核心短板", "业务风险", "趋势分析", "对比分析", "占比分析", "异常检测"],
-            default=conclusion_cfg.get("dimensions", ["业绩结构", "增长亮点", "核心短板", "业务风险"]),
-            key="conclusion_dims",
-            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
-        )
+    col_v1, col_v2, col_v3 = st.columns(3)
     
-    with col2:
-        conclusion_style = st.selectbox(
-            "洞察风格",
-            options=["数据驱动", "问题导向", "建议导向", "平衡型"],
-            index=["数据驱动", "问题导向", "建议导向", "平衡型"].index(conclusion_cfg.get("style", "数据驱动")) if conclusion_cfg.get("style") in ["数据驱动", "问题导向", "建议导向", "平衡型"] else 3,
-            key="conclusion_style",
-            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
-        )
-        
-        conclusion_words = st.slider(
-            "字数要求",
-            min_value=100,
-            max_value=500,
-            value=conclusion_cfg.get("word_count", 300),
-            step=50,
-            key="conclusion_words",
-            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
-        )
+    with col_v1:
+        new_var_key = st.text_input("变量 Key *", placeholder="例如：conclusion", help="必填：用于占位符 {{INSIGHT:xxx}}")
+        new_var_name = st.text_input("变量名称", placeholder="例如：核心结论", help="显示名称")
     
-    conclusion_prompt = st.text_area(
-        "自定义生成提示词（可选，留空使用默认）",
-        value=conclusion_cfg.get("custom_prompt", ""),
-        height=150,
-        placeholder="请输入结论生成的详细提示词，包括分析维度、格式要求等。留空则使用默认提示词。",
-        key="conclusion_prompt",
-        on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
-    )
+    with col_v2:
+        new_var_desc = st.text_area("变量说明", placeholder="例如：AI 自动生成 4 条核心结论", height=60)
+        new_var_style = st.selectbox("洞察风格", options=["数据驱动", "问题导向", "建议导向", "平衡型"], index=0)
+    
+    with col_v3:
+        new_var_dims = st.multiselect("分析维度", options=["业绩结构", "增长亮点", "核心短板", "业务风险", "趋势分析", "对比分析", "占比分析", "异常检测", "客户运营", "产品组合", "团队管理", "营销节奏"], default=["业绩结构", "增长亮点", "核心短板", "业务风险"])
+        new_var_words = st.number_input("字数要求", min_value=100, max_value=1000, value=300, step=50)
+    
+    new_var_prompt = st.text_area("自定义生成提示词 *", placeholder="请输入详细的 AI 生成提示词，包括分析维度、格式要求、输出规范等", height=100, help="必填：AI 生成洞察的提示词")
+    
+    if st.button("➕ 添加自定义变量", key="add_custom_var_btn"):
+        if not new_var_key:
+            st.error("❌ 请填写变量 Key")
+        elif not new_var_prompt.strip():
+            st.error("❌ 请填写自定义生成提示词")
+        else:
+            # 检查是否已存在
+            exists = any(v.get("key") == new_var_key for v in variables_list)
+            if exists:
+                st.warning(f"⚠️ 变量 Key 已存在：{new_var_key}")
+            else:
+                new_var = {
+                    "key": new_var_key,
+                    "name": new_var_name or new_var_key,
+                    "description": new_var_desc or f"AI 自动生成{new_var_name or new_var_key}",
+                    "dimensions": new_var_dims,
+                    "style": new_var_style,
+                    "word_count": new_var_words,
+                    "custom_prompt": new_var_prompt
+                }
+                
+                variables_list.append(new_var)
+                placeholders_config["special_insights"]["variables"] = variables_list
+                
+                with open(placeholders_file, 'w', encoding='utf-8') as f:
+                    json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                
+                st.success(f"✅ 已添加自定义变量：{{{{INSIGHT:{new_var_key}}}}}")
+                st.rerun()
     
     st.markdown("---")
-    st.subheader("📝 落地策略配置")
-    st.caption("💡 修改后自动保存")
+    st.subheader("📋 已配置的洞察变量")
     
-    strategy_cfg = placeholders_config["special_insights"].get("strategy", {})
-    
-    col3, col4 = st.columns(2)
-    
-    with col3:
-        strategy_desc = st.text_area(
-            "策略说明",
-            value=strategy_cfg.get("description", "AI 自动生成落地策略"),
-            height=60,
-            key="strategy_desc",
-            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
-        )
-        
-        strategy_dimensions = st.multiselect(
-            "策略维度（可选 4 条）",
-            options=["客户运营策略", "产品组合策略", "团队管理策略", "营销节奏策略", "渠道拓展", "数字化转型", "供应链优化", "风控体系"],
-            default=strategy_cfg.get("dimensions", ["客户运营策略", "产品组合策略", "团队管理策略", "营销节奏策略"]),
-            key="strategy_dims",
-            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
-        )
-    
-    with col4:
-        strategy_style = st.selectbox(
-            "洞察风格",
-            options=["数据驱动", "问题导向", "建议导向", "平衡型"],
-            index=["数据驱动", "问题导向", "建议导向", "平衡型"].index(strategy_cfg.get("style", "建议导向")) if strategy_cfg.get("style") in ["数据驱动", "问题导向", "建议导向", "平衡型"] else 2,
-            key="strategy_style",
-            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
-        )
-        
-        strategy_words = st.slider(
-            "字数要求",
-            min_value=200,
-            max_value=600,
-            value=strategy_cfg.get("word_count", 400),
-            step=50,
-            key="strategy_words",
-            on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
-        )
-    
-    strategy_prompt = st.text_area(
-        "自定义生成提示词（可选，留空使用默认）",
-        value=strategy_cfg.get("custom_prompt", ""),
-        height=150,
-        placeholder="请输入策略生成的详细提示词，包括策略维度、可执行性要求等。留空则使用默认提示词。",
-        key="strategy_prompt",
-        on_change=lambda: save_conclusion_strategy(placeholders_file, placeholders_config)
-    )
-    
-    st.markdown("---")
-    st.subheader("🔖 结论策略变量")
-    st.info("""
-    **结论变量**：`{{INSIGHT:conclusion}}`
-    
-    **策略变量**：`{{INSIGHT:strategy}}`
-    
-    💡 **提示**：
-    - 在 PPT 模板中插入文本框，输入上述占位符
-    - 运行 `Run.bat` 时 AI 会根据配置自动生成内容
-    - 所有修改会自动保存到 `placeholders.json` 和 `skills/data-insight/SKILL.md`
-    """)
-    
-    # 实时保存函数
-    def save_conclusion_strategy(p_file, p_config):
-        """实时保存结论策略配置"""
-        p_config["special_insights"] = {
-            "conclusion": {
-                "description": st.session_state.get("conclusion_desc", "AI 自动生成核心结论"),
-                "dimensions": st.session_state.get("conclusion_dims", ["业绩结构", "增长亮点", "核心短板", "业务风险"]),
-                "style": st.session_state.get("conclusion_style", "数据驱动"),
-                "word_count": st.session_state.get("conclusion_words", 300),
-                "custom_prompt": st.session_state.get("conclusion_prompt", "")
-            },
-            "strategy": {
-                "description": st.session_state.get("strategy_desc", "AI 自动生成落地策略"),
-                "dimensions": st.session_state.get("strategy_dims", ["客户运营策略", "产品组合策略", "团队管理策略", "营销节奏策略"]),
-                "style": st.session_state.get("strategy_style", "建议导向"),
-                "word_count": st.session_state.get("strategy_words", 400),
-                "custom_prompt": st.session_state.get("strategy_prompt", "")
-            }
-        }
-        
-        try:
-            with open(p_file, 'w', encoding='utf-8') as f:
-                json.dump(p_config, f, ensure_ascii=False, indent=2)
-            st.toast("🎯 结论策略配置已自动保存", icon="✅")
-        except Exception as e:
-            st.toast(f"保存失败：{e}", icon="❌")
-
-
+    if variables_list:
+        for i, var in enumerate(variables_list):
+            var_key = var.get("key", f"var_{i}")
+            var_name = var.get("name", var_key)
+            var_desc = var.get("description", "")
+            
+            with st.expander(f"📊 {{INSIGHT:{var_key}}} - {var_name}", expanded=False):
+                st.json(var)
+                
+                # 编辑功能
+                edit_key = f"edit_var_{var_key}"
+                if st.button("✏️ 编辑", key=edit_key):
+                    st.session_state[f"editing_var_{var_key}"] = True
+                
+                if st.session_state.get(f"editing_var_{var_key}", False):
+                    st.markdown("#### 编辑变量")
+                    
+                    edit_name = st.text_input("变量名称", value=var_name, key=f"edit_name_{var_key}")
+                    edit_desc = st.text_area("变量说明", value=var_desc, key=f"edit_desc_{var_key}")
+                    edit_dims = st.multiselect("分析维度", options=["业绩结构", "增长亮点", "核心短板", "业务风险", "趋势分析", "对比分析", "占比分析", "异常检测", "客户运营", "产品组合", "团队管理", "营销节奏"], default=var.get("dimensions", []), key=f"edit_dims_{var_key}")
+                    edit_style = st.selectbox("洞察风格", options=["数据驱动", "问题导向", "建议导向", "平衡型"], index=["数据驱动", "问题导向", "建议导向", "平衡型"].index(var.get("style", "平衡型")) if var.get("style") in ["数据驱动", "问题导向", "建议导向", "平衡型"] else 3, key=f"edit_style_{var_key}")
+                    edit_words = st.number_input("字数要求", min_value=100, max_value=1000, value=var.get("word_count", 300), step=50, key=f"edit_words_{var_key}")
+                    edit_prompt = st.text_area("自定义生成提示词", value=var.get("custom_prompt", ""), height=100, key=f"edit_prompt_{var_key}")
+                    
+                    col_e1, col_e2 = st.columns(2)
+                    with col_e1:
+                        if st.button("💾 保存修改", key=f"save_edit_{var_key}"):
+                            var["name"] = edit_name
+                            var["description"] = edit_desc
+                            var["dimensions"] = edit_dims
