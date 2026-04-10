@@ -33,12 +33,35 @@ class DataLoader:
         
         return df
     
-    def load_summary(self, filename: str = '销售统计汇总.xlsx') -> Dict[str, pd.DataFrame]:
+    def load_summary(self, filename: str = None) -> Dict[str, pd.DataFrame]:
         """加载统计汇总表（所有 Sheet）"""
+        # 如果没有指定文件名，自动查找 output 目录中的统计汇总文件
+        if filename is None:
+            # 查找包含"统计汇总"的 xlsx 文件
+            for f in os.listdir(self.output_dir):
+                if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
+                    filename = f
+                    break
+            
+            # 如果还没找到，使用默认值
+            if filename is None:
+                filename = '销售统计汇总.xlsx'
+        
         filepath = os.path.join(self.output_dir, filename)
         
         if not os.path.exists(filepath):
-            raise FileNotFoundError(f"统计汇总文件不存在：{filepath}")
+            # 尝试自动查找最近的 xlsx 文件
+            xlsx_files = [f for f in os.listdir(self.output_dir) if f.endswith('.xlsx') and not f.startswith('~')]
+            if xlsx_files:
+                # 使用最新的 xlsx 文件（排除统计汇总文件）
+                for f in sorted(xlsx_files, reverse=True):
+                    if '统计汇总' not in f:
+                        filepath = os.path.join(self.output_dir, f)
+                        logger.info(f"自动使用文件：{filepath}")
+                        break
+            
+            if not os.path.exists(filepath):
+                raise FileNotFoundError(f"统计汇总文件不存在：{filepath}")
         
         logger.info(f"加载统计汇总：{filepath}")
         

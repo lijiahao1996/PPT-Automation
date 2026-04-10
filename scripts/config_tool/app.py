@@ -62,7 +62,7 @@ with st.sidebar:
     templates_dir = os.path.join(base_dir, "templates")
     output_dir = os.path.join(base_dir, "output")
     
-    # 从 config.ini 读取文件名配置
+    # 从 config.ini 读取默认文件名（仅作为初始值）
     config_file = os.path.join(base_dir, "config.ini")
     if os.path.exists(config_file):
         import configparser
@@ -72,14 +72,11 @@ with st.sidebar:
     else:
         raw_data_file_name = '帆软销售明细.xlsx'
     
+    # 初始化 raw_data_file（上传后会更新）
     raw_data_file = os.path.join(output_dir, raw_data_file_name)
     
-    # 统计汇总文件名：基于原始数据文件名 + _统计汇总
-    if raw_data_file_name.endswith('.xlsx'):
-        summary_file_name = raw_data_file_name.replace('.xlsx', '_统计汇总.xlsx')
-    else:
-        summary_file_name = raw_data_file_name + '_统计汇总.xlsx'
-    
+    # 初始化 summary_file（上传后会更新）
+    summary_file_name = raw_data_file_name.replace('.xlsx', '_统计汇总.xlsx') if raw_data_file_name.endswith('.xlsx') else raw_data_file_name + '_统计汇总.xlsx'
     summary_file = os.path.join(output_dir, summary_file_name)
     
     st.success(f"✅ 项目路径：{base_dir}")
@@ -156,15 +153,26 @@ with tab1:
     uploaded_file = st.file_uploader(
         "上传 Excel 文件",
         type=["xlsx", "xls"],
-        help=f"上传帆软销售明细数据，文件名会自动保存为：output/{raw_data_file_name}"
+        help="上传帆软销售明细数据，保持原始文件名"
     )
     
     if uploaded_file is not None:
         # 确保 output 目录存在
         os.makedirs(output_dir, exist_ok=True)
         
-        # 保存文件
-        output_file = raw_data_file
+        # 使用上传文件的原始文件名
+        uploaded_file_name = uploaded_file.name
+        output_file = os.path.join(output_dir, uploaded_file_name)
+        
+        # 更新 raw_data_file 和 summary_file 变量
+        raw_data_file = output_file
+        
+        # 统计汇总文件名：基于上传的文件名 + _统计汇总
+        if uploaded_file_name.endswith('.xlsx'):
+            summary_file_name = uploaded_file_name.replace('.xlsx', '_统计汇总.xlsx')
+        else:
+            summary_file_name = uploaded_file_name + '_统计汇总.xlsx'
+        summary_file = os.path.join(output_dir, summary_file_name)
         
         try:
             # 如果文件已存在，先删除
@@ -291,15 +299,14 @@ with tab1:
                 # 加载原始数据
                 raw_df = pd.read_excel(raw_data_file)
                 
-                # 执行统计引擎
-                stats_engine = StatsEngine(base_dir=base_dir)
-                output_path = summary_file
-                results = stats_engine.run_all(raw_df, output_path=output_path)
+                # 执行统计引擎（传入 raw_data_file，让它知道原始文件名）
+                stats_engine = StatsEngine(base_dir=base_dir, raw_data_file=raw_data_file)
+                results = stats_engine.run_all(raw_df, output_path=summary_file)
                 
                 # 验证文件已生成
-                if os.path.exists(output_path):
-                    file_size = os.path.getsize(output_path)
-                    st.success(f"✅ 已生成：`{output_path}` ({round(file_size/1024, 1)} KB, {len(results)} 个 Sheet)")
+                if os.path.exists(summary_file):
+                    file_size = os.path.getsize(summary_file)
+                    st.success(f"✅ 已生成：`{summary_file}` ({round(file_size/1024, 1)} KB, {len(results)} 个 Sheet)")
                     
                     # 显示生成的 Sheet 列表
                     with st.expander("📊 查看生成的 Sheet", expanded=True):
@@ -308,7 +315,7 @@ with tab1:
                     
                     st.success("🎉 完成！现在可以去「📈 图表配置」页签配置图表了")
                 else:
-                    st.error(f"❌ 生成失败：{output_path}")
+                    st.error(f"❌ 生成失败：{summary_file}")
                     
             except FileNotFoundError as e:
                 st.error(f"❌ 数据文件不存在：{e}\n\n💡 请先上传 Excel 文件或运行 `Run.bat` 爬取数据")

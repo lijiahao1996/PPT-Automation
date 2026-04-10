@@ -110,44 +110,13 @@ function Test-SessionValid {
     }
 }
 
-# Login & Scrape
-if (-not $skipScrape) {
-    $needLogin = -not (Test-SessionValid -SessionFile $sessionFile -MaxAgeDays $sessionMaxAge)
-    if ($needLogin) {
-        Write-Host "`nStep 1: Login to FanRuan..." -ForegroundColor Cyan
-        $loginScript = Join-Path $fanruanDir "fanruan_login.py"
-        if (Test-Path $loginScript) {
-            python $loginScript
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "`n[ERROR] Login failed!" -ForegroundColor Red
-                Read-Host "Press Enter to exit"
-                exit 1
-            }
-        } else {
-            Write-Host "[ERROR] Login script not found: $loginScript" -ForegroundColor Red
-            Read-Host "Press Enter to exit"
-            exit 1
-        }
-    }
-    
-    Write-Host "`nStep 2: Scrape data from FanRuan..." -ForegroundColor Cyan
-    $scrapeScript = Join-Path $fanruanDir "fanruan_scrape.py"
-    if (Test-Path $scrapeScript) {
-        python $scrapeScript
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "`n[ERROR] Scrape failed!" -ForegroundColor Red
-            Read-Host "Press Enter to exit"
-            exit 1
-        }
-    } else {
-        Write-Host "[ERROR] Scrape script not found: $scrapeScript" -ForegroundColor Red
-        Read-Host "Press Enter to exit"
-        exit 1
-    }
-}
+# 不再爬取数据，直接使用已上传的文件
+Write-Host "`n[INFO] Skip scraping, use uploaded data file" -ForegroundColor Cyan
+Write-Host "  Raw data: $rawDataFile" -ForegroundColor Gray
+Write-Host "  Summary: $summaryFile" -ForegroundColor Gray
 
 # Analyze Data
-Write-Host "`nStep 3: Analyze Data (with validation)..." -ForegroundColor Cyan
+Write-Host "`nStep 1: Analyze Data (with validation)..." -ForegroundColor Cyan
 $analyzeScript = Join-Path $fanruanDir "fanruan_analyze.py"
 if (Test-Path $analyzeScript) {
     python $analyzeScript
@@ -163,7 +132,7 @@ if (Test-Path $analyzeScript) {
 }
 
 # Generate Report
-Write-Host "`nStep 4: Generate Report (Template + Charts + AI)..." -ForegroundColor Cyan
+Write-Host "`nStep 2: Generate Report (Template + Charts + AI)..." -ForegroundColor Cyan
 $reportScript = Join-Path $scriptsDir "generate_report.py"
 if (Test-Path $reportScript) {
     python $reportScript
@@ -183,6 +152,7 @@ Write-Host "  Complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 Read-Host "Press Enter to exit"
+
 
 
 

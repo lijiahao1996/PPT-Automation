@@ -17,13 +17,14 @@ logger = logging.getLogger(__name__)
 class StatsEngine:
     """配置化统计引擎"""
     
-    def __init__(self, config_path: str = None, base_dir: str = None):
+    def __init__(self, config_path: str = None, base_dir: str = None, raw_data_file: str = None):
         """
         初始化统计引擎
         
         Args:
             config_path: 配置文件路径
             base_dir: 基础目录（项目根目录）
+            raw_data_file: 原始数据文件路径（可选，用于动态生成汇总文件名）
         """
         # 支持 EXE 打包：优先使用 EXE_WORK_DIR 环境变量
         self.base_dir = os.environ.get('EXE_WORK_DIR') or base_dir or os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -35,7 +36,21 @@ class StatsEngine:
         self.config = self._load_config(config_path)
         self.global_settings = self.config.get('global_settings', {})
         
-        logger.info(f"统计引擎已初始化，配置：{config_path}")
+        # 如果提供了 raw_data_file，使用它来生成 summary_file 名
+        if raw_data_file:
+            self.raw_data_file_name = os.path.basename(raw_data_file)
+        else:
+            # 从 config.ini 读取
+            import configparser
+            cfg = configparser.ConfigParser()
+            cfg_path = os.path.join(self.base_dir, 'config.ini')
+            if os.path.exists(cfg_path):
+                cfg.read(cfg_path, encoding='utf-8')
+                self.raw_data_file_name = cfg.get('paths', 'raw_data_file', fallback='帆软销售明细.xlsx')
+            else:
+                self.raw_data_file_name = '帆软销售明细.xlsx'
+        
+        logger.info(f"统计引擎已初始化，原始数据文件：{self.raw_data_file_name}")
     
     def _load_config(self, config_path: str) -> Dict:
         """加载配置文件"""
@@ -351,8 +366,17 @@ class StatsEngine:
         else:
             return series.agg(agg)
     
-    def _save_to_excel(self, results: Dict[str, pd.DataFrame], output_path: str):
+    def _save_to_excel(self, results: Dict[str, pd.DataFrame], output_path: str = None):
         """保存结果到 Excel"""
+        # 如果没有指定 output_path，基于 raw_data_file_name 生成
+        if output_path is None:
+            output_dir = os.path.join(self.base_dir, 'output')
+            if self.raw_data_file_name.endswith('.xlsx'):
+                summary_name = self.raw_data_file_name.replace('.xlsx', '_统计汇总.xlsx')
+            else:
+                summary_name = self.raw_data_file_name + '_统计汇总.xlsx'
+            output_path = os.path.join(output_dir, summary_name)
+        
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         
         # 使用默认引擎（避免 openpyxl 3.1.5 兼容性问题）

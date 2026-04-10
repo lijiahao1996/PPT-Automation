@@ -365,8 +365,17 @@ def generate_report(template_name: str = None, output_name: str = None,
         # ========== 1. 加载数据 ==========
         logger.info("\n[1/5] 加载销售统计数据...")
         data_loader = DataLoader(BASE_DIR)
-        data_summary = data_loader.load_summary()
-        logger.info(f"      已加载 {len(data_summary)} 个统计表")
+        
+        # 自动查找统计汇总文件
+        summary_file = None
+        output_dir = os.path.join(BASE_DIR, 'output')
+        for f in os.listdir(output_dir):
+            if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
+                summary_file = f
+                break
+        
+        data_summary = data_loader.load_summary(filename=summary_file)
+        logger.info(f"      已加载 {len(data_summary)} 个统计表（文件：{summary_file}）")
         
         validator = PresetValidators.summary_data_validator(data_summary)
         logger.info("      [OK] 数据校验通过")
@@ -616,15 +625,18 @@ def generate_report(template_name: str = None, output_name: str = None,
         # 保存输出
         if output_name is None:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            # 基于原始数据文件名生成 PPT 报告名
-            import configparser
-            cfg = configparser.ConfigParser()
-            cfg.read(os.path.join(BASE_DIR, 'config.ini'), encoding='utf-8')
-            raw_data_file_name = cfg.get('paths', 'raw_data_file', fallback='帆软销售明细.xlsx')
-            raw_data_file = os.path.join(BASE_DIR, 'output', raw_data_file_name)
-            if os.path.exists(raw_data_file):
-                # 提取文件名（不含扩展名）
-                base_name = os.path.splitext(os.path.basename(raw_data_file))[0]
+            # 基于统计汇总文件名生成 PPT 报告名
+            summary_file_name = None
+            output_dir = os.path.join(BASE_DIR, 'output')
+            for f in os.listdir(output_dir):
+                if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
+                    summary_file_name = f
+                    break
+            
+            if summary_file_name:
+                # 从统计汇总文件名提取原始数据文件名
+                # 例如：要测试的数据_统计汇总.xlsx → 要测试的数据
+                base_name = summary_file_name.replace('_统计汇总.xlsx', '')
                 output_name = f'{base_name}_报告_{timestamp}_v1.pptx'
             else:
                 output_name = f'销售分析报告_{timestamp}_v1.pptx'

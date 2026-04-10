@@ -32,8 +32,19 @@ OUTPUT_DIR = config.get('paths', 'output_dir', fallback=os.path.join(WORK_DIR, "
 ARTIFACTS_DIR = config.get('paths', 'artifacts_dir', fallback=os.path.join(WORK_DIR, "artifacts"))
 LOGS_DIR = config.get('paths', 'logs_dir', fallback=os.path.join(WORK_DIR, "logs"))
 
-# 从 config.ini 读取文件名配置
-RAW_DATA_FILE_NAME = config.get('paths', 'raw_data_file', fallback='帆软销售明细.xlsx')
+# 自动检测 output 目录中的原始数据文件
+# 优先使用 config.ini 配置，如果没有则查找第一个 xlsx 文件
+RAW_DATA_FILE_NAME = config.get('paths', 'raw_data_file', fallback='')
+
+if not RAW_DATA_FILE_NAME or not os.path.exists(os.path.join(OUTPUT_DIR, RAW_DATA_FILE_NAME)):
+    # 自动查找 output 目录中的第一个 xlsx 文件（排除统计汇总文件）
+    for f in os.listdir(OUTPUT_DIR):
+        if f.endswith('.xlsx') and '统计汇总' not in f and not f.startswith('~'):
+            RAW_DATA_FILE_NAME = f
+            break
+
+if not RAW_DATA_FILE_NAME:
+    RAW_DATA_FILE_NAME = '帆软销售明细.xlsx'
 
 # 统计汇总文件名：基于原始数据文件名 + _统计汇总
 if RAW_DATA_FILE_NAME.endswith('.xlsx'):
