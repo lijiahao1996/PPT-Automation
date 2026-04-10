@@ -86,7 +86,7 @@ with st.sidebar:
     st.info("💡 **提示**:\n1. 先配置统计规则\n2. 上传数据或爬取\n3. 生成统计汇总\n4. 配置图表\n5. 生成 PPT")
 
 # 主功能选择
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📋 统计规则配置", "📈 图表配置", "💡 洞察配置", "⚙️ 自定义变量", "🤖 AI 综合洞察", "🔖 PPT 变量总览"])
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(["📋 统计规则配置", "📈 图表配置", "💡 洞察配置", "⚙️ 自定义变量", "🤖 AI 综合洞察", "🔖 PPT 变量总览", "⚙️ 项目配置", "🚀 生成 PPT 报告"])
 
 # ========== Tab 1: 统计规则配置 ==========
 with tab1:
@@ -1811,4 +1811,247 @@ with tab6:
 
 
 
+
+
+
+# ========== Tab 8: 生成 PPT 报告 ==========
+with tab8:
+    st.header("🚀 生成 PPT 报告")
+    st.markdown("**一键执行完整流程：统计分析 → 图表生成 → PPT 报告**")
+    
+    # 初始化执行器
+    sys.path.insert(0, os.path.join(base_dir, 'scripts'))
+    
+    # 日志存储
+    if 'execution_logs' not in st.session_state:
+        st.session_state.execution_logs = []
+    if 'execution_running' not in st.session_state:
+        st.session_state.execution_running = False
+    if 'execution_result' not in st.session_state:
+        st.session_state.execution_result = None
+    
+    def add_log(message: str, level: str = 'INFO'):
+        """添加日志"""
+        timestamp = datetime.now().strftime('%H:%M:%S')
+        log_entry = f"[{timestamp}] [{level}] {message}"
+        st.session_state.execution_logs.append(log_entry)
+    
+    def clear_logs():
+        """清空日志"""
+        st.session_state.execution_logs = []
+        st.session_state.execution_result = None
+    
+    # 检测当前文件状态
+    st.subheader("📊 当前状态")
+    
+    files_detected = {'raw_data': None, 'summary': None, 'ppt_reports': []}
+    if os.path.exists(output_dir):
+        for f in os.listdir(output_dir):
+            if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
+                files_detected['summary'] = f
+            elif f.endswith('.xlsx') and '统计汇总' not in f and not f.startswith('~'):
+                files_detected['raw_data'] = f
+            elif f.endswith('.pptx') and not f.startswith('~'):
+                files_detected['ppt_reports'].append(f)
+    
+    col_s1, col_s2, col_s3 = st.columns(3)
+    
+    with col_s1:
+        if files_detected['raw_data']:
+            file_size = os.path.getsize(os.path.join(output_dir, files_detected['raw_data']))
+            st.success(f"✅ 原始数据\n\n`{files_detected['raw_data']}`\n\n{round(file_size/1024, 1)} KB")
+        else:
+            st.error("❌ 原始数据\n\n未找到文件\n\n请先上传 Excel")
+    
+    with col_s2:
+        if files_detected['summary']:
+            file_size = os.path.getsize(os.path.join(output_dir, files_detected['summary']))
+            st.success(f"✅ 统计汇总\n\n`{files_detected['summary']}`\n\n{round(file_size/1024, 1)} KB")
+        else:
+            st.warning("⚠️ 统计汇总\n\n未生成\n\n将在执行时生成")
+    
+    with col_s3:
+        if files_detected['ppt_reports']:
+            latest_ppt = sorted(files_detected['ppt_reports'])[-1]
+            file_size = os.path.getsize(os.path.join(output_dir, latest_ppt))
+            st.success(f"✅ PPT 报告\n\n`{latest_ppt}`\n\n{round(file_size/1024, 1)} KB")
+        else:
+            st.info("ℹ️ PPT 报告\n\n未生成\n\n将在执行时生成")
+    
+    st.markdown("---")
+    
+    # 执行选项
+    st.subheader("⚙️ 执行选项")
+    
+    col_opt1, col_opt2 = st.columns(2)
+    
+    with col_opt1:
+        regenerate_stats = st.checkbox(
+            "🔄 重新生成统计数据",
+            value=False,
+            help="如果已存在统计汇总文件，勾选后会重新生成"
+        )
+    
+    with col_opt2:
+        template_name = st.text_input(
+            "📄 PPT 模板文件名",
+            value="销售分析报告_标准模板.pptx",
+            help="PPT 模板文件名（在 templates 目录下）"
+        )
+    
+    st.markdown("---")
+    
+    # 执行按钮
+    st.subheader("🎯 执行")
+    
+    col_btn1, col_btn2 = st.columns([3, 1])
+    
+    with col_btn1:
+        start_button = st.button(
+            "▶️ 开始生成 PPT 报告",
+            type="primary",
+            use_container_width=True,
+            disabled=st.session_state.execution_running
+        )
+    
+    with col_btn2:
+        if st.button("🗑️ 清空日志", use_container_width=True):
+            clear_logs()
+    
+    # 执行逻辑
+    if start_button and not st.session_state.execution_running:
+        st.session_state.execution_running = True
+        clear_logs()
+        
+        # 创建日志容器
+        log_container = st.empty()
+        progress_bar = st.progress(0)
+        
+        try:
+            # 导入执行器
+            from ppt_report_executor import PPTReportGenerator
+            
+            # 创建执行器
+            generator = PPTReportGenerator(base_dir=base_dir, log_callback=add_log)
+            
+            # 执行流程
+            add_log("=" * 50, 'INFO')
+            add_log("🚀 开始执行 PPT 报告生成流程", 'INFO')
+            add_log("=" * 50, 'INFO')
+            progress_bar.progress(10)
+            
+            # 步骤 1: 检测文件
+            add_log("步骤 1: 检测文件...", 'INFO')
+            files = generator.detect_files()
+            
+            if not files['raw_data']:
+                add_log("❌ 未找到原始数据文件，请先在「📋 统计规则配置」页签上传 Excel 文件", 'ERROR')
+                progress_bar.progress(0)
+                st.session_state.execution_running = False
+                st.stop()
+            
+            add_log(f"✓ 原始数据：{files['raw_data']}", 'SUCCESS')
+            progress_bar.progress(20)
+            
+            if files['summary'] and not regenerate_stats:
+                add_log(f"✓ 统计汇总：{files['summary']} (使用已有文件)", 'SUCCESS')
+            else:
+                if files['summary'] and regenerate_stats:
+                    add_log(f"ℹ 将重新生成统计汇总：{files['summary']}", 'INFO')
+            
+            # 步骤 2: 生成统计数据
+            if not files['summary'] or regenerate_stats:
+                add_log("步骤 2: 生成统计数据...", 'INFO')
+                add_log(f"加载原始数据：{files['raw_data']}", 'INFO')
+                
+                if generator.generate_statistics(files['raw_data']):
+                    add_log("✅ 统计生成完成", 'SUCCESS')
+                    progress_bar.progress(50)
+                else:
+                    add_log("❌ 统计生成失败，终止流程", 'ERROR')
+                    progress_bar.progress(0)
+                    st.session_state.execution_running = False
+                    st.stop()
+            else:
+                add_log("步骤 2: 跳过（使用已有统计文件）", 'INFO')
+                progress_bar.progress(50)
+            
+            # 步骤 3: 生成 PPT 报告
+            add_log("步骤 3: 生成 PPT 报告...", 'INFO')
+            add_log(f"使用模板：{template_name}", 'INFO')
+            
+            if generator.generate_report(template_name):
+                add_log("✅ PPT 报告生成完成", 'SUCCESS')
+                progress_bar.progress(100)
+            else:
+                add_log("❌ PPT 报告生成失败", 'ERROR')
+                progress_bar.progress(50)
+                st.session_state.execution_running = False
+                st.stop()
+            
+            # 完成
+            add_log("=" * 50, 'INFO')
+            add_log("🎉 PPT 报告生成流程完成！", 'SUCCESS')
+            add_log("=" * 50, 'INFO')
+            
+            # 更新结果
+            files = generator.detect_files()
+            st.session_state.execution_result = {
+                'success': True,
+                'files': files
+            }
+            
+        except Exception as e:
+            add_log(f"❌ 执行失败：{e}", 'ERROR')
+            import traceback
+            add_log(traceback.format_exc(), 'ERROR')
+            progress_bar.progress(0)
+        
+        finally:
+            st.session_state.execution_running = False
+    
+    # 显示日志
+    st.markdown("---")
+    st.subheader("📝 执行日志")
+    
+    if st.session_state.execution_logs:
+        # 使用代码块显示日志（类似终端）
+        logs_text = '\n'.join(st.session_state.execution_logs[-50:])  # 只显示最近 50 条
+        st.code(logs_text, language='text')
+        
+        # 自动滚动到最新日志
+        st.markdown("<script>window.scrollTo(0, document.body.scrollHeight);</script>", unsafe_allow_html=True)
+    else:
+        st.info("💡 点击"▶️ 开始生成 PPT 报告"按钮开始执行")
+    
+    # 显示执行结果
+    if st.session_state.execution_result and st.session_state.execution_result.get('success'):
+        st.markdown("---")
+        st.subheader("📁 生成的文件")
+        
+        result = st.session_state.execution_result
+        files = result['files']
+        
+        if files.get('summary'):
+            summary_path = os.path.join(output_dir, files['summary'])
+            with open(summary_path, 'rb') as f:
+                st.download_button(
+                    label=f"📊 下载统计汇总 ({files['summary']})",
+                    data=f.read(),
+                    file_name=files['summary'],
+                    mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    use_container_width=True
+                )
+        
+        if files.get('ppt_reports'):
+            latest_ppt = sorted(files['ppt_reports'])[-1]
+            ppt_path = os.path.join(output_dir, latest_ppt)
+            with open(ppt_path, 'rb') as f:
+                st.download_button(
+                    label=f"📄 下载 PPT 报告 ({latest_ppt})",
+                    data=f.read(),
+                    file_name=latest_ppt,
+                    mime='application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                    use_container_width=True
+                )
 
