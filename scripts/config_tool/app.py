@@ -188,22 +188,22 @@ with tab1:
     st.subheader("📝 添加统计规则")
     st.caption("💡 **必填字段**：统计表格名称、统计类型、分组字段、统计指标")
     
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([1, 1])
     
     with col1:
         sheet_name = st.text_input("统计表格名称 *", placeholder="例如：销售员业绩", help="必填：用于 Excel Sheet 名称")
         stat_type = st.selectbox("统计类型 *", options=list(stats_types.keys()), format_func=lambda x: stats_types[x], help="必填：选择统计类型")
         enabled = st.checkbox("启用", value=True)
-        description = st.text_area("描述", placeholder="例如：销售员业绩排名")
+        description = st.text_area("描述", placeholder="例如：销售员业绩排名", height=80)
     
     with col2:
-        st.markdown("### 分组字段 *")
-        group_fields = st.text_area("分组字段\n（每行一个）", placeholder="销售员\n城市", height=100, help="必填：用于分组统计的字段")
+        st.markdown("#### 分组字段 *")
+        group_fields = st.text_area("分组字段（每行一个）", placeholder="例如:\n销售员\n城市", value="销售员\n城市", height=120, help="必填：用于分组统计的字段")
         
-        st.markdown("### 统计指标 *")
-        metrics_config = st.text_area("统计指标配置\n（JSON 格式）", 
+        st.markdown("#### 统计指标 *")
+        metrics_config = st.text_area("统计指标配置（JSON 格式）", 
                                      value='[{"field": "销售额", "agg": "sum", "alias": "总销售额"}]',
-                                     height=150, help="必填：JSON 格式，定义统计指标")
+                                     height=120, help="必填：JSON 格式，定义统计指标")
     
     # 预览配置
     if st.button("➕ 添加统计规则"):
