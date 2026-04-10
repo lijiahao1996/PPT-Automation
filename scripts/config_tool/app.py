@@ -2022,7 +2022,7 @@ with tab8:
         # 自动滚动到最新日志
         st.markdown("<script>window.scrollTo(0, document.body.scrollHeight);</script>", unsafe_allow_html=True)
     else:
-        st.info("💡 点击"▶️ 开始生成 PPT 报告"按钮开始执行")
+        st.info("💡 点击【开始生成 PPT 报告】按钮开始执行")
     
     # 显示执行结果
     if st.session_state.execution_result and st.session_state.execution_result.get('success'):
