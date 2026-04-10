@@ -157,6 +157,20 @@ def scrape():
             
             # 保存 Excel（带表头）
             os.makedirs(OUTPUT_DIR, exist_ok=True)
+            
+            # 检查文件是否被占用
+            if os.path.exists(OUTPUT_FILE):
+                try:
+                    # 尝试删除旧文件
+                    os.remove(OUTPUT_FILE)
+                    print(f"      [INFO] 已删除旧文件：{OUTPUT_FILE}")
+                except PermissionError:
+                    print(f"      [WARN] 文件被占用，无法删除：{OUTPUT_FILE}")
+                    print(f"      [INFO] 将保存为新文件名...")
+                    import time
+                    timestamp = int(time.time())
+                    OUTPUT_FILE = os.path.join(OUTPUT_DIR, f"帆软销售明细_{timestamp}.xlsx")
+            
             if field_names:
                 df = pd.DataFrame(final_rows, columns=field_names)
                 df.to_excel(OUTPUT_FILE, index=False, header=True)  # 保留表头
