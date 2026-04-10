@@ -136,6 +136,14 @@ with tab1:
         "outlier": "⚠️ 异常检测 - 异常订单"
     }
     
+    st.subheader("⚙️ 项目配置（快速）")
+    st.caption("💡 修改文件名、API Key 等配置，详细配置请使用第一个页签")
+    
+    # 快速配置链接
+    if st.button("⚙️ 打开完整项目配置", use_container_width=True):
+        st.info("💡 请在浏览器上方点击第一个页签'⚙️ 项目配置'进行详细配置")
+    
+    st.markdown("---")
     st.subheader("📤 上传原始数据 Excel")
     st.caption("💡 上传从帆软导出的销售明细数据，或手动整理的数据")
     
@@ -213,7 +221,7 @@ with tab1:
     
     with col2:
         st.markdown("#### 分组字段 *")
-        group_fields = st.text_area("分组字段（每行一个）", placeholder="例如:\n销售员\n城市", value="销售员\n城市", height=120, help="必填：用于分组统计的字段")
+        group_fields = st.multiselect("选择分组字段（可多选）", options=["销售员", "产品", "城市", "客户属性", "年月", "季度", "星期", "年龄段"], default=["销售员", "城市"], help="必填：用于分组统计的字段，可多选")
         
         st.markdown("#### 统计指标 *")
         metrics_config = st.text_area("统计指标配置（JSON 格式）", 
@@ -1795,4 +1803,6 @@ with tab6:
     - 复制占位符到 PPT 模板中的文本框即可使用
     - 运行 `Run.bat` 时会自动替换为实际内容
     """)
+
+
 

@@ -76,7 +76,7 @@
         "slide_index": 9
       },
       "CHART:age_scatter": {
-        "description": "",
+        "description": "客户年龄与销售额分布分析",
         "data_source": "客户年龄分布",
         "chart_type": "scatter",
         "title": "客户年龄与销售额分布分析",
