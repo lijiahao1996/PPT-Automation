@@ -156,6 +156,9 @@ def render_tab1(base_dir, templates_dir, output_dir):
                                 st.json(rec)
                                 
                                 if st.button(f"➕ 添加此规则", key=f"add_rec_{i}"):
+                                    st.write(f"[DEBUG] stats_rules_file: {stats_rules_file}")
+                                    st.write(f"[DEBUG] 文件存在：{os.path.exists(stats_rules_file)}")
+                                    
                                     if rec['name'] not in st.session_state.stats_config['stats_sheets']:
                                         st.session_state.stats_config['stats_sheets'][rec['name']] = {
                                             'description': rec.get('description', ''),
@@ -167,16 +170,22 @@ def render_tab1(base_dir, templates_dir, output_dir):
                                         
                                         # 同时保存到 stats_rules.json
                                         try:
+                                            st.write(f"[DEBUG] 准备保存到：{stats_rules_file}")
                                             with open(stats_rules_file, 'w', encoding='utf-8') as f:
                                                 json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
                                             st.success(f"✅ 已添加并保存：{rec['name']}")
+                                            st.info(f"📄 文件路径：{stats_rules_file}")
                                         except Exception as e:
-                                            st.warning(f"⚠️ 已添加到内存，但保存失败：{e}")
+                                            st.error(f"❌ 保存失败：{e}")
+                                            import traceback
+                                            st.code(traceback.format_exc())
                                         
                                         st.rerun()
                         
                         # 批量添加按钮
                         if st.button("📥 批量添加所有推荐规则", type="primary", use_container_width=True):
+                            st.write(f"[DEBUG] 批量添加 - stats_rules_file: {stats_rules_file}")
+                            
                             added_count = 0
                             for rec in recommendations:
                                 if rec['name'] not in st.session_state.stats_config['stats_sheets']:
@@ -191,11 +200,15 @@ def render_tab1(base_dir, templates_dir, output_dir):
                             
                             # 批量保存到 stats_rules.json
                             try:
+                                st.write(f"[DEBUG] 准备批量保存到：{stats_rules_file}")
                                 with open(stats_rules_file, 'w', encoding='utf-8') as f:
                                     json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
                                 st.success(f"✅ 已添加 {added_count} 条统计规则并保存到 stats_rules.json")
+                                st.info(f"📄 文件路径：{stats_rules_file}")
                             except Exception as e:
-                                st.warning(f"⚠️ 已添加到内存，但保存失败：{e}")
+                                st.error(f"❌ 保存失败：{e}")
+                                import traceback
+                                st.code(traceback.format_exc())
                             
                             st.rerun()
                     
