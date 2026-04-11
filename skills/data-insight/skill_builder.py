@@ -66,7 +66,7 @@ def build_skill_from_config(stats_rules_path: str, placeholders_path: str, outpu
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(skill_content)
     
-    print(f"✅ SKILL.md generated: {output_path}")
+    print(f"[OK] SKILL.md generated: {output_path}")
     print(f"   - Stats tables: {len(data_tables)}")
     print(f"   - Charts: {len(charts)}")
 

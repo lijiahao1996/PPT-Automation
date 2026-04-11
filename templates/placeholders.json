@@ -10,8 +10,8 @@
         "data_source": "产品占比",
         "chart_type": "pie",
         "title": "产品销售额占比分布",
-        "x_field": "产品",
-        "y_field": "销售额"
+        "category_field": "产品",
+        "value_field": "销售额"
       },
       "CHART:customer_type_comparison": {
         "description": "横向条形图清晰对比两类客户在销售额、订单数、客单价三个维度的差异（可分组或双轴），适合小类别（n=2）的多指标横向比较",
@@ -58,8 +58,10 @@
         "data_source": "核心 KPI",
         "chart_type": "column_clustered",
         "title": "核心 KPI 指标概览",
-        "x_field": "指标",
-        "y_field": "数值"
+        "category_field": "指标",
+        "series": [
+          "数值"
+        ]
       },
       "CHART:monthly_trend_dual": {
         "description": "同一时间轴上双指标折线图能揭示销售额与订单量的协同或背离关系，强化业务洞察；数据结构完全匹配",
