@@ -158,8 +158,14 @@ def render_tab1(base_dir, templates_dir, output_dir):
                 with col_btn:
                     if already_added:
                         # 已添加：显示删除按钮
-                        if st.button("🗑️ 删除", key=f"del_single_{rec['name']}_{i}", use_container_width=True):
-                            try:
+                        del_btn_key = f"del_{rec['name']}"
+                        if st.session_state.get(del_btn_key):
+                            # 第二次渲染，显示成功消息
+                            st.success("✅ 已删除")
+                            # 清除标记
+                            st.session_state[del_btn_key] = False
+                        else:
+                            if st.button("🗑️ 删除", key=del_btn_key, use_container_width=True):
                                 with open(stats_rules_file, 'r', encoding='utf-8') as f:
                                     current_config = json.load(f)
                                 
@@ -169,18 +175,19 @@ def render_tab1(base_dir, templates_dir, output_dir):
                                     with open(stats_rules_file, 'w', encoding='utf-8') as f:
                                         json.dump(current_config, f, ensure_ascii=False, indent=2)
                                     
-                                    st.success(f"✅ 已删除：{rec['name']}")
-                                    
                                     st.session_state.stats_config = current_config
-                            
-                            except Exception as e:
-                                st.error(f"❌ 删除失败：{e}")
-                                import traceback
-                                st.code(traceback.format_exc())
+                                    st.session_state[del_btn_key] = True
+                                    st.rerun()
                     else:
                         # 未添加：显示添加按钮
-                        if st.button("➕ 添加并保存", key=f"add_single_{rec['name']}_{i}", use_container_width=True):
-                            try:
+                        add_btn_key = f"add_{rec['name']}"
+                        if st.session_state.get(add_btn_key):
+                            # 第二次渲染，显示成功消息
+                            st.success("✅ 已添加")
+                            # 清除标记
+                            st.session_state[add_btn_key] = False
+                        else:
+                            if st.button("➕ 添加并保存", key=add_btn_key, use_container_width=True):
                                 with open(stats_rules_file, 'r', encoding='utf-8') as f:
                                     current_config = json.load(f)
                                 
@@ -195,18 +202,9 @@ def render_tab1(base_dir, templates_dir, output_dir):
                                 with open(stats_rules_file, 'w', encoding='utf-8') as f:
                                     json.dump(current_config, f, ensure_ascii=False, indent=2)
                                 
-                                st.success(f"✅ 已添加：{rec['name']}")
-                                st.balloons()
-                                
                                 st.session_state.stats_config = current_config
-                                
-                                # 立即更新推荐列表状态，不需要刷新
-                                st.session_state.ai_recommendations_list = [r for r in st.session_state.ai_recommendations_list if r['name'] != rec['name']]
-                            
-                            except Exception as e:
-                                st.error(f"❌ 失败：{e}")
-                                import traceback
-                                st.code(traceback.format_exc())
+                                st.session_state[add_btn_key] = True
+                                st.rerun()
                 
                 # 展开查看详情
                 with st.expander("查看配置详情", expanded=False):
