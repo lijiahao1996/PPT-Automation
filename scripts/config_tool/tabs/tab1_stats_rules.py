@@ -143,93 +143,92 @@ def render_tab1(base_dir, templates_dir, output_dir):
         if recommendations:
             st.success(f"🤖 AI 推荐了 {len(recommendations)} 条统计规则")
             
-            # 一键全部保存按钮（放在顶部）
-            not_added = [rec for rec in recommendations if rec['name'] not in st.session_state.stats_config.get('stats_sheets', {})]
-            
-            if not_added:
-                st.info(f"📋 还有 {len(not_added)} 条规则未添加")
-                
-                col_all1, col_all2 = st.columns([3, 1])
-                with col_all1:
-                    if st.button("🚀 一键保存所有推荐规则", type="primary", use_container_width=True, key="save_all_ai_rules"):
-                        try:
-                            with open(stats_rules_file, 'r', encoding='utf-8') as f:
-                                current_config = json.load(f)
-                            
-                            added_count = 0
-                            for rec in not_added:
-                                if rec['name'] not in current_config['stats_sheets']:
-                                    current_config['stats_sheets'][rec['name']] = {
-                                        'description': rec.get('description', ''),
-                                        'type': rec['type'],
-                                        'enabled': True,
-                                        'group_by': rec.get('group_by', []),
-                                        'metrics': rec.get('metrics', [])
-                                    }
-                                    added_count += 1
-                            
-                            with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                                json.dump(current_config, f, ensure_ascii=False, indent=2)
-                            
-                            st.success(f"✅ 已一键保存 {added_count} 条规则到 stats_rules.json")
-                            st.balloons()
-                            
-                            st.session_state.stats_config = current_config
-                            st.session_state.ai_recommendations_list = []
-                            
-                            st.info("💡 请刷新页面（F5）查看结果")
-                        
-                        except Exception as e:
-                            st.error(f"❌ 保存失败：{e}")
-                            import traceback
-                            st.code(traceback.format_exc())
-            
-            st.markdown("---")
             st.markdown("### 推荐规则列表")
             
             for i, rec in enumerate(recommendations):
-                # 使用 expander 展示详情
-                with st.expander(f"{'✅' if rec['name'] in st.session_state.stats_config.get('stats_sheets', {}) else '⬜'} **{rec['name']}** - {rec.get('ai_reason', '')}", expanded=False):
-                    col_detail, col_btn = st.columns([3, 1])
-                    
-                    with col_detail:
-                        st.markdown("**配置详情**:")
-                        st.json(rec)
-                    
-                    with col_btn:
-                        already_added = rec['name'] in st.session_state.stats_config.get('stats_sheets', {})
-                        
-                        if already_added:
-                            st.success("✅ 已添加")
-                        else:
-                            # 单条立即保存按钮
-                            if st.button("➕ 添加并保存", key=f"add_single_{rec['name']}_{i}", use_container_width=True):
-                                try:
-                                    with open(stats_rules_file, 'r', encoding='utf-8') as f:
-                                        current_config = json.load(f)
-                                    
-                                    current_config['stats_sheets'][rec['name']] = {
-                                        'description': rec.get('description', ''),
-                                        'type': rec['type'],
-                                        'enabled': True,
-                                        'group_by': rec.get('group_by', []),
-                                        'metrics': rec.get('metrics', [])
-                                    }
-                                    
-                                    with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                                        json.dump(current_config, f, ensure_ascii=False, indent=2)
-                                    
-                                    st.success(f"✅ 已添加：{rec['name']}")
-                                    st.balloons()
-                                    
-                                    st.session_state.stats_config = current_config
-                                    
-                                    st.info("💡 请刷新页面（F5）查看结果")
+                already_added = rec['name'] in st.session_state.stats_config.get('stats_sheets', {})
+                
+                # 折叠后显示：规则名 + 添加按钮
+                col_title, col_btn = st.columns([4, 1])
+                
+                with col_title:
+                    status_icon = "✅" if already_added else "⬜"
+                    st.write(f"{status_icon} **{rec['name']}** - {rec.get('ai_reason', '')}")
+                
+                with col_btn:
+                    if already_added:
+                        st.success("✅ 已添加")
+                    else:
+                        if st.button("➕ 添加并保存", key=f"add_single_{rec['name']}_{i}", use_container_width=True):
+                            try:
+                                with open(stats_rules_file, 'r', encoding='utf-8') as f:
+                                    current_config = json.load(f)
                                 
-                                except Exception as e:
-                                    st.error(f"❌ 失败：{e}")
-                                    import traceback
-                                    st.code(traceback.format_exc())
+                                current_config['stats_sheets'][rec['name']] = {
+                                    'description': rec.get('description', ''),
+                                    'type': rec['type'],
+                                    'enabled': True,
+                                    'group_by': rec.get('group_by', []),
+                                    'metrics': rec.get('metrics', [])
+                                }
+                                
+                                with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                                    json.dump(current_config, f, ensure_ascii=False, indent=2)
+                                
+                                st.success(f"✅ 已添加：{rec['name']}")
+                                st.balloons()
+                                
+                                st.session_state.stats_config = current_config
+                                
+                                # 立即更新推荐列表状态，不需要刷新
+                                st.session_state.ai_recommendations_list = [r for r in st.session_state.ai_recommendations_list if r['name'] != rec['name']]
+                            
+                            except Exception as e:
+                                st.error(f"❌ 失败：{e}")
+                                import traceback
+                                st.code(traceback.format_exc())
+                
+                # 展开查看详情
+                with st.expander("查看配置详情", expanded=False):
+                    st.json(rec)
+            
+            # 一键保存按钮放在最下面
+            not_added = [rec for rec in recommendations if rec['name'] not in st.session_state.stats_config.get('stats_sheets', {})]
+            
+            if not_added:
+                st.markdown("---")
+                if st.button("🚀 一键保存所有推荐规则", type="primary", use_container_width=True, key="save_all_ai_rules"):
+                    try:
+                        with open(stats_rules_file, 'r', encoding='utf-8') as f:
+                            current_config = json.load(f)
+                        
+                        added_count = 0
+                        for rec in not_added:
+                            if rec['name'] not in current_config['stats_sheets']:
+                                current_config['stats_sheets'][rec['name']] = {
+                                    'description': rec.get('description', ''),
+                                    'type': rec['type'],
+                                    'enabled': True,
+                                    'group_by': rec.get('group_by', []),
+                                    'metrics': rec.get('metrics', [])
+                                }
+                                added_count += 1
+                        
+                        with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                            json.dump(current_config, f, ensure_ascii=False, indent=2)
+                        
+                        st.success(f"✅ 已一键保存 {added_count} 条规则到 stats_rules.json")
+                        st.balloons()
+                        
+                        st.session_state.stats_config = current_config
+                        st.session_state.ai_recommendations_list = []
+                        
+                        st.info("💡 规则已保存，请滚动到下方查看"现有统计规则"")
+                    
+                    except Exception as e:
+                        st.error(f"❌ 保存失败：{e}")
+                        import traceback
+                        st.code(traceback.format_exc())
     
     st.markdown("---")
     
@@ -249,8 +248,25 @@ def render_tab1(base_dir, templates_dir, output_dir):
                 from core.stats_engine import StatsEngine
                 from core.data_loader import DataLoader
                 
+                # 使用用户上传的文件名
+                use_file_name = st.session_state.get('uploaded_file_name')
+                
+                if not use_file_name:
+                    # 如果没有上传，自动检测 output 目录中的第一个非统计汇总文件
+                    for f in os.listdir(output_dir):
+                        if f.endswith('.xlsx') and '统计汇总' not in f and not f.startswith('~'):
+                            use_file_name = f
+                            st.session_state['uploaded_file_name'] = f
+                            break
+                
+                if not use_file_name:
+                    st.error("❌ 未找到数据文件，请先上传 Excel")
+                    st.stop()
+                
+                st.info(f"📊 使用数据文件：{use_file_name}")
+                
                 data_loader = DataLoader(base_dir)
-                raw_df = data_loader.load_raw_data(st.session_state.get('uploaded_file_name', '帆软销售明细.xlsx'))
+                raw_df = data_loader.load_raw_data(use_file_name)
                 
                 stats_engine = StatsEngine(base_dir=base_dir)
                 output_path = os.path.join(output_dir, summary_file_name)
@@ -276,15 +292,21 @@ def render_tab1(base_dir, templates_dir, output_dir):
     st.markdown("---")
     st.subheader("📋 现有统计规则")
     
-    if stats_config["stats_sheets"]:
-        for name, rule in stats_config["stats_sheets"].items():
+    # 重新读取最新的 stats_rules.json（确保显示最新数据）
+    if os.path.exists(stats_rules_file):
+        with open(stats_rules_file, 'r', encoding='utf-8') as f:
+            latest_config = json.load(f)
+        st.session_state.stats_config = latest_config
+    
+    if st.session_state.stats_config.get('stats_sheets'):
+        for name, rule in st.session_state.stats_config['stats_sheets'].items():
             with st.expander(f"{'✅' if rule.get('enabled', True) else '❌'} {name}"):
                 st.json(rule)
                 
                 if st.button(f"🗑️ 删除", key=f"delete_{name}"):
-                    del stats_config["stats_sheets"][name]
+                    del st.session_state.stats_config['stats_sheets'][name]
                     with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                        json.dump(stats_config, f, ensure_ascii=False, indent=2)
+                        json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
                     st.rerun()
     else:
         st.info("暂无统计规则")
