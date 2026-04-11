@@ -22,9 +22,9 @@ def render_tab6(templates_dir, stats_config, placeholders_config):
                 '占位符': f'[{text_key}]',
                 '描述': text_cfg.get('description', ''),
                 '默认值': text_cfg.get('default', ''),
-                'PPT 页码': text_cfg.get('slide_index', '未设置')
+                'PPT 页码': str(text_cfg.get('slide_index', '未设置'))
             })
-        st.dataframe(pd.DataFrame(text_data), use_container_width=True, width='stretch', hide_index=True)
+        st.dataframe(pd.DataFrame(text_data), width='stretch', hide_index=True)
     else:
         st.info("暂无文本变量配置")
     
@@ -44,9 +44,9 @@ def render_tab6(templates_dir, stats_config, placeholders_config):
                 '描述': date_cfg.get('description', ''),
                 '默认值': date_cfg.get('default', ''),
                 '格式': date_cfg.get('format', '%Y-%m-%d'),
-                'PPT 页码': date_cfg.get('slide_index', '未设置')
+                'PPT 页码': str(date_cfg.get('slide_index', '未设置'))
             })
-        st.dataframe(pd.DataFrame(date_data), use_container_width=True, width='stretch', hide_index=True)
+        st.dataframe(pd.DataFrame(date_data), width='stretch', hide_index=True)
     else:
         st.info("暂无日期变量配置")
     
@@ -66,9 +66,9 @@ def render_tab6(templates_dir, stats_config, placeholders_config):
                 '描述': img_cfg.get('description', ''),
                 '类型': img_cfg.get('type', 'other'),
                 '路径': img_cfg.get('path', ''),
-                'PPT 页码': img_cfg.get('slide_index', '未设置')
+                'PPT 页码': str(img_cfg.get('slide_index', '未设置'))
             })
-        st.dataframe(pd.DataFrame(img_data), use_container_width=True, width='stretch', hide_index=True)
+        st.dataframe(pd.DataFrame(img_data), width='stretch', hide_index=True)
     else:
         st.info("暂无图片变量配置")
     
@@ -87,9 +87,9 @@ def render_tab6(templates_dir, stats_config, placeholders_config):
                 '占位符': f'[{video_key}]',
                 '描述': video_cfg.get('description', ''),
                 '路径': video_cfg.get('path', ''),
-                'PPT 页码': video_cfg.get('slide_index', '未设置')
+                'PPT 页码': str(video_cfg.get('slide_index', '未设置'))
             })
-        st.dataframe(pd.DataFrame(video_data), use_container_width=True, width='stretch', hide_index=True)
+        st.dataframe(pd.DataFrame(video_data), width='stretch', hide_index=True)
     else:
         st.info("暂无视频变量配置")
     
@@ -109,9 +109,9 @@ def render_tab6(templates_dir, stats_config, placeholders_config):
                 '描述': link_cfg.get('description', ''),
                 '类型': link_cfg.get('type', 'url'),
                 '链接地址': link_cfg.get('url', ''),
-                'PPT 页码': link_cfg.get('slide_index', '未设置')
+                'PPT 页码': str(link_cfg.get('slide_index', '未设置'))
             })
-        st.dataframe(pd.DataFrame(link_data), use_container_width=True, width='stretch', hide_index=True)
+        st.dataframe(pd.DataFrame(link_data), width='stretch', hide_index=True)
     else:
         st.info("暂无链接变量配置")
     
@@ -131,9 +131,9 @@ def render_tab6(templates_dir, stats_config, placeholders_config):
                 '图表标题': chart_cfg.get('title', ''),
                 '数据源': chart_cfg.get('data_source', ''),
                 '图表类型': chart_cfg.get('chart_type', ''),
-                'PPT 页码': chart_cfg.get('slide_index', '未设置')
+                'PPT 页码': str(chart_cfg.get('slide_index', '未设置'))
             })
-        st.dataframe(pd.DataFrame(chart_data), use_container_width=True, width='stretch', hide_index=True)
+        st.dataframe(pd.DataFrame(chart_data), width='stretch', hide_index=True)
     else:
         st.info("暂无图表配置")
     
@@ -177,9 +177,9 @@ def render_tab6(templates_dir, stats_config, placeholders_config):
                 '占位符': f'[{table_key}]',
                 '描述': table_cfg.get('description', ''),
                 '数据源': table_cfg.get('data_source', ''),
-                'PPT 页码': table_cfg.get('slide_index', '未设置')
+                'PPT 页码': str(table_cfg.get('slide_index', '未设置'))
             })
-        st.dataframe(pd.DataFrame(table_data), use_container_width=True, width='stretch', hide_index=True)
+        st.dataframe(pd.DataFrame(table_data), width='stretch', hide_index=True)
     else:
         st.info("暂无表格变量配置")
     

@@ -1,158 +1,40 @@
-﻿# Auto Run Script - Enterprise Version
-# Support both EXE bundled and direct PowerShell execution
-# Auto-generate config.ini from template if not exists
+# PPT Report Generator - Web Interface Launcher v5.0
+# Simplified version - Web interface only
 
 Write-Host "========================================" -ForegroundColor Green
-Write-Host "  FanRuan Auto Run - Enterprise Edition" -ForegroundColor Green
+Write-Host "  PPT Report Generator v5.0" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 
-# ========== Check and Generate config.ini ==========
-$scriptDir = if ($env:EXE_BASE_DIR) { $env:EXE_WORK_DIR } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
-$configFile = Join-Path $scriptDir "config.ini"
-$configTemplate = Join-Path $scriptDir "config.ini.example"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location $scriptDir
 
-if (-not (Test-Path $configFile)) {
-    Write-Host "[INFO] config.ini not found, creating from template..." -ForegroundColor Yellow
-    
-    if (Test-Path $configTemplate) {
-        Copy-Item $configTemplate $configFile
-        Write-Host "[OK] config.ini created from template" -ForegroundColor Green
-        Write-Host ""
-        Write-Host "========================================" -ForegroundColor Yellow
-        Write-Host "  ACTION REQUIRED" -ForegroundColor Yellow
-        Write-Host "========================================" -ForegroundColor Yellow
-        Write-Host ""
-        Write-Host "Please edit config.ini and fill in:" -ForegroundColor White
-        Write-Host "  1. [fanruan] password - Your FanRuan account password" -ForegroundColor Cyan
-        Write-Host "  2. [api_keys] qwen_api_key - Your Qwen API key" -ForegroundColor Cyan
-        Write-Host ""
-        Write-Host "Then run again." -ForegroundColor White
-        Write-Host ""
-        Write-Host "Template location: $configTemplate" -ForegroundColor Gray
-        Write-Host "Config location: $configFile" -ForegroundColor Gray
-        Write-Host "========================================" -ForegroundColor Yellow
-        Write-Host ""
-        Read-Host "Press Enter to exit"
-        exit 0
-    } else {
-        Write-Host "[ERROR] config.ini.example template not found!" -ForegroundColor Red
-        Write-Host "Please create config.ini manually" -ForegroundColor Yellow
-        Read-Host "Press Enter to exit"
-        exit 1
-    }
-}
-
-# Determine directories (support EXE bundled)
-if ($env:EXE_BASE_DIR) {
-    $scriptDir = $env:EXE_BASE_DIR
-    $workDir = $env:EXE_WORK_DIR
-    Write-Host "[INFO] Running from EXE" -ForegroundColor Cyan
-    Write-Host "  Base: $scriptDir" -ForegroundColor Gray
-    Write-Host "  Work: $workDir" -ForegroundColor Gray
-} else {
-    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-    $workDir = $scriptDir
-}
-
-$outputDir = Join-Path $workDir "output"
-$scriptsDir = Join-Path $scriptDir "scripts"
-$logsDir = Join-Path $workDir "logs"
-$artifactsDir = Join-Path $workDir "artifacts"
-$fanruanDir = Join-Path $scriptsDir "fanruan"
-
-# Ensure directories exist
-if (-not (Test-Path $logsDir)) { New-Item -ItemType Directory -Force -Path $logsDir | Out-Null }
-if (-not (Test-Path $artifactsDir)) { New-Item -ItemType Directory -Force -Path $artifactsDir | Out-Null }
-
-Set-Location $workDir
-
-# Check for raw data file (甯嗚蒋閿€鍞槑缁?xlsx)
-Write-Host "Checking data files..." -ForegroundColor Cyan
-$rawDataFile = Join-Path $outputDir $rawDataFileName
-$skipScrape = $false
-
-# 閫昏緫锛氬鏋滄枃浠跺瓨鍦ㄤ笖鏈夋晥锛岀洿鎺ヨ烦杩囩埇鍙?
-if (Test-Path $rawDataFile) {
-    $fileSize = (Get-Item $rawDataFile).Length
-    if ($fileSize -gt 10000) {  # 鑷冲皯 10KB 鎵嶈涓烘槸鏈夋晥鏂囦欢
-        Write-Host "[OK] Raw data file exists ($([math]::Round($fileSize/1KB, 1)) KB), skip scraping" -ForegroundColor Green
-        Write-Host "      File: $rawDataFile" -ForegroundColor Gray
-        $skipScrape = $true
-    } else {
-        Write-Host "[WARN] Raw data file is empty/small ($fileSize bytes), will re-scrape..." -ForegroundColor Yellow
-        $skipScrape = $false
-    }
-} else {
-    Write-Host "[INFO] Raw data file not found, starting scrape..." -ForegroundColor Yellow
-    $skipScrape = $false
-}
-
-# Session Management
-$sessionFile = Join-Path $artifactsDir "fanruan_session.json"
-$sessionMaxAge = 7
-
-function Test-SessionValid {
-    param([string]$SessionFile, [int]$MaxAgeDays)
-    if (-not (Test-Path $SessionFile)) { return $false }
-    try {
-        $session = Get-Content $SessionFile -Raw | ConvertFrom-Json
-        $age = (Get-Date) - (Get-Item $SessionFile).LastWriteTime
-        if ($age.TotalDays -gt $MaxAgeDays) {
-            Write-Host "[INFO] Session expired (age: $($age.Days) days)" -ForegroundColor Yellow
-            return $false
-        }
-        Write-Host "[OK] Session valid (age: $($age.Days) days)" -ForegroundColor Green
-        return $true
-    } catch {
-        Write-Host "[WARN] Session file invalid" -ForegroundColor Yellow
-        return $false
-    }
-}
-
-# 不再爬取数据，直接使用已上传的文件
-Write-Host "`n[INFO] Skip scraping, use uploaded data file" -ForegroundColor Cyan
-Write-Host "  Raw data: $rawDataFile" -ForegroundColor Gray
-Write-Host "  Summary: $summaryFile" -ForegroundColor Gray
-
-# Analyze Data
-Write-Host "`nStep 1: Analyze Data (with validation)..." -ForegroundColor Cyan
-$analyzeScript = Join-Path $fanruanDir "fanruan_analyze.py"
-if (Test-Path $analyzeScript) {
-    python $analyzeScript
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "`n[ERROR] Analysis failed!" -ForegroundColor Red
-        Read-Host "Press Enter to exit"
-        exit 1
-    }
-} else {
-    Write-Host "[ERROR] Analysis script not found: $analyzeScript" -ForegroundColor Red
+# Check Python
+try {
+    $pythonVersion = python --version 2>&1
+    Write-Host "[OK] Python: $pythonVersion" -ForegroundColor Green
+} catch {
+    Write-Host "[ERROR] Python not found! Please install Python 3.8+" -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }
 
-# Generate Report
-Write-Host "`nStep 2: Generate Report (Template + Charts + AI)..." -ForegroundColor Cyan
-$reportScript = Join-Path $scriptsDir "generate_report.py"
-if (Test-Path $reportScript) {
-    python $reportScript
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "`n[ERROR] Report generation failed!" -ForegroundColor Red
-        Read-Host "Press Enter to exit"
-        exit 1
-    }
-} else {
-    Write-Host "[ERROR] Report script not found: $reportScript" -ForegroundColor Red
+# Check Streamlit
+try {
+    $streamlitVersion = streamlit --version 2>&1 | Select-Object -First 1
+    Write-Host "[OK] Streamlit: $streamlitVersion" -ForegroundColor Green
+} catch {
+    Write-Host "[ERROR] Streamlit not found! Install with: pip install streamlit" -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }
 
-Write-Host "`n========================================" -ForegroundColor Green
-Write-Host "  Complete!" -ForegroundColor Green
-Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Read-Host "Press Enter to exit"
+Write-Host "Starting web interface..." -ForegroundColor Cyan
+Write-Host "Access: http://localhost:8501/" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "Press Ctrl+C to stop" -ForegroundColor Gray
+Write-Host ""
 
-
-
-
+# Start Streamlit
+python -m streamlit run scripts\config_tool\app.py --server.port 8501 --server.address localhost

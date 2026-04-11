@@ -27,6 +27,75 @@ def render_tab1(base_dir, templates_dir, output_dir):
     
     stats_config = st.session_state.stats_config
     
+    # 从 config.ini 读取默认文件名
+    from app_config import get_default_raw_data_filename
+    raw_data_file_name = get_default_raw_data_filename()
+    raw_data_file = os.path.join(output_dir, raw_data_file_name)
+    
+    # 如果有上传的文件，使用上传的文件名
+    if 'uploaded_file_name' in st.session_state:
+        raw_data_file = os.path.join(output_dir, st.session_state['uploaded_file_name'])
+        raw_data_file_name = st.session_state['uploaded_file_name']
+    
+    # 统计汇总文件名
+    if raw_data_file_name.endswith('.xlsx'):
+        summary_file_name = raw_data_file_name.replace('.xlsx', '_统计汇总.xlsx')
+    else:
+        summary_file_name = raw_data_file_name + '_统计汇总.xlsx'
+    summary_file = os.path.join(output_dir, summary_file_name)
+    
+    # ========== Excel 上传功能 ==========
+    st.subheader("📤 上传原始数据 Excel")
+    st.caption("💡 上传从帆软导出的销售明细数据，或手动整理的数据")
+    
+    uploaded_file = st.file_uploader(
+        "上传 Excel 文件",
+        type=["xlsx", "xls"],
+        help="上传帆软销售明细数据，保持原始文件名"
+    )
+    
+    if uploaded_file is not None:
+        os.makedirs(output_dir, exist_ok=True)
+        uploaded_file_name = uploaded_file.name
+        output_file = os.path.join(output_dir, uploaded_file_name)
+        st.session_state['uploaded_file_name'] = uploaded_file_name
+        raw_data_file = output_file
+        
+        try:
+            if os.path.exists(output_file):
+                try:
+                    os.remove(output_file)
+                except PermissionError:
+                    st.warning("⚠️ 文件被占用，请关闭 Excel/WPS 后重试")
+                    st.stop()
+            
+            with open(output_file, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            
+            df_preview = pd.read_excel(output_file, nrows=5)
+            file_size = os.path.getsize(output_file)
+            
+            st.success(f"✅ 上传成功！")
+            st.info(f"""📊 **文件信息**：
+- 保存位置：`{output_file}`
+- 文件大小：{round(file_size/1024, 1)} KB
+- 列名：{', '.join(df_preview.columns)}
+- 预览：前 5 行数据已读取""")
+            
+            with st.expander("📋 查看数据预览", expanded=True):
+                st.dataframe(df_preview, width='stretch')
+            
+        except Exception as e:
+            st.error(f"❌ 上传失败：{e}")
+    
+    if os.path.exists(raw_data_file):
+        file_size = os.path.getsize(raw_data_file)
+        st.success(f"✅ 已找到数据文件：`{os.path.basename(raw_data_file)}` ({round(file_size/1024, 1)} KB)")
+    else:
+        st.info("💡 请先上传 Excel 数据文件，或运行 `Run.bat` 自动爬取数据")
+    
+    st.markdown("---")
+    
     stats_types = {
         "kpi": "📊 核心 KPI - 汇总指标",
         "ranking": "🏆 排名统计 - 销售员/城市排名",
@@ -94,28 +163,44 @@ def render_tab1(base_dir, templates_dir, output_dir):
                 json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
             st.info("📝 配置已保存")
             
+            # 检查是否有上传的文件
+            if 'uploaded_file_name' not in st.session_state:
+                st.error("❌ 请先上传 Excel 数据文件\n\n💡 在上方「📤 上传原始数据 Excel」处上传文件")
+                st.stop()
+            
+            uploaded_file_name = st.session_state['uploaded_file_name']
+            raw_data_path = os.path.join(output_dir, uploaded_file_name)
+            
+            if not os.path.exists(raw_data_path):
+                st.error(f"❌ 数据文件不存在：{raw_data_path}\n\n💡 请重新上传文件")
+                st.stop()
+            
             with st.spinner("⚙️ 正在执行统计引擎，生成 Excel Sheet..."):
                 sys.path.insert(0, os.path.join(base_dir, 'scripts'))
                 from core.stats_engine import StatsEngine
                 from core.data_loader import DataLoader
                 
                 data_loader = DataLoader(base_dir)
-                raw_df = data_loader.load_raw_data('帆软销售明细.xlsx')
+                raw_df = data_loader.load_raw_data(uploaded_file_name)
                 
-                stats_engine = StatsEngine(base_dir=base_dir)
-                output_path = os.path.join(output_dir, '销售统计汇总.xlsx')
+                # 生成统计汇总文件名（基于上传的文件名）
+                if uploaded_file_name.endswith('.xlsx'):
+                    summary_name = uploaded_file_name.replace('.xlsx', '_统计汇总.xlsx')
+                else:
+                    summary_name = uploaded_file_name + '_统计汇总.xlsx'
+                output_path = os.path.join(output_dir, summary_name)
+                
+                stats_engine = StatsEngine(base_dir=base_dir, raw_data_file=uploaded_file_name)
                 results = stats_engine.run_all(raw_df, output_path=output_path)
                 
                 st.success(f"✅ 已生成 {len(results)} 个统计 Sheet！")
+                st.info(f"📄 输出文件：`{summary_name}`")
                 
                 with st.expander("📊 查看生成的 Sheet", expanded=True):
                     for sheet_name, df in results.items():
                         st.write(f"**{sheet_name}**: {len(df)} 行")
             
             st.success("🎉 配置保存并数据生成完成！现在可以去「📈 图表配置」页签配置图表了")
-            
-        except FileNotFoundError as e:
-            st.error(f"❌ 数据文件不存在：{e}\n\n💡 请先确保 output 目录中有 `帆软销售明细.xlsx` 文件")
         except Exception as e:
             st.error(f"❌ 执行失败：{e}")
             import traceback
@@ -205,10 +290,44 @@ def render_tab1(base_dir, templates_dir, output_dir):
     st.header("📊 查看生成的数据")
     st.markdown("*预览统计汇总 Excel 中的 Sheet 数据*")
     
-    summary_file = os.path.join(output_dir, "销售统计汇总.xlsx")
+    # 根据上传的文件名构建统计汇总文件名
+    summary_file = None
+    if 'uploaded_file_name' in st.session_state:
+        uploaded_name = st.session_state['uploaded_file_name']
+        if uploaded_name.endswith('.xlsx'):
+            summary_name = uploaded_name.replace('.xlsx', '_统计汇总.xlsx')
+        else:
+            summary_name = uploaded_name + '_统计汇总.xlsx'
+        summary_file = os.path.join(output_dir, summary_name)
     
-    if os.path.exists(summary_file):
+    # 如果找不到，自动检测 output 目录
+    if not summary_file or not os.path.exists(summary_file):
+        for f in os.listdir(output_dir):
+            if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
+                summary_file = os.path.join(output_dir, f)
+                break
+    
+    if summary_file and os.path.exists(summary_file):
         st.success("✅ 找到统计汇总文件")
+        
+        # ========== 导出功能 ==========
+        st.subheader("💾 导出数据")
+        
+        with open(summary_file, "rb") as f:
+            file_size = os.path.getsize(summary_file)
+            file_mtime = pd.Timestamp.fromtimestamp(os.path.getmtime(summary_file)).strftime('%Y-%m-%d %H:%M:%S')
+            
+            st.download_button(
+                label=f"📄 下载统计汇总 Excel ({round(file_size/1024, 1)} KB, 更新于 {file_mtime})",
+                data=f.read(),
+                file_name="销售统计汇总.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                width='stretch',
+                help="下载完整的统计汇总 Excel 文件，包含所有 Sheet"
+            )
+        
+        st.caption("💡 提示：下载的文件包含所有统计 Sheet，可直接用 Excel 或 WPS 打开编辑")
+        st.markdown("---")
         
         try:
             xls = pd.ExcelFile(summary_file)
@@ -240,7 +359,7 @@ def render_tab1(base_dir, templates_dir, output_dir):
                     })
             
             overview_df = pd.DataFrame(overview_data)
-            st.dataframe(overview_df, use_container_width=True, width='stretch', hide_index=True)
+            st.dataframe(overview_df, width='stretch', hide_index=True)
             
             # 详细查看某个 Sheet
             st.markdown("---")
@@ -251,7 +370,7 @@ def render_tab1(base_dir, templates_dir, output_dir):
             if selected_sheet:
                 try:
                     df_detail = pd.read_excel(summary_file, sheet_name=selected_sheet)
-                    st.dataframe(df_detail.head(100), use_container_width=True, width='stretch')
+                    st.dataframe(df_detail.head(100), width='stretch')
                     
                     st.markdown(f"##### 数据信息")
                     col1, col2, col3, col4 = st.columns(4)
@@ -275,7 +394,7 @@ def render_tab1(base_dir, templates_dir, output_dir):
                                 '空值数': int(df_detail[col].isnull().sum()),
                                 '唯一值': int(df_detail[col].nunique())
                             })
-                        st.dataframe(pd.DataFrame(field_info), use_container_width=True, width='stretch', hide_index=True)
+                        st.dataframe(pd.DataFrame(field_info), width='stretch', hide_index=True)
                 except Exception as e:
                     st.error(f"❌ 读取失败：{e}")
         except Exception as e:

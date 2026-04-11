@@ -62,30 +62,16 @@ logger, logs_dir = setup_logging()
 
 # ========== 动态生成 SKILL.md ==========
 def build_skill_always(log_callback=None):
-    """每次运行时都重新生成 SKILL.md（确保包含最新的 special_insights 配置）"""
-    stats_rules_path = os.path.join(BASE_DIR, 'templates', 'stats_rules.json')
-    placeholders_path = os.path.join(BASE_DIR, 'templates', 'placeholders.json')
+    """检查 SKILL.md 是否存在，不存在时给出提示（SKILL.md 应手动维护或从模板生成）"""
     skill_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'SKILL.md')
-    skill_builder_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'skill_builder.py')
     
     if log_callback is None:
         log_callback = lambda x: None
     
-    log_callback("正在重新生成 SKILL.md (包含最新的 special_insights 配置)...")
-    try:
-        import importlib.util
-        spec = importlib.util.spec_from_file_location("skill_builder", skill_builder_path)
-        skill_builder = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(skill_builder)
-        
-        skill_builder.build_skill_from_config(
-            stats_rules_path=stats_rules_path,
-            placeholders_path=placeholders_path,
-            output_path=skill_path
-        )
-        log_callback("✅ SKILL.md 已重新生成")
-    except Exception as e:
-        log_callback(f"⚠️ SKILL.md 生成失败：{e}，使用现有文件")
+    if os.path.exists(skill_path):
+        log_callback("✅ SKILL.md 已存在，使用现有文件")
+    else:
+        log_callback("⚠️ SKILL.md 不存在，请确保 templates/placeholders.json 配置正确")
 
 
 
@@ -162,11 +148,23 @@ def _generate_single_chart(args: Tuple) -> Tuple[str, str]:
         return (chart_key, None)
 
 
-def _get_date_range_from_data(data_loader) -> str:
+def _get_date_range_from_data(data_loader, raw_data_filename=None) -> str:
     """从原始数据中动态提取日期范围"""
     import pandas as pd
     try:
-        df = data_loader.load_raw_data('帆软销售明细.xlsx')
+        # 如果没有提供文件名，自动检测 output 目录中的第一个非统计汇总文件
+        if raw_data_filename is None:
+            output_dir = os.path.join(BASE_DIR, 'output')
+            for f in os.listdir(output_dir):
+                if f.endswith('.xlsx') and '统计汇总' not in f and not f.startswith('~'):
+                    raw_data_filename = f
+                    break
+        
+        # 如果还是没找到，使用默认值
+        if not raw_data_filename:
+            raw_data_filename = '帆软销售明细.xlsx'
+        
+        df = data_loader.load_raw_data(raw_data_filename)
         if '订单时间' in df.columns:
             df['订单时间'] = pd.to_datetime(df['订单时间'], errors='coerce')
             min_date = df['订单时间'].min().strftime('%Y年%m月%d日')
@@ -216,7 +214,7 @@ def _build_text_replacements_from_config(placeholders: Dict, data_loader, insigh
             replacements[full_key] = config.get('default', '业绩复盘 · 洞察归因 · 策略建议')
         elif key == 'TEXT:report_date':
             # 动态提取统计周期（从 placeholders.json 读取格式配置）
-            date_range = _get_date_range_from_data(data_loader)
+            date_range = _get_date_range_from_data(data_loader, raw_data_file)
             date_format = placeholders.get('report_settings', {}).get('date_range_format', '统计周期：{start} - {end} | 日期：{today}')
             replacements[full_key] = date_format.format(start=date_range.split(' - ')[0], end=date_range.split(' - ')[1], today=today)
         elif key == 'KPI:cards':
@@ -365,7 +363,7 @@ def _build_chart_placeholder_map_from_config(placeholders: Dict, chart_paths: Di
 
 def generate_report(template_name: str = None, output_name: str = None, 
                     parallel_charts: bool = True, regenerate_placeholders: bool = False,
-                    log_callback=None):
+                    log_callback=None, raw_data_name: str = None):
     """
     生成销售分析报告
     
@@ -400,16 +398,49 @@ def generate_report(template_name: str = None, output_name: str = None,
         log_callback("\n[1/5] 加载销售统计数据...")
         data_loader = DataLoader(BASE_DIR)
         
-        # 自动查找统计汇总文件
-        summary_file = None
+        # 使用传入的文件名（如果提供了）
         output_dir = os.path.join(BASE_DIR, 'output')
-        for f in os.listdir(output_dir):
-            if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
-                summary_file = f
-                break
+        
+        if raw_data_name:
+            # 直接使用传入的文件名构建统计汇总文件名
+            if raw_data_name.endswith('.xlsx'):
+                summary_file = raw_data_name.replace('.xlsx', '_统计汇总.xlsx')
+            else:
+                summary_file = raw_data_name + '_统计汇总.xlsx'
+            
+            # 检查文件是否存在
+            if not os.path.exists(os.path.join(output_dir, summary_file)):
+                log_callback(f"❌ 统计汇总文件不存在：{summary_file}")
+                log_callback("   将尝试自动检测...")
+                raw_data_name = None  # 回退到自动检测
+        
+        # 如果没有传入文件名，自动检测最新的统计汇总文件
+        if not raw_data_name:
+            summary_files = []
+            for f in os.listdir(output_dir):
+                if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
+                    full_path = os.path.join(output_dir, f)
+                    mtime = os.path.getmtime(full_path)
+                    summary_files.append((f, mtime))
+            
+            if summary_files:
+                summary_files.sort(key=lambda x: x[1], reverse=True)
+                summary_file = summary_files[0][0]
+            else:
+                summary_file = None
+        
+        if not summary_file or not os.path.exists(os.path.join(output_dir, summary_file)):
+            log_callback("❌ 未找到统计汇总文件，请先在 Tab 1 生成")
+            return False
         
         data_summary = data_loader.load_summary(filename=summary_file)
         log_callback(f"      已加载 {len(data_summary)} 个统计表（文件：{summary_file}）")
+        
+        # 如果没有传入 raw_data_name，从统计汇总文件名提取
+        if not raw_data_name:
+            raw_data_name = summary_file.replace('_统计汇总.xlsx', '')
+        
+        log_callback(f"      原始数据：{raw_data_name}")
         
         validator = PresetValidators.summary_data_validator(data_summary)
         log_callback("      [OK] 数据校验通过")
@@ -660,20 +691,8 @@ def generate_report(template_name: str = None, output_name: str = None,
         if output_name is None:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             # 基于统计汇总文件名生成 PPT 报告名
-            summary_file_name = None
-            output_dir = os.path.join(BASE_DIR, 'output')
-            for f in os.listdir(output_dir):
-                if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
-                    summary_file_name = f
-                    break
-            
-            if summary_file_name:
-                # 从统计汇总文件名提取原始数据文件名
-                # 例如：要测试的数据_统计汇总.xlsx → 要测试的数据
-                base_name = summary_file_name.replace('_统计汇总.xlsx', '')
-                output_name = f'{base_name}_报告_{timestamp}_v1.pptx'
-            else:
-                output_name = f'销售分析报告_{timestamp}_v1.pptx'
+            base_name = summary_file.replace('_统计汇总.xlsx', '')
+            output_name = f'{base_name}_报告_{timestamp}_v1.pptx'
         
         output_path = os.path.join(BASE_DIR, 'output', output_name)
         template_engine.save(prs, output_path)

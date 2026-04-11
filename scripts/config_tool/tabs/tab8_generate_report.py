@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Tab 8: 生成 PPT 报告
 一键执行完整流程：统计分析 → 图表生成 → PPT 报告
@@ -7,7 +7,10 @@ import streamlit as st
 import pandas as pd
 import os
 import sys
+import threading
+import time
 from datetime import datetime
+from queue import Queue
 
 
 def render_tab8(base_dir, output_dir, templates_dir):
@@ -16,10 +19,10 @@ def render_tab8(base_dir, output_dir, templates_dir):
     st.header("🚀 生成 PPT 报告")
     st.markdown("**一键执行完整流程：统计分析 → 图表生成 → PPT 报告**")
     
-    # 初始化执行器
+    # 添加脚本路径
     sys.path.insert(0, os.path.join(base_dir, 'scripts'))
     
-    # 日志存储
+    # 初始化 session_state
     if 'execution_logs' not in st.session_state:
         st.session_state.execution_logs = []
     if 'execution_running' not in st.session_state:
@@ -27,128 +30,85 @@ def render_tab8(base_dir, output_dir, templates_dir):
     if 'execution_result' not in st.session_state:
         st.session_state.execution_result = None
     
-    def add_log(message: str, level: str = 'INFO'):
-        """添加日志"""
-        timestamp = datetime.now().strftime('%H:%M:%S')
-        log_entry = f"[{timestamp}] [{level}] {message}"
-        st.session_state.execution_logs.append(log_entry)
+    # 强制重置运行状态
+    if 'force_reset' in st.session_state and st.session_state.force_reset:
+        st.session_state.execution_running = False
+        st.session_state.force_reset = False
     
     def clear_logs():
-        """清空日志"""
         st.session_state.execution_logs = []
         st.session_state.execution_result = None
     
-    # 检测当前文件状态
+    # ========== 检测当前文件状态 ==========
     st.subheader("📊 当前状态")
     
-    files_detected = {'raw_data': None, 'summary': None, 'ppt_reports': []}
+    files = {'raw_data': None, 'summary': None, 'ppt_reports': []}
     
-    # 优先使用 session_state 中记录的上传文件名
-    if 'uploaded_file_name' in st.session_state:
-        uploaded_name = st.session_state['uploaded_file_name']
-        raw_path = os.path.join(output_dir, uploaded_name)
-        if os.path.exists(raw_path):
-            files_detected['raw_data'] = uploaded_name
-            # 统计汇总文件名
-            summary_name = uploaded_name.replace('.xlsx', '_统计汇总.xlsx') if uploaded_name.endswith('.xlsx') else uploaded_name + '_统计汇总.xlsx'
-            summary_path = os.path.join(output_dir, summary_name)
-            if os.path.exists(summary_path):
-                files_detected['summary'] = summary_name
-    
-    # 如果没有记录，则自动检测
-    if not files_detected['raw_data'] and os.path.exists(output_dir):
-        for f in os.listdir(output_dir):
-            if f.endswith('.xlsx') and '统计汇总' not in f and not f.startswith('~'):
-                files_detected['raw_data'] = f
-                break
-    
-    # 检测统计汇总文件
-    if not files_detected['summary'] and os.path.exists(output_dir):
-        for f in os.listdir(output_dir):
-            if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
-                files_detected['summary'] = f
-                break
-    
-    # 检测 PPT 报告（根据上传的文件名查找对应的报告）
+    # 每次运行时重新检测 output 目录中的最新文件（不依赖 session_state）
     if os.path.exists(output_dir):
-        # 优先使用 session_state 中记录的上传文件名
-        if 'uploaded_file_name' in st.session_state:
-            uploaded_name = st.session_state['uploaded_file_name']
-            base_name = uploaded_name.replace('.xlsx', '') if uploaded_name.endswith('.xlsx') else uploaded_name
-            
-            # 查找所有 PPT 文件
-            all_ppt = [f for f in os.listdir(output_dir) if f.endswith('.pptx') and not f.startswith('~')]
-            
-            # 优先查找包含基础名称的 PPT 报告
-            matching_ppt = [f for f in all_ppt if base_name in f]
-            other_ppt = [f for f in all_ppt if base_name not in f]
-            
-            # 排序：匹配的文件在前，按时间倒序
-            matching_ppt.sort(reverse=True)
-            other_ppt.sort(reverse=True)
-            
-            # 合并列表
-            files_detected['ppt_reports'] = matching_ppt + other_ppt
-        else:
-            # 没有记录，显示所有 PPT 文件
-            ppt_files = [f for f in os.listdir(output_dir) if f.endswith('.pptx') and not f.startswith('~')]
-            ppt_files.sort(reverse=True)
-            files_detected['ppt_reports'] = ppt_files
+        latest_raw = None
+        latest_summary = None
+        
+        for f in os.listdir(output_dir):
+            if f.endswith('.xlsx') and not f.startswith('~'):
+                if '统计汇总' in f:
+                    # 找到最新的统计汇总文件
+                    if latest_summary is None or f > latest_summary:
+                        latest_summary = f
+                else:
+                    # 找到最新的原始数据文件
+                    if latest_raw is None or f > latest_raw:
+                        latest_raw = f
+        
+        files['raw_data'] = latest_raw
+        files['summary'] = latest_summary
+        
+        # 更新 session_state（如果检测到新文件）
+        if latest_raw and ('uploaded_file_name' not in st.session_state or st.session_state['uploaded_file_name'] != latest_raw):
+            st.session_state['uploaded_file_name'] = latest_raw
     
+    # 检测 PPT
+    if os.path.exists(output_dir):
+        ppt_files = [f for f in os.listdir(output_dir) if f.endswith('.pptx') and not f.startswith('~')]
+        ppt_files.sort(reverse=True)
+        files['ppt_reports'] = ppt_files
+    
+    # 显示状态
     col_s1, col_s2, col_s3 = st.columns(3)
     
     with col_s1:
-        # 只展示与 session_state 中记录的上传文件匹配的原始数据
-        matching_raw = None
-        if 'uploaded_file_name' in st.session_state:
-            uploaded_name = st.session_state['uploaded_file_name']
-            raw_path = os.path.join(output_dir, uploaded_name)
-            if os.path.exists(raw_path):
-                matching_raw = uploaded_name
-        
-        if matching_raw:
-            file_size = os.path.getsize(os.path.join(output_dir, matching_raw))
-            st.success(f"✅ 原始数据\n\n`{matching_raw}`\n\n{round(file_size/1024, 1)} KB")
+        if files['raw_data']:
+            file_size = os.path.getsize(os.path.join(output_dir, files['raw_data']))
+            st.success(f"✅ 原始数据\n\n`{files['raw_data']}`\n\n{round(file_size/1024, 1)} KB")
         else:
-            st.info("ℹ️ 原始数据\n\n未上传\n\n请先在「📋 统计规则配置」页签上传 Excel 数据文件")
+            st.info("ℹ️ 原始数据\n\n未上传\n\n请先在「📋 统计规则配置」页签上传 Excel")
     
     with col_s2:
-        # 只展示与上传文件匹配的统计汇总
-        matching_summary = None
-        if 'uploaded_file_name' in st.session_state and files_detected['summary']:
-            uploaded_name = st.session_state['uploaded_file_name']
-            expected_summary = uploaded_name.replace('.xlsx', '_统计汇总.xlsx') if uploaded_name.endswith('.xlsx') else uploaded_name + '_统计汇总.xlsx'
-            # 检查是否存在匹配的统计汇总
-            if files_detected['summary'] == expected_summary and os.path.exists(os.path.join(output_dir, expected_summary)):
-                matching_summary = expected_summary
-        
-        if matching_summary:
-            file_size = os.path.getsize(os.path.join(output_dir, matching_summary))
-            st.success(f"✅ 统计汇总\n\n`{matching_summary}`\n\n{round(file_size/1024, 1)} KB")
+        if files['summary']:
+            file_size = os.path.getsize(os.path.join(output_dir, files['summary']))
+            st.success(f"✅ 统计汇总\n\n`{files['summary']}`\n\n{round(file_size/1024, 1)} KB")
         else:
-            st.warning("⚠️ 统计汇总\n\n未生成\n\n请先在「📋 统计规则配置」页签上传 Excel 并点击【🔄 保存配置并生成数据】")
+            st.warning("⚠️ 统计汇总\n\n未生成\n\n请先在「📋 统计规则配置」页签生成数据")
     
     with col_s3:
-        # 只显示与上传文件名匹配的 PPT 报告
-        matching_ppt = None
-        if 'uploaded_file_name' in st.session_state and files_detected['ppt_reports']:
-            uploaded_name = st.session_state['uploaded_file_name']
-            base_name = uploaded_name.replace('.xlsx', '') if uploaded_name.endswith('.xlsx') else uploaded_name
-            # 查找匹配的文件
-            for ppt_file in files_detected['ppt_reports']:
-                if base_name in ppt_file:
-                    matching_ppt = ppt_file
-                    break
-        
-        if matching_ppt:
-            file_size = os.path.getsize(os.path.join(output_dir, matching_ppt))
-            st.success(f"✅ PPT 报告\n\n`{matching_ppt}`\n\n{round(file_size/1024, 1)} KB")
+        # 只显示与当前数据匹配的 PPT
+        if files['raw_data'] and files['summary']:
+            base_name = files['raw_data'].replace('.xlsx', '')
+            matching_ppt = [f for f in os.listdir(output_dir) if f.endswith('.pptx') and base_name in f and not f.startswith('~')]
+            
+            if matching_ppt:
+                matching_ppt.sort(reverse=True)
+                latest_ppt = matching_ppt[0]
+                file_size = os.path.getsize(os.path.join(output_dir, latest_ppt))
+                st.success(f"✅ PPT 报告\n\n`{latest_ppt}`\n\n{round(file_size/1024, 1)} KB")
+            else:
+                st.info("ℹ️ PPT 报告\n\n未生成\n\n点击按钮生成")
         else:
-            st.info("ℹ️ PPT 报告\n\n未生成\n\n将在执行时生成")
+            st.info("ℹ️ PPT 报告\n\n未生成\n\n先上传数据并生成统计汇总")
     
     st.markdown("---")
     
-    # 执行选项
+    # ========== 执行选项 ==========
     st.subheader("⚙️ 执行选项")
     
     col_opt1, col_opt2 = st.columns(2)
@@ -161,7 +121,6 @@ def render_tab8(base_dir, output_dir, templates_dir):
         )
     
     with col_opt2:
-        # PPT 模板选择方式
         template_mode = st.radio(
             "模板选择",
             options=["使用已有模板", "上传新模板"],
@@ -171,7 +130,6 @@ def render_tab8(base_dir, output_dir, templates_dir):
         )
         
         if template_mode == "使用已有模板":
-            # 扫描 templates 目录中的 PPT 文件
             template_files = []
             if os.path.exists(templates_dir):
                 template_files = [f for f in os.listdir(templates_dir) if f.endswith('.pptx') and not f.startswith('~')]
@@ -182,7 +140,6 @@ def render_tab8(base_dir, output_dir, templates_dir):
                 help="PPT 模板文件名（在 templates 目录下）"
             )
         else:
-            # 上传新模板
             uploaded_template = st.file_uploader(
                 "📄 上传 PPT 模板",
                 type=["pptx"],
@@ -190,25 +147,25 @@ def render_tab8(base_dir, output_dir, templates_dir):
             )
             
             if uploaded_template is not None:
-                # 保存上传的模板
                 template_name = uploaded_template.name
                 template_path = os.path.join(templates_dir, template_name)
                 with open(template_path, "wb") as f:
                     f.write(uploaded_template.getbuffer())
                 st.success(f"✅ 模板已保存：{template_name}")
+                st.rerun()
             else:
                 template_name = "销售分析报告_标准模板.pptx"
     
     st.markdown("---")
     
-    # 执行按钮
+    # ========== 执行按钮 ==========
     st.subheader("🎯 执行")
     
     col_btn1, col_btn2 = st.columns([3, 1])
     
     with col_btn1:
         start_button = st.button(
-            "▶️ 开始生成 PPT 报告",
+            "▶️ 生成 PPT 报告",
             type="primary",
             use_container_width=True,
             disabled=st.session_state.execution_running
@@ -217,89 +174,126 @@ def render_tab8(base_dir, output_dir, templates_dir):
     with col_btn2:
         if st.button("🗑️ 清空日志", use_container_width=True):
             clear_logs()
+            st.rerun()
     
-    # 创建日志容器和进度条（在 if start_button 之前，这样重新运行时不会丢失）
+    # 日志容器
     log_container = st.empty()
     progress_bar = st.progress(0)
     
+    # 显示现有日志
+    if st.session_state.execution_logs:
+        logs_text = ''.join(st.session_state.execution_logs)
+        log_container.markdown(f'<div class="log-container">{logs_text}</div>', unsafe_allow_html=True)
+    
+    # ========== 执行逻辑 ==========
     if start_button and not st.session_state.execution_running:
-        import threading
-        import time
-        
         st.session_state.execution_running = True
         clear_logs()
         
-        result = [None]
-        error = [None]
-        generator = [None]
+        # 创建局部日志队列（线程安全）
+        log_queue = Queue()
+        
+        result = {'success': False, 'files': {}}
+        error_msg = None
         
         def run_pipeline():
+            nonlocal result, error_msg
             try:
-                from ppt_report_executor import PPTReportGenerator
-                generator[0] = PPTReportGenerator(base_dir=base_dir)
+                from generate_report import generate_report
                 
-                use_raw_data_file = None
-                if 'uploaded_file_name' in st.session_state:
-                    use_raw_data_file = st.session_state['uploaded_file_name']
+                # 获取数据文件名（使用刚才检测到的 files['raw_data']）
+                use_raw_data_file = files.get('raw_data')
                 
-                result[0] = generator[0].run_full_pipeline(
-                    regenerate_stats=regenerate_stats,
+                if not use_raw_data_file:
+                    # 如果没检测到，再尝试自动查找
+                    for f in os.listdir(output_dir):
+                        if f.endswith('.xlsx') and '统计汇总' not in f and not f.startswith('~'):
+                            use_raw_data_file = f
+                            break
+                
+                if not use_raw_data_file:
+                    error_msg = "未找到原始数据文件，请先上传 Excel 文件"
+                    return
+                
+                # 日志回调（使用闭包访问 log_queue）
+                def log_callback(msg):
+                    log_queue.put(msg + "<br>")
+                    print(msg)
+                
+                log_callback("=" * 60)
+                log_callback("开始生成 PPT 报告...")
+                log_callback(f"使用模板：{template_name}")
+                log_callback(f"原始数据：{use_raw_data_file}")
+                log_callback(f"统计汇总：{use_raw_data_file.replace('.xlsx', '_统计汇总.xlsx')}")
+                log_callback(f"将生成：{use_raw_data_file.replace('.xlsx', '')}_报告_xxx.pptx")
+                log_callback("=" * 60)
+                
+                # 调用生成函数（直接传入文件名）
+                success = generate_report(
                     template_name=template_name,
-                    raw_data_file=use_raw_data_file
+                    output_name=None,  # 自动生成文件名
+                    parallel_charts=True,
+                    log_callback=log_callback,
+                    raw_data_name=use_raw_data_file  # 直接传入原始数据文件名
                 )
+                
+                result['success'] = success
+                if success:
+                    # 查找最新 PPT
+                    ppt_files = [f for f in os.listdir(output_dir) if f.endswith('.pptx') and not f.startswith('~')]
+                    if ppt_files:
+                        ppt_files.sort(reverse=True)
+                        result['files']['ppt_report'] = ppt_files[0]
+                        log_callback(f"✅ PPT 生成成功：{ppt_files[0]}")
+                else:
+                    log_callback("❌ PPT 生成失败")
+                    
             except Exception as e:
-                error[0] = e
+                import traceback
+                error_msg = f"{str(e)}\n\n{traceback.format_exc()}"
+                log_callback(f"❌ 错误：{str(e)}")
+            finally:
+                st.session_state.execution_running = False
+                st.session_state.force_reset = True
         
-        # 启动后台线程
-        thread = threading.Thread(target=run_pipeline)
+        # 启动线程
+        thread = threading.Thread(target=run_pipeline, daemon=True)
         thread.start()
         
-        # 实时处理日志队列
-        while thread.is_alive() or (generator[0] and not generator[0].log_queue.empty()):
-            if generator[0]:
-                while not generator[0].log_queue.empty():
-                    try:
-                        log_entry = generator[0].log_queue.get_nowait()
-                        if 'execution_logs' not in st.session_state:
-                            st.session_state.execution_logs = []
-                        st.session_state.execution_logs.append(log_entry)
-                        # 实时更新显示
-                        logs_text = ''.join(st.session_state.execution_logs)
-                        try:
-                            log_container.markdown(f'<div class="log-container">{logs_text}</div>', unsafe_allow_html=True)
-                        except:
-                            pass
-                    except:
-                        break
-            time.sleep(0.1)
+        # 等待完成
+        timeout = 300
+        start_time = time.time()
         
-        # 更新进度
+        while thread.is_alive() and (time.time() - start_time) < timeout:
+            time.sleep(0.5)
+            
+            # 更新日志（从局部队列读取）
+            while not log_queue.empty():
+                try:
+                    log_entry = log_queue.get_nowait()
+                    st.session_state.execution_logs.append(log_entry)
+                except:
+                    break
+            
+            if st.session_state.execution_logs:
+                logs_text = ''.join(st.session_state.execution_logs)
+                log_container.markdown(f'<div class="log-container">{logs_text}</div>', unsafe_allow_html=True)
+        
         progress_bar.progress(100)
-        
-        # 更新结果
-        if error[0]:
-            st.error(f"❌ 错误：{error[0]}")
-        else:
-            st.session_state.execution_result = result[0]
-            # 更新文件显示
-            if generator[0]:
-                files = generator[0].detect_files()
-                if files.get('summary'):
-                    st.success(f"✅ 统计汇总：{files['summary']}")
-                if files.get('ppt_reports'):
-                    latest_ppt = sorted(files['ppt_reports'])[-1]
-                    st.success(f"✅ PPT 报告：{latest_ppt}")
-        
-        st.session_state.execution_running = False
-        if files.get('ppt_reports'):
-            latest_ppt = sorted(files['ppt_reports'])[-1]
+        st.rerun()
+    
+    # ========== 显示结果 ==========
+    if st.session_state.execution_result and st.session_state.execution_result.get('success'):
+        result = st.session_state.execution_result
+        if result.get('files', {}).get('ppt_report'):
+            latest_ppt = result['files']['ppt_report']
             ppt_path = os.path.join(output_dir, latest_ppt)
-            with open(ppt_path, 'rb') as f:
-                st.download_button(
-                    label=f"📄 下载 PPT 报告 ({latest_ppt})",
-                    data=f.read(),
-                    file_name=latest_ppt,
-                    mime='application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                    use_container_width=True
-                )
-
+            if os.path.exists(ppt_path):
+                with open(ppt_path, 'rb') as f:
+                    st.download_button(
+                        label=f"📄 下载 PPT 报告 ({latest_ppt})",
+                        data=f.read(),
+                        file_name=latest_ppt,
+                        mime='application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                        width='stretch'
+                    )

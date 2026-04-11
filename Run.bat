@@ -1,19 +1,23 @@
 @echo off
 chcp 65001 >nul
 cd /d "%~dp0"
-title FanRuan PPT Report Generator v4.5
+title PPT Report Generator v5.0
 cls
 echo.
 echo ========================================
-echo   FanRuan PPT Report Generator v4.5
+echo   PPT Report Generator v5.0
 echo ========================================
 echo.
-echo Starting...
+echo Starting Web Interface...
 echo.
-powershell -ExecutionPolicy Bypass -NoProfile -File "Run.ps1"
+echo Access: http://localhost:8501/
+echo.
+echo Press Ctrl+C to stop
+echo.
+python -m streamlit run scripts\config_tool\app.py --server.port 8501 --server.address localhost
 if errorlevel 1 (
     echo.
-    echo [ERROR] Execution failed, check logs
+    echo [ERROR] Failed to start web interface
     echo.
     pause
 )
