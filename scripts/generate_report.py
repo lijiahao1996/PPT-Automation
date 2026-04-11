@@ -63,16 +63,218 @@ logger, logs_dir = setup_logging()
 
 # ========== 动态生成 SKILL.md ==========
 def build_skill_always(log_callback=None):
-    """检查 SKILL.md 是否存在，不存在时给出提示（SKILL.md 应手动维护或从模板生成）"""
+    """根据当前配置动态生成 SKILL.md"""
+    import json
+    
     skill_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'SKILL.md')
+    placeholders_path = os.path.join(BASE_DIR, 'templates', 'placeholders.json')
     
     if log_callback is None:
         log_callback = lambda x: None
     
-    if os.path.exists(skill_path):
-        log_callback("✅ SKILL.md 已存在，使用现有文件")
-    else:
-        log_callback("⚠️ SKILL.md 不存在，请确保 templates/placeholders.json 配置正确")
+    log_callback("正在根据当前配置重新生成 SKILL.md...")
+    
+    try:
+        # 读取当前配置
+        if os.path.exists(placeholders_path):
+            with open(placeholders_path, 'r', encoding='utf-8') as f:
+                placeholders = json.load(f)
+            
+            # 构建 SKILL 内容
+            charts = placeholders.get('placeholders', {}).get('charts', {})
+            insights = placeholders.get('placeholders', {}).get('insights', {})
+            special_insights = placeholders.get('special_insights', {}).get('variables', [])
+            
+            skill_content = f"""---
+name: data-insight
+description: 销售数据洞察生成规范（动态版）- 根据实际图表配置生成洞察
+version: 3.2.0-dynamic
+author: Senior Data Analyst
+trigger: 生成销售洞察，分析销售数据，PPT 洞察填充
+generated_at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+---
+
+# 销售数据洞察专家（动态配置版）
+
+你是高级数据分析师，专门为销售分析报告生成 PPT 洞察文案。
+
+**重要**：本规范根据实际配置文件动态生成，请严格按照以下数据结构和分析要求生成洞察。
+
+---
+
+## 📊 已知数据结构
+
+你的输入包含以下统计表：
+
+| Sheet 名称 | 内容说明 | 关键字段 |
+|-----------|---------|---------|
+"""
+            
+            # 这里应该从 stats_rules.json 读取实际的 Sheet 定义
+            # 简化版本：列出所有图表的数据源
+            data_sources = set()
+            for chart_key, chart_cfg in charts.items():
+                data_sources.add(chart_cfg.get('data_source', ''))
+            
+            for source in data_sources:
+                skill_content += f"| {source} | 统计数据 | 动态检测 |\n"
+            
+            skill_content += f"""
+---
+
+## ✍️ 洞察生成核心规则
+
+### 1. 必须用数据说话
+- ❌ 错误："销售额表现良好"
+- ✅ 正确："Q2 销售额 21.3 万元，环比 Q1 增长 190%"
+
+### 2. 必须有对比
+- 同比/环比、目标 vs 实际、头部 vs 尾部、实际 vs 平均
+
+### 3. 必须具体
+- 精确到具体数字、具体人名、具体产品、具体城市
+
+### 4. 必须有洞察
+- 不仅描述"是什么"，还要指出"为什么"和"意味着什么"
+
+### 5. 文案质量要求 ⭐⭐⭐⭐⭐
+
+#### 字数要求（严格执行）
+- **第 1 页（核心指标）**: 120-180 字
+- **其他页（图表洞察）**: 每条 50-100 字，3 条合计 150-300 字
+- **核心结论页**: 每段 60-100 字，4 段合计 240-400 字
+- **落地策略页**: 每段 80-120 字，4 段合计 320-480 字
+
+#### 内容要求
+- 使用完整句子，不要简单罗列数据
+- 包含**数据 + 对比 + 洞察**三层结构
+- 避免"显著"、"明显"等模糊词汇，用具体倍数/百分比
+- 每条洞察必须有**业务含义**或**行动建议**
+
+---
+
+## 📤 输出格式规范（重要！）
+
+### ⚠️ 严格输出格式 - 必须遵守！
+
+**必须输出 JSON 数组，每个元素对应一个图表的洞察！**
+
+❌ **错误格式**（会导致解析失败）:
+```json
+[
+  "第 1 页洞察",
+  ["• 第 2 页洞察 1", "• 第 2 页洞察 2", "• 第 2 页洞察 3"],
+  ...
+]
+```
+
+✅ **正确格式**（必须这样输出）:
+```json
+[
+  "第 1 页洞察（单条，100-150 字）",
+  "• 第 2 页洞察 1\n• 第 2 页洞察 2\n• 第 2 页洞察 3",
+  ...
+]
+```
+
+### 关键要求
+
+1. **数组元素数量 = 图表数量**
+2. **不能嵌套数组**，所有洞察都必须是字符串
+3. 列表式洞察用 `\n` 连接 3 条，如：`"• 洞察 1\n• 洞察 2\n• 洞察 3"`
+4. 结构化洞察用 `\n\n` 分隔 4 个段落
+5. 直接输出 JSON 数组，不要任何其他文字
+
+---
+
+## 📊 洞察映射（共{len(charts)}个）
+
+根据当前配置，需要生成以下洞察：
+
+"""
+            
+            for i, (chart_key, chart_cfg) in enumerate(charts.items()):
+                chart_name = chart_key.replace('CHART:', '')
+                skill_content += f"""#### 第{i}页：{chart_name}
+**洞察 Key**: `{chart_key}`
+**数据源**: {chart_cfg.get('data_source', '')}
+**分析维度**: 排名分析，对比分析
+**自定义提示**: {chart_cfg.get('description', '根据数据特征生成洞察')}
+
+"""
+            
+            # 添加特殊洞察配置
+            if special_insights:
+                skill_content += "\n\n## 🎯 特殊洞察配置（可自定义）\n\n"
+                for var in special_insights:
+                    skill_content += f"""#### {var.get('name', var.get('key', ''))}（{{{{INSIGHT:{var.get('key', '')}}}}}）
+**分析维度**: {', '.join(var.get('dimensions', []))}
+**洞察风格**: {var.get('style', '数据驱动')}
+**字数要求**: {var.get('word_count', 300)}字
+**自定义提示**: {var.get('custom_prompt', '')}
+
+"""
+            
+            skill_content += """
+---
+
+## 🔧 技术实现要求
+
+### JSON 输出格式
+
+```json
+[
+  "总销售额 285,696 元中，Q2 贡献...（100-150 字）",
+  "• 孙林以 39,601 元总销售额位列业绩 TOP1...\n• TOP3 销售员贡献了全团队 39% 的销售额...\n• 头部销售员客单价显著高于团队平均水平...",
+  ...
+]
+```
+
+### 注意事项
+
+1. 所有数字使用阿拉伯数字，千位加分隔符（如 39,601）
+2. 百分比保留 1 位小数（如 34.2%）
+3. 金额单位统一用"元"或"万元"
+4. 人名、产品名、城市名必须与数据一致
+5. 列表式洞察用 `•` 符号，每条换行
+6. 结构化洞察用小标题 + 冒号格式
+
+---
+
+## 💡 最佳实践示例
+
+### 优秀洞察特征
+
+✅ **数据准确**: "销售额 285,696 元，环比增长 190%"
+✅ **对比清晰**: "是老客的 3 倍，超出平均值 45%"
+✅ **洞察深入**: "依赖大单明显，业绩结构存在风险"
+✅ **建议具体**: "建议通过组合捆绑提升连带率"
+
+### 错误示例
+
+❌ **模糊**: "销售额表现良好"
+❌ **无对比**: "孙林销售额最高"
+❌ **无洞察**: "牛肉干占比 34.2%"
+❌ **建议空洞**: "需要提升销售"
+
+---
+
+**最后更新**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+**版本**: 3.2.0-dynamic
+**状态**: ✅ 动态生成，与实际配置同步
+"""
+            
+            # 保存 SKILL.md
+            os.makedirs(os.path.dirname(skill_path), exist_ok=True)
+            with open(skill_path, 'w', encoding='utf-8') as f:
+                f.write(skill_content)
+            
+            log_callback("✅ SKILL.md 已根据当前配置重新生成")
+        else:
+            log_callback("⚠️ placeholders.json 不存在，无法生成 SKILL.md")
+    
+    except Exception as e:
+        log_callback(f"⚠️ SKILL.md 生成失败：{e}，使用现有文件")
 
 
 
