@@ -4,63 +4,35 @@
   "last_updated": "2026-04-07",
   "stats_sheets": {
     "核心 KPI": {
-      "description": "核心经营指标",
+      "description": "核心经营指标汇总",
       "type": "kpi",
       "enabled": true,
+      "group_by": [],
       "metrics": [
         {
           "field": "销售额",
           "agg": "sum",
-          "alias": "总销售额",
-          "unit": "元"
+          "alias": "总销售额"
         },
         {
           "field": "销售额",
           "agg": "count",
-          "alias": "总订单数",
-          "unit": "单"
+          "alias": "总订单数"
         },
         {
           "field": "销售额",
           "agg": "mean",
-          "alias": "平均客单价",
-          "unit": "元"
+          "alias": "平均客单价"
         },
         {
           "field": "销售额",
           "agg": "max",
-          "alias": "最高单额",
-          "unit": "元"
+          "alias": "最高单额"
         },
         {
           "field": "销售额",
           "agg": "min",
-          "alias": "最低单额",
-          "unit": "元"
-        }
-      ]
-    },
-    "AI 测试规则": {
-      "description": "测试规则",
-      "type": "kpi",
-      "enabled": true,
-      "metrics": [
-        {
-          "field": "销售额",
-          "agg": "sum",
-          "alias": "总销售额"
-        }
-      ]
-    },
-    "AI_Test_Rule": {
-      "description": "Test Rule",
-      "type": "kpi",
-      "enabled": true,
-      "metrics": [
-        {
-          "field": "销售额",
-          "agg": "sum",
-          "alias": "总销售额"
+          "alias": "最低单额"
         }
       ]
     },

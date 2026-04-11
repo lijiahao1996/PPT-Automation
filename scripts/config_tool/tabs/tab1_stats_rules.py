@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 import json
 import os
+import sys
 
 def render_tab1(base_dir, templates_dir, output_dir):
     st.header("📋 统计规则配置")
