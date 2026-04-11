@@ -92,7 +92,7 @@ class BasicChartsMixin:
         ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
         ax.set_xlabel('')
         ax.set_ylabel('')
-        ax.tick_params(axis='x', rotation=45, ha='right')
+        ax.tick_params(axis='x', rotation=45, labelright=False)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         
@@ -237,7 +237,7 @@ class BasicChartsMixin:
                    linewidths=0.5, linecolor='white')
         
         ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
-        plt.xticks(rotation=45, ha='right', fontsize=9)
+        plt.xticks(rotation=45, fontsize=9)
         plt.yticks(rotation=0, fontsize=9)
         
         plt.tight_layout()
