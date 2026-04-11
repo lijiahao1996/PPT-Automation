@@ -89,35 +89,27 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                 
                 st.session_state['sheet_analysis'] = sheet_analysis
                 
-                # 调用 AI 推荐图表
+                # 调用 AI（使用 chart-config-recommender SKILL）
                 from ai.qwen_client import QwenClient
                 qwen = QwenClient(base_dir=base_dir)
                 
                 if qwen.is_available():
+                    # 读取 SKILL.md
+                    skill_path = os.path.join(base_dir, 'skills', 'chart-config-recommender', 'SKILL.md')
+                    with open(skill_path, 'r', encoding='utf-8') as f:
+                        skill_content = f.read()
+                    
+                    # 构建 Prompt
                     prompt = f"""
-你是数据可视化专家。请根据以下统计 Sheet 数据，推荐合适的图表配置：
+请根据以下统计 Sheet 数据，推荐合适的图表配置：
 
+统计汇总文件：{summary_file_name}
 统计 Sheet 列表:
 {json.dumps(sheet_analysis, ensure_ascii=False, indent=2)}
 
-请为每个 Sheet 推荐 1-2 个图表类型，并说明理由。
-推荐的图表类型从以下选择：bar_horizontal, bar_vertical, pie, line, heatmap, scatter, column_clustered
+{skill_content}
 
-输出 JSON 格式：
-{{
-  "chart_recommendations": [
-    {{
-      "chart_key": "sales_by_person",
-      "chart_title": "销售员业绩表现分析",
-      "data_source": "销售员业绩",
-      "chart_type": "bar_horizontal",
-      "x_field": "总销售额",
-      "y_field": "销售员",
-      "reason": "横向条形图适合展示排名对比"
-    }},
-    ...
-  ]
-}}
+请根据 SKILL 中的规则，推荐图表配置。
 """
                     
                     system_prompt = "你是数据可视化专家，输出严格 JSON 格式。只输出 JSON，不要任何其他文字。"

@@ -97,38 +97,56 @@ def render_tab1(base_dir, templates_dir, output_dir):
             try:
                 df = pd.read_excel(raw_data_file)
                 
-                from core.field_detector import FieldDetector
-                detector = FieldDetector(base_dir=base_dir, enable_ai=True)
-                detected = detector.detect(df, raw_data_file_name)
+                # 构建数据样本
+                sample_data = df.head(5).to_dict('records')
+                columns_info = []
+                for col in df.columns:
+                    col_info = {
+                        'name': col,
+                        'type': str(df[col].dtype),
+                        'sample': df[col].head(3).dropna().tolist()
+                    }
+                    columns_info.append(col_info)
                 
-                st.session_state['field_detection'] = detected
+                # 调用 AI（使用 stats-rule-recommender SKILL）
+                from ai.qwen_client import QwenClient
+                qwen = QwenClient(base_dir=base_dir)
                 
-                st.success(f"✅ 检测到 {len(detected)} 个字段")
-                
-                with st.expander("📊 查看字段检测结果", expanded=True):
-                    detection_data = []
-                    for col, info in detected.items():
-                        detection_data.append({
-                            'Excel 列名': col,
-                            '系统字段': info.get('standard_name', '未识别'),
-                            '类型': info.get('type', 'unknown'),
-                            '置信度': '🤖高' if info.get('confidence') == 'high' else '中',
-                            '检测方法': 'AI+ 规则' if info.get('method') == 'ai_enhanced' else '规则'
-                        })
-                    st.dataframe(pd.DataFrame(detection_data), width='stretch', hide_index=True)
-                
-                from core.stats_recommender import StatsRecommender
-                recommender = StatsRecommender()
-                
-                field_mapping = {col: info['standard_name'] for col, info in detected.items() if info.get('standard_name')}
-                recommendations = recommender.recommend(field_mapping)
-                
-                # 保存推荐到 session_state，避免 rerun 后丢失
-                st.session_state['ai_recommendations_list'] = recommendations
-                
-                if recommendations:
-                    st.success(f"🤖 AI 推荐了 {len(recommendations)} 条统计规则")
-                    st.rerun()
+                if qwen.is_available():
+                    # 读取 SKILL.md
+                    skill_path = os.path.join(base_dir, 'skills', 'stats-rule-recommender', 'SKILL.md')
+                    with open(skill_path, 'r', encoding='utf-8') as f:
+                        skill_content = f.read()
+                    
+                    # 构建 Prompt
+                    prompt = f"""
+请根据以下 Excel 数据结构，推荐合适的统计规则配置：
+
+Excel 文件：{raw_data_file_name}
+列信息：
+{json.dumps(columns_info, ensure_ascii=False, indent=2)}
+
+数据样本（前 5 行）：
+{json.dumps(sample_data, ensure_ascii=False, indent=2)}
+
+{skill_content}
+
+请根据 SKILL 中的规则，推荐统计规则配置。
+"""
+                    
+                    system_prompt = "你是数据分析专家，输出严格 JSON 格式。只输出 JSON，不要任何其他文字。"
+                    response = qwen.chat(system_prompt, prompt, json_mode=True)
+                    
+                    if response:
+                        result = qwen.parse_json_response(response)
+                        if result and 'recommendations' in result:
+                            st.session_state['ai_recommendations_list'] = result['recommendations']
+                            st.success(f"🤖 AI 推荐了 {len(result['recommendations'])} 条统计规则")
+                            st.rerun()
+                    else:
+                        st.warning("⚠️ AI 未返回有效结果")
+                else:
+                    st.warning("⚠️ Qwen API Key 未配置，无法使用 AI 推荐")
             
             except Exception as e:
                 st.error(f"❌ AI 分析失败：{e}")
