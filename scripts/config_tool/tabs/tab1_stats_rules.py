@@ -150,94 +150,73 @@ def render_tab1(base_dir, templates_dir, output_dir):
                     if recommendations:
                         st.success(f"🤖 AI 推荐了 {len(recommendations)} 条统计规则")
                         
-                        # 初始化待添加规则列表
-                        if 'pending_ai_rules' not in st.session_state:
-                            st.session_state.pending_ai_rules = []
-                        
                         # 显示推荐列表
                         st.markdown("### 推荐规则列表")
                         
                         for i, rec in enumerate(recommendations):
-                            col1, col2, col3 = st.columns([3, 2, 1])
+                            col1, col2 = st.columns([4, 1])
                             
                             with col1:
                                 status_icon = "✅" if rec.get('enabled', False) else "⬜"
-                                st.write(f"{status_icon} **{rec['name']}**")
+                                st.write(f"{status_icon} **{rec['name']}** - {rec.get('ai_reason', '')}")
                             
                             with col2:
-                                st.caption(rec.get('ai_reason', ''))
-                            
-                            with col3:
                                 # 检查是否已添加
                                 already_added = rec['name'] in st.session_state.stats_config.get('stats_sheets', {})
-                                in_pending = rec['name'] in st.session_state.pending_ai_rules
                                 
                                 if already_added:
                                     st.success("✅ 已添加")
-                                elif in_pending:
-                                    st.info("⏳ 待保存")
                                 else:
-                                    button_key = f"add_single_{i}_{rec['name']}"
-                                    if st.button("➕", key=button_key, help=f"添加 {rec['name']}"):
-                                        # 添加到待保存列表
-                                        st.session_state.pending_ai_rules.append(rec)
-                                        st.rerun()
-                        
-                        # 显示待保存规则数量
-                        if st.session_state.pending_ai_rules:
-                            st.info(f"📝 已选择 {len(st.session_state.pending_ai_rules)} 条规则待保存")
-                            
-                            # 保存按钮
-                            if st.button("💾 保存所有选择的规则到 stats_rules.json", type="primary", use_container_width=True, key="save_pending_rules"):
-                                st.write(f"[DEBUG] stats_rules_file = {stats_rules_file}")
-                                st.write(f"[DEBUG] pending_rules = {len(st.session_state.pending_ai_rules)}")
-                                
-                                try:
-                                    # 读取当前文件
-                                    st.write("[DEBUG] 读取文件中...")
-                                    with open(stats_rules_file, 'r', encoding='utf-8') as f:
-                                        current_config = json.load(f)
-                                    st.write(f"[DEBUG] 读取成功，当前有 {len(current_config.get('stats_sheets', {}))} 条规则")
-                                    
-                                    added_count = 0
-                                    for rec in st.session_state.pending_ai_rules:
-                                        if rec['name'] not in current_config['stats_sheets']:
-                                            current_config['stats_sheets'][rec['name']] = {
-                                                'description': rec.get('description', ''),
-                                                'type': rec['type'],
-                                                'enabled': rec.get('enabled', False),
-                                                'group_by': rec.get('group_by', []),
-                                                'metrics': rec.get('metrics', [])
-                                            }
-                                            added_count += 1
-                                            st.write(f"[DEBUG] 添加：{rec['name']}")
-                                    
-                                    st.write(f"[DEBUG] 保存后共 {len(current_config.get('stats_sheets', {}))} 条规则")
-                                    
-                                    # 保存到文件
-                                    st.write(f"[DEBUG] 写入文件：{stats_rules_file}")
-                                    with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                                        json.dump(current_config, f, ensure_ascii=False, indent=2)
-                                    
-                                    st.write("[DEBUG] 写入完成！")
-                                    st.success(f"✅ 已保存 {added_count} 条规则")
-                                    st.balloons()
-                                    
-                                    # 验证
-                                    with open(stats_rules_file, 'r', encoding='utf-8') as f:
-                                        verify = json.load(f)
-                                    st.write(f"[DEBUG] 验证：文件现有 {len(verify.get('stats_sheets', {}))} 条")
-                                    st.write(f"[DEBUG] 规则：{list(verify.get('stats_sheets', {}).keys())}")
-                                    
-                                    st.session_state.stats_config = current_config
-                                    st.session_state.pending_ai_rules = []
-                                    
-                                    st.info("💡 请刷新页面（F5）查看结果")
-                                
-                                except Exception as e:
-                                    st.error(f"❌ 失败：{e}")
-                                    import traceback
-                                    st.code(traceback.format_exc())
+                                    # 直接保存到文件，不依赖 session_state
+                                    button_key = f"add_{rec['name']}_{i}"
+                                    if st.button("➕ 添加", key=button_key, use_container_width=True):
+                                        try:
+                                            # 使用 file lock 避免并发问题
+                                            import time
+                                            lock_file = stats_rules_file + '.lock'
+                                            
+                                            # 等待锁
+                                            wait_count = 0
+                                            while os.path.exists(lock_file) and wait_count < 10:
+                                                time.sleep(0.1)
+                                                wait_count += 1
+                                            
+                                            # 创建锁
+                                            with open(lock_file, 'w') as f:
+                                                f.write('locked')
+                                            
+                                            # 读取当前文件
+                                            with open(stats_rules_file, 'r', encoding='utf-8') as f:
+                                                current_config = json.load(f)
+                                            
+                                            # 添加规则
+                                            if rec['name'] not in current_config['stats_sheets']:
+                                                current_config['stats_sheets'][rec['name']] = {
+                                                    'description': rec.get('description', ''),
+                                                    'type': rec['type'],
+                                                    'enabled': rec.get('enabled', False),
+                                                    'group_by': rec.get('group_by', []),
+                                                    'metrics': rec.get('metrics', [])
+                                                }
+                                                
+                                                # 保存到文件
+                                                with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                                                    json.dump(current_config, f, ensure_ascii=False, indent=2)
+                                                
+                                                st.success(f"✅ 已添加：{rec['name']}")
+                                                st.balloons()
+                                            else:
+                                                st.info(f"ℹ️ 已存在")
+                                            
+                                            # 释放锁
+                                            if os.path.exists(lock_file):
+                                                os.remove(lock_file)
+                                            
+                                        except Exception as e:
+                                            st.error(f"❌ 失败：{e}")
+                                            # 释放锁
+                                            if os.path.exists(lock_file):
+                                                os.remove(lock_file)
                     
                 except Exception as e:
                     st.error(f"❌ AI 分析失败：{e}")
