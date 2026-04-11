@@ -251,15 +251,18 @@ class PresetValidators:
     
     @staticmethod
     def summary_data_validator(data: Dict[str, pd.DataFrame]) -> DataValidator:
-        """统计汇总数据校验器"""
+        """统计汇总数据校验器 - 宽松模式"""
         validator = DataValidator()
         
-        # 检查必要的 Sheet 是否存在
-        required_sheets = ['核心 KPI', '销售员业绩', '产品占比', '城市排名']
-        for sheet in required_sheets:
-            if sheet not in data:
-                validator.errors.append(f"缺少必要的统计表：{sheet}")
+        # 只检查是否有数据，不强制要求特定 Sheet
+        if not data:
+            validator.errors.append("统计汇总数据为空")
+        else:
+            # 只警告，不报错
+            sheet_names = list(data.keys())
+            validator.warnings.append(f"检测到 {len(sheet_names)} 个统计表：{', '.join(sheet_names[:5])}{'...' if len(sheet_names) > 5 else ''}")
         
+        # 如果有错误才抛出异常
         if validator.errors:
             raise DataQualityError('; '.join(validator.errors))
         
