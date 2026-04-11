@@ -91,10 +91,105 @@ def render_tab1(base_dir, templates_dir, output_dir):
     if os.path.exists(raw_data_file):
         file_size = os.path.getsize(raw_data_file)
         st.success(f"✅ 已找到数据文件：`{os.path.basename(raw_data_file)}` ({round(file_size/1024, 1)} KB)")
-    else:
-        st.info("💡 请先上传 Excel 数据文件，或运行 `Run.bat` 自动爬取数据")
-    
-    st.markdown("---")
+        
+        # ========== AI 字段检测 ==========
+        st.subheader("🤖 AI 智能分析")
+        
+        use_ai = st.checkbox(
+            "✨ 使用 AI 自动推荐统计规则",
+            value=False,
+            key="tab1_use_ai",
+            help="启用后，AI 将自动分析 Excel 字段并推荐统计规则（需要配置 Qwen API Key）"
+        )
+        
+        if use_ai:
+            if st.button("🤖 开始 AI 智能分析", type="primary", use_container_width=True):
+                try:
+                    # 加载数据
+                    df = pd.read_excel(raw_data_file)
+                    
+                    # 字段检测
+                    from core.field_detector import FieldDetector
+                    detector = FieldDetector(base_dir=base_dir, enable_ai=True)
+                    detected = detector.detect(df, raw_data_file_name)
+                    
+                    # 保存字段检测结果
+                    st.session_state['field_detection'] = detected
+                    
+                    # 显示检测结果
+                    st.success(f"✅ 检测到 {len(detected)} 个字段")
+                    
+                    with st.expander("📊 查看字段检测结果", expanded=True):
+                        detection_data = []
+                        for col, info in detected.items():
+                            detection_data.append({
+                                'Excel 列名': col,
+                                '系统字段': info.get('standard_name', '未识别'),
+                                '类型': info.get('type', 'unknown'),
+                                '置信度': '🤖高' if info.get('confidence') == 'high' else '中',
+                                '检测方法': 'AI+ 规则' if info.get('method') == 'ai_enhanced' else '规则'
+                            })
+                        st.dataframe(pd.DataFrame(detection_data), width='stretch', hide_index=True)
+                    
+                    # 检查必填字段
+                    status = detector.get_required_fields_status(detected)
+                    if not status['valid']:
+                        st.warning(f"⚠️ 缺少必填字段：{', '.join(status['missing'])}")
+                    else:
+                        st.success("✅ 必填字段完整")
+                    
+                    # 推荐统计规则
+                    from core.stats_recommender import StatsRecommender
+                    recommender = StatsRecommender()
+                    
+                    # 构建字段映射
+                    field_mapping = {col: info['standard_name'] for col, info in detected.items() if info.get('standard_name')}
+                    
+                    recommendations = recommender.recommend(field_mapping)
+                    
+                    if recommendations:
+                        st.success(f"🤖 AI 推荐了 {len(recommendations)} 条统计规则")
+                        
+                        # 显示推荐
+                        for i, rec in enumerate(recommendations):
+                            with st.expander(f"{rec.get('enabled', False) and '✅' or '⬜'} {rec['name']} - {rec.get('ai_reason', '')}", expanded=rec.get('enabled', False)):
+                                st.json(rec)
+                                
+                                if st.button(f"➕ 添加此规则", key=f"add_rec_{i}"):
+                                    if rec['name'] not in st.session_state.stats_config['stats_sheets']:
+                                        st.session_state.stats_config['stats_sheets'][rec['name']] = {
+                                            'description': rec.get('description', ''),
+                                            'type': rec['type'],
+                                            'enabled': rec.get('enabled', False),
+                                            'group_by': rec.get('group_by', []),
+                                            'metrics': rec.get('metrics', [])
+                                        }
+                                        st.success(f"✅ 已添加：{rec['name']}")
+                                        st.rerun()
+                        
+                        # 批量添加按钮
+                        if st.button("📥 批量添加所有推荐规则", type="primary", use_container_width=True):
+                            added_count = 0
+                            for rec in recommendations:
+                                if rec['name'] not in st.session_state.stats_config['stats_sheets']:
+                                    st.session_state.stats_config['stats_sheets'][rec['name']] = {
+                                        'description': rec.get('description', ''),
+                                        'type': rec['type'],
+                                        'enabled': rec.get('enabled', False),
+                                        'group_by': rec.get('group_by', []),
+                                        'metrics': rec.get('metrics', [])
+                                    }
+                                    added_count += 1
+                            st.success(f"✅ 已添加 {added_count} 条统计规则")
+                            st.rerun()
+                    
+                except Exception as e:
+                    st.error(f"❌ AI 分析失败：{e}")
+                    import traceback
+                    with st.expander("📄 查看详细错误"):
+                        st.code(traceback.format_exc())
+        
+        st.markdown("---")
     
     stats_types = {
         "kpi": "📊 核心 KPI - 汇总指标",

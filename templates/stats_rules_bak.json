@@ -1,0 +1,306 @@
+{
+  "version": "1.0",
+  "description": "统计规则配置 - 新增图表只需修改此文件",
+  "last_updated": "2026-04-07",
+  "stats_sheets": {
+    "核心 KPI": {
+      "description": "核心经营指标",
+      "type": "kpi",
+      "enabled": true,
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额",
+          "unit": "元"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "总订单数",
+          "unit": "单"
+        },
+        {
+          "field": "销售额",
+          "agg": "mean",
+          "alias": "平均客单价",
+          "unit": "元"
+        },
+        {
+          "field": "销售额",
+          "agg": "max",
+          "alias": "最高单额",
+          "unit": "元"
+        },
+        {
+          "field": "销售额",
+          "agg": "min",
+          "alias": "最低单额",
+          "unit": "元"
+        }
+      ]
+    },
+    "销售员业绩": {
+      "description": "销售员业绩排名",
+      "type": "ranking",
+      "enabled": true,
+      "group_by": [
+        "销售员"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        },
+        {
+          "field": "销售额",
+          "agg": "mean",
+          "alias": "客单价"
+        }
+      ],
+      "sort_by": "总销售额",
+      "sort_asc": false
+    },
+    "产品占比": {
+      "description": "产品销售占比分析",
+      "type": "composition",
+      "enabled": true,
+      "group_by": [
+        "产品"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "销售额"
+        }
+      ],
+      "add_percentage": true,
+      "sort_by": "销售额",
+      "sort_asc": false
+    },
+    "城市排名": {
+      "description": "城市销售业绩排名",
+      "type": "ranking",
+      "enabled": true,
+      "group_by": [
+        "城市"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        }
+      ],
+      "sort_by": "总销售额",
+      "sort_asc": false
+    },
+    "客户类型": {
+      "description": "新老客销售对比",
+      "type": "comparison",
+      "enabled": true,
+      "group_by": [
+        "客户属性"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        },
+        {
+          "field": "销售额",
+          "agg": "mean",
+          "alias": "客单价"
+        }
+      ],
+      "add_percentage": true
+    },
+    "月度趋势": {
+      "description": "月度销售趋势分析",
+      "type": "trend",
+      "enabled": true,
+      "group_by": [
+        "年月"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        },
+        {
+          "field": "销售额",
+          "agg": "mean",
+          "alias": "客单价"
+        }
+      ],
+      "add_mom": true,
+      "sort_by": "年月",
+      "sort_asc": true
+    },
+    "季度对比": {
+      "description": "季度销售对比",
+      "type": "comparison",
+      "enabled": true,
+      "group_by": [
+        "季度"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        },
+        {
+          "field": "销售额",
+          "agg": "mean",
+          "alias": "客单价"
+        }
+      ],
+      "add_percentage": true
+    },
+    "星期分布": {
+      "description": "星期销售分布",
+      "type": "distribution",
+      "enabled": true,
+      "group_by": [
+        "星期"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        },
+        {
+          "field": "销售额",
+          "agg": "mean",
+          "alias": "客单价"
+        }
+      ],
+      "custom_order": [
+        "周一",
+        "周二",
+        "周三",
+        "周四",
+        "周五",
+        "周六",
+        "周日"
+      ]
+    },
+    "销售员 - 产品": {
+      "description": "销售员产品销售矩阵",
+      "type": "matrix",
+      "enabled": true,
+      "pivot": {
+        "index": "销售员",
+        "columns": "产品",
+        "values": "销售额",
+        "aggfunc": "sum"
+      }
+    },
+    "异常订单": {
+      "description": "异常订单检测",
+      "type": "outlier",
+      "enabled": true,
+      "outlier_method": "3sigma",
+      "field": "销售额",
+      "columns": [
+        "订单时间",
+        "销售员",
+        "产品",
+        "城市",
+        "销售额",
+        "异常类型"
+      ]
+    },
+    "客户城市分析": {
+      "description": "客户属性与城市交叉分析",
+      "type": "ranking",
+      "enabled": true,
+      "group_by": [
+        "客户属性",
+        "城市"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        }
+      ],
+      "sort_by": "总销售额",
+      "sort_asc": false
+    },
+    "客户年龄分布": {
+      "description": "客户年龄与销售额分布分析",
+      "type": "distribution",
+      "enabled": true,
+      "group_by": [
+        "年龄段",
+        "客户类型"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        },
+        {
+          "field": "销售额",
+          "agg": "mean",
+          "alias": "客单价"
+        }
+      ]
+    }
+  },
+  "global_settings": {
+    "decimal_places": 2,
+    "thousands_separator": true,
+    "output_dir": "output",
+    "output_filename": "销售统计汇总.xlsx"
+  }
+}

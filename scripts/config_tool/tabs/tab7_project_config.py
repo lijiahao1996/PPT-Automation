@@ -62,16 +62,20 @@ def render_tab7(base_dir):
     # AI 功能开关
     st.subheader("🤖 AI 功能配置")
     
+    st.info("💡 **AI 增强功能说明**:\n\n1. **Tab 1 - AI 字段检测**: 自动识别 Excel 字段含义\n2. **Tab 1 - AI 统计推荐**: 基于字段自动推荐统计规则\n3. **AI 洞察生成**: 为 PPT 生成商业洞察文案")
+    
     enable_ai = config.getboolean('ai', 'enable_ai_insight', fallback=True)
     enable_ai = st.checkbox(
-        "启用 AI 洞察生成",
+        "启用 AI 洞察生成（PPT 文案）",
         value=enable_ai,
         key="cfg_enable_ai",
         help="禁用后将跳过 AI 洞察生成，节省 Token 消耗（但 PPT 中的洞察占位符将为空）"
     )
     
-    if not enable_ai:
-        st.warning("⚠️ **AI 洞察已禁用**\n\n生成 PPT 时将跳过 AI 洞察步骤，节省 Token 费用。\n\n注意：PPT 中的 `{{INSIGHT:xxx}}` 占位符将被替换为空。", icon="⚠️")
+    st.markdown("---")
+    st.subheader("📊 Tab 1 AI 功能")
+    
+    st.info("ℹ️ **Tab 1 中的 AI 功能**:\n\n在「📋 统计规则配置」页签上传 Excel 后，勾选「✨ 使用 AI 自动推荐统计规则」，然后点击「🤖 开始 AI 智能分析」即可。\n\n- ✅ 自动识别字段含义（如：sales → 销售额）\n- ✅ 推荐统计规则（KPI、排名、占比等）\n- ✅ 推荐图表类型\n\n**Token 消耗**: 每次约¥0.004，非常便宜！")
     
     st.markdown("---")
     
