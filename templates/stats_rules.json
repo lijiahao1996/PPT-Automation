@@ -27,62 +27,12 @@
         {
           "field": "销售额",
           "agg": "max",
-          "alias": "最高单额"
-        },
-        {
-          "field": "销售额",
-          "agg": "min",
-          "alias": "最低单额"
+          "alias": "最高单笔销售额"
         }
       ]
     },
-    "客户类型对比": {
-      "description": "按维度对比分析",
-      "type": "comparison",
-      "enabled": true,
-      "group_by": [
-        "客户类型"
-      ],
-      "metrics": [
-        {
-          "field": "销售额",
-          "agg": "sum",
-          "alias": "总销售额"
-        },
-        {
-          "field": "销售额",
-          "agg": "count",
-          "alias": "订单数"
-        },
-        {
-          "field": "销售额",
-          "agg": "mean",
-          "alias": "客单价"
-        }
-      ]
-    },
-    "城市排名": {
-      "description": "按维度排名统计",
-      "type": "ranking",
-      "enabled": true,
-      "group_by": [
-        "城市"
-      ],
-      "metrics": [
-        {
-          "field": "销售额",
-          "agg": "sum",
-          "alias": "总销售额"
-        },
-        {
-          "field": "销售额",
-          "agg": "count",
-          "alias": "订单数"
-        }
-      ]
-    },
-    "销售员排名": {
-      "description": "按维度排名统计",
+    "销售员业绩排名": {
+      "description": "按销售员汇总销售额与订单数进行排名",
       "type": "ranking",
       "enabled": true,
       "group_by": [
@@ -101,51 +51,62 @@
         }
       ]
     },
-    "自定义月度趋势": {
-      "description": "月度销售趋势分析",
-      "type": "trend",
-      "enabled": true,
-      "group_by": [
-        "年月"
-      ],
-      "metrics": [
-        {
-          "field": "销售额",
-          "agg": "sum",
-          "alias": "总销售额"
-        },
-        {
-          "field": "销售额",
-          "agg": "count",
-          "alias": "订单数"
-        }
-      ]
-    },
-    "月度趋势": {
-      "description": "月度销售趋势分析",
-      "type": "trend",
-      "enabled": true,
-      "group_by": [
-        "年月"
-      ],
-      "metrics": [
-        {
-          "field": "销售额",
-          "agg": "sum",
-          "alias": "总销售额"
-        },
-        {
-          "field": "销售额",
-          "agg": "count",
-          "alias": "订单数"
-        }
-      ]
-    },
-    "产品占比": {
-      "description": "按维度占比分析",
+    "城市销售占比": {
+      "description": "各城市销售额占比分析",
       "type": "composition",
       "enabled": true,
       "group_by": [
+        "城市"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "销售额"
+        }
+      ]
+    },
+    "客户属性对比": {
+      "description": "新客与其他客户属性（如后续可能出现的老客）的销售对比",
+      "type": "comparison",
+      "enabled": true,
+      "group_by": [
+        "客户属性"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        }
+      ]
+    },
+    "月度销售趋势": {
+      "description": "按年月粒度统计销售额趋势",
+      "type": "trend",
+      "enabled": true,
+      "group_by": [
+        "年月"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        }
+      ]
+    },
+    "销售员-产品矩阵": {
+      "description": "销售员与产品交叉维度的销售额汇总",
+      "type": "matrix",
+      "enabled": true,
+      "group_by": [
+        "销售员",
         "产品"
       ],
       "metrics": [
@@ -153,6 +114,19 @@
           "field": "销售额",
           "agg": "sum",
           "alias": "销售额"
+        }
+      ]
+    },
+    "销售额异常检测": {
+      "description": "识别销售额显著偏离均值的异常订单",
+      "type": "outlier",
+      "enabled": true,
+      "group_by": [],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
         }
       ]
     }

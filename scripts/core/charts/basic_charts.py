@@ -190,7 +190,7 @@ class BasicChartsMixin:
                 for j, y in enumerate(y_values):
                     ax.text(j, y + max(y_values) * 0.02,
                            f'{y:,.0f}',
-                           ha='center', fontsize=8, color=color)
+                           horizontalalignment='center', fontsize=8, color=color)
         
         ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
         ax.set_xlabel('')

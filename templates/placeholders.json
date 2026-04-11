@@ -5,100 +5,71 @@
   "template_file": "销售分析报告_标准模板.pptx",
   "placeholders": {
     "charts": {
-      "CHART:product_share": {
-        "description": "饼图直观呈现各产品在总销售额中的构成比例，适用于6个类别的分类占比分析",
-        "data_source": "产品占比",
-        "chart_type": "pie",
-        "title": "产品销售额占比分布",
-        "category_field": "产品",
-        "value_field": "销售额"
+      "CHART:core_kpi_summary": {
+        "description": "纵向柱状图适合展示少量关键指标的绝对值对比，清晰传达各KPI量级差异",
+        "data_source": "核心 KPI",
+        "chart_type": "bar_vertical",
+        "title": "核心 KPI 指标概览",
+        "x_field": "指标",
+        "y_field": "数值"
       },
       "CHART:customer_type_comparison": {
-        "description": "横向条形图清晰对比两类客户在销售额、订单数、客单价三个维度的差异（可分组或双轴），适合小类别（n=2）的多指标横向比较",
+        "description": "分组柱状图适合多维度分类对比，可直观揭示新客与老客在销售额、订单量及客单价上的结构性差异",
         "data_source": "客户类型对比",
-        "chart_type": "bar_horizontal",
-        "title": "新客与老客经营效能对比",
-        "x_field": "总销售额",
-        "y_field": "客户类型"
+        "chart_type": "column_clustered",
+        "title": "新老客户业绩对比分析",
+        "x_field": "",
+        "y_field": ""
       },
-      "CHART:city_ranking": {
-        "description": "横向条形图便于按销售额降序排列9个城市，避免城市名过长导致垂直标签重叠，突出排名关系",
+      "CHART:city_ranking_horizontal": {
+        "description": "横向条形图适合城市类中长文本标签的排名展示，避免纵轴拥挤，突出高/低绩效城市",
         "data_source": "城市排名",
         "chart_type": "bar_horizontal",
         "title": "城市销售业绩排名",
         "x_field": "总销售额",
         "y_field": "城市"
       },
-      "CHART:salesperson_ranking": {
-        "description": "横向条形图适配9人排名场景，支持清晰标注销售员姓名与对应销售额，优于垂直柱状图的标签可读性",
+      "CHART:salesperson_ranking_horizontal": {
+        "description": "横向条形图最适合人员排名场景，便于按业绩从高到低排序并清晰标注个体表现",
         "data_source": "销售员排名",
         "chart_type": "bar_horizontal",
         "title": "销售员业绩排名",
         "x_field": "总销售额",
         "y_field": "销售员"
       },
-      "CHART:monthly_trend_sales": {
-        "description": "折线图最适配时间序列趋势分析，能清晰展现6个月销售额和订单数的变化方向与增速，支持双Y轴或双线叠加",
-        "data_source": "自定义月度趋势",
-        "chart_type": "line",
-        "title": "月度销售额与订单趋势",
-        "x_field": "年月",
-        "y_field": "总销售额"
-      },
-      "CHART:monthly_trend_orders": {
-        "description": "与‘自定义月度趋势’结构一致，复用相同图表类型确保视觉一致性；折线图精准表达时序增长/波动特征",
-        "data_source": "月度趋势",
-        "chart_type": "line",
-        "title": "月度订单量趋势",
-        "x_field": "年月",
-        "y_field": "订单数"
-      },
-      "CHART:core_kpi": {
-        "description": "柱状簇图可清晰并列展示少量关键指标数值，便于快速对比；单位统一（无量纲或隐含），适合离散类别+单值映射",
-        "data_source": "核心 KPI",
-        "chart_type": "column_clustered",
-        "title": "核心 KPI 指标概览",
-        "category_field": "指标",
-        "series": [
-          "数值"
-        ]
-      },
       "CHART:monthly_trend_dual": {
-        "description": "同一时间轴上双指标折线图能揭示销售额与订单量的协同或背离关系，强化业务洞察；数据结构完全匹配",
+        "description": "折线图最适配时间序列分析，双指标可同步观察销售规模与业务活跃度的时序演化关系",
         "data_source": "月度趋势",
         "chart_type": "line",
-        "title": "月度双指标趋势对比",
+        "title": "月度销售与订单趋势分析",
         "x_field": "年月",
         "y_field": [
           "总销售额",
           "订单数"
         ]
       },
-      "CHART:monthly_trend_custom": {
-        "description": "折线图最适合展示时间序列趋势，6个月数据量适中，双线可清晰反映销售额与订单数的联动变化",
+      "CHART:custom_monthly_trend_dual": {
+        "description": "折线图适用于任意时间粒度的趋势分析，该Sheet结构与‘月度趋势’一致，推荐相同可视化逻辑以保持报告一致性",
         "data_source": "自定义月度趋势",
         "chart_type": "line",
-        "title": "自定义月度销售与订单趋势",
+        "title": "自定义月度销售与订单趋势分析",
         "x_field": "年月",
         "y_field": [
           "总销售额",
           "订单数"
         ]
       },
-      "CHART:monthly_trend_official": {
-        "description": "与自定义月度趋势结构一致，折线图是时间趋势分析的标准选择，确保一致性与可比性",
-        "data_source": "月度趋势",
-        "chart_type": "line",
-        "title": "月度销售与订单趋势",
-        "x_field": "年月",
-        "y_field": [
-          "总销售额",
-          "订单数"
-        ]
+      "CHART:product_share_pie": {
+        "description": "环形饼图专用于展示部分与整体的占比关系，能直观呈现各产品对总销售额的贡献权重",
+        "data_source": "产品占比",
+        "chart_type": "pie",
+        "title": "产品销售占比结构",
+        "x_field": "",
+        "y_field": ""
       }
     },
     "insights": {
-      "CHART:product_share": {
+      "CHART:core_kpi_summary": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -130,7 +101,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:city_ranking": {
+      "CHART:city_ranking_horizontal": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -146,55 +117,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:salesperson_ranking": {
-        "dimensions": [
-          "趋势分析",
-          "对比分析"
-        ],
-        "metrics": [
-          "总销售额",
-          "订单数",
-          "客单价"
-        ],
-        "baseline": "环比",
-        "style": "平衡型",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": ""
-      },
-      "CHART:monthly_trend_sales": {
-        "dimensions": [
-          "趋势分析",
-          "对比分析"
-        ],
-        "metrics": [
-          "总销售额",
-          "订单数",
-          "客单价"
-        ],
-        "baseline": "环比",
-        "style": "平衡型",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": ""
-      },
-      "CHART:monthly_trend_orders": {
-        "dimensions": [
-          "趋势分析",
-          "对比分析"
-        ],
-        "metrics": [
-          "总销售额",
-          "订单数",
-          "客单价"
-        ],
-        "baseline": "环比",
-        "style": "平衡型",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": ""
-      },
-      "CHART:core_kpi": {
+      "CHART:salesperson_ranking_horizontal": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -226,7 +149,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:monthly_trend_custom": {
+      "CHART:custom_monthly_trend_dual": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -242,7 +165,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:monthly_trend_official": {
+      "CHART:product_share_pie": {
         "dimensions": [
           "趋势分析",
           "对比分析"
