@@ -147,10 +147,10 @@ def render_tab1(base_dir, templates_dir, output_dir):
             not_added = [rec for rec in recommendations if rec['name'] not in st.session_state.stats_config.get('stats_sheets', {})]
             
             if not_added:
+                st.info(f"📋 还有 {len(not_added)} 条规则未添加")
+                
                 col_all1, col_all2 = st.columns([3, 1])
                 with col_all1:
-                    st.info(f"📋 还有 {len(not_added)} 条规则未添加")
-                with col_all2:
                     if st.button("🚀 一键保存所有推荐规则", type="primary", use_container_width=True, key="save_all_ai_rules"):
                         try:
                             with open(stats_rules_file, 'r', encoding='utf-8') as f:
@@ -188,46 +188,48 @@ def render_tab1(base_dir, templates_dir, output_dir):
             st.markdown("### 推荐规则列表")
             
             for i, rec in enumerate(recommendations):
-                col1, col2 = st.columns([4, 1])
-                
-                with col1:
-                    status_icon = "✅" if rec.get('enabled', False) else "⬜"
-                    st.write(f"{status_icon} **{rec['name']}** - {rec.get('ai_reason', '')}")
-                
-                with col2:
-                    already_added = rec['name'] in st.session_state.stats_config.get('stats_sheets', {})
+                # 使用 expander 展示详情
+                with st.expander(f"{'✅' if rec['name'] in st.session_state.stats_config.get('stats_sheets', {}) else '⬜'} **{rec['name']}** - {rec.get('ai_reason', '')}", expanded=False):
+                    col_detail, col_btn = st.columns([3, 1])
                     
-                    if already_added:
-                        st.success("✅ 已添加")
-                    else:
-                        # 单条立即保存按钮
-                        if st.button("➕ 添加并保存", key=f"add_single_{rec['name']}_{i}", use_container_width=True):
-                            try:
-                                with open(stats_rules_file, 'r', encoding='utf-8') as f:
-                                    current_config = json.load(f)
+                    with col_detail:
+                        st.markdown("**配置详情**:")
+                        st.json(rec)
+                    
+                    with col_btn:
+                        already_added = rec['name'] in st.session_state.stats_config.get('stats_sheets', {})
+                        
+                        if already_added:
+                            st.success("✅ 已添加")
+                        else:
+                            # 单条立即保存按钮
+                            if st.button("➕ 添加并保存", key=f"add_single_{rec['name']}_{i}", use_container_width=True):
+                                try:
+                                    with open(stats_rules_file, 'r', encoding='utf-8') as f:
+                                        current_config = json.load(f)
+                                    
+                                    current_config['stats_sheets'][rec['name']] = {
+                                        'description': rec.get('description', ''),
+                                        'type': rec['type'],
+                                        'enabled': True,
+                                        'group_by': rec.get('group_by', []),
+                                        'metrics': rec.get('metrics', [])
+                                    }
+                                    
+                                    with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                                        json.dump(current_config, f, ensure_ascii=False, indent=2)
+                                    
+                                    st.success(f"✅ 已添加：{rec['name']}")
+                                    st.balloons()
+                                    
+                                    st.session_state.stats_config = current_config
+                                    
+                                    st.info("💡 请刷新页面（F5）查看结果")
                                 
-                                current_config['stats_sheets'][rec['name']] = {
-                                    'description': rec.get('description', ''),
-                                    'type': rec['type'],
-                                    'enabled': True,
-                                    'group_by': rec.get('group_by', []),
-                                    'metrics': rec.get('metrics', [])
-                                }
-                                
-                                with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                                    json.dump(current_config, f, ensure_ascii=False, indent=2)
-                                
-                                st.success(f"✅ 已添加：{rec['name']}")
-                                st.balloons()
-                                
-                                st.session_state.stats_config = current_config
-                                
-                                st.info("💡 请刷新页面（F5）查看结果")
-                            
-                            except Exception as e:
-                                st.error(f"❌ 失败：{e}")
-                                import traceback
-                                st.code(traceback.format_exc())
+                                except Exception as e:
+                                    st.error(f"❌ 失败：{e}")
+                                    import traceback
+                                    st.code(traceback.format_exc())
     
     st.markdown("---")
     
@@ -236,9 +238,11 @@ def render_tab1(base_dir, templates_dir, output_dir):
     
     if st.button("▶ 执行统计并生成 Excel", type="primary", use_container_width=True):
         try:
-            with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
-            st.info("📝 配置已保存")
+            # 先读取最新的 stats_rules.json
+            with open(stats_rules_file, 'r', encoding='utf-8') as f:
+                latest_config = json.load(f)
+            
+            st.info(f"📝 读取配置：{len(latest_config.get('stats_sheets', {}))} 条规则")
             
             with st.spinner("⚙️ 正在执行统计引擎..."):
                 sys.path.insert(0, os.path.join(base_dir, 'scripts'))
@@ -253,6 +257,11 @@ def render_tab1(base_dir, templates_dir, output_dir):
                 results = stats_engine.run_all(raw_df, output_path=output_path)
                 
                 st.success(f"✅ 已生成 {len(results)} 个统计 Sheet！")
+                
+                # 显示生成的 Sheet 列表
+                with st.expander("📊 查看生成的 Sheet", expanded=True):
+                    for sheet_name, df in results.items():
+                        st.write(f"**{sheet_name}**: {len(df)} 行")
             
             st.success("🎉 完成！")
             
