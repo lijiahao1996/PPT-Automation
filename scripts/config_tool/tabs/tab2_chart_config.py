@@ -79,11 +79,22 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                 sheet_analysis = []
                 for sheet_name in available_sheets:
                     df = pd.read_excel(summary_path, sheet_name=sheet_name, nrows=5)
+                    # 将 Timestamp 转换为字符串
+                    sample_data = []
+                    for _, row in df.head(3).iterrows():
+                        row_dict = {}
+                        for col, val in row.items():
+                            if hasattr(val, 'strftime'):  # Timestamp
+                                row_dict[col] = val.strftime('%Y-%m-%d')
+                            else:
+                                row_dict[col] = val
+                        sample_data.append(row_dict)
+                    
                     sheet_info = {
                         'name': sheet_name,
                         'columns': df.columns.tolist(),
                         'row_count': len(pd.read_excel(summary_path, sheet_name=sheet_name)),
-                        'sample': df.head(3).to_dict('records')
+                        'sample': sample_data
                     }
                     sheet_analysis.append(sheet_info)
                 
