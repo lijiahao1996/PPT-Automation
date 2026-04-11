@@ -472,12 +472,21 @@ def generate_report(template_name: str = None, output_name: str = None,
             config.read(config_path, encoding='utf-8')
             enable_ai = config.getboolean('ai', 'enable_ai_insight', fallback=True)
         
-        if not enable_ai:
-            log_callback("      [INFO] AI 洞察已禁用，使用空洞察")
-        
         insights_file = os.path.join(BASE_DIR, 'artifacts', 'ai_insights.json')
-        insights = insight_generator.generate(data_summary, insights_file, enable_ai=enable_ai)
-        log_callback(f"      [OK] 生成 {len(insights)} 条洞察")
+        
+        if not enable_ai:
+            log_callback("      [SKIP] AI 洞察已禁用（节省 Token），将使用空洞察")
+            insights = insight_generator.generate(data_summary, insights_file, enable_ai=False)
+        else:
+            log_callback("      [INFO] 正在调用 Qwen API 生成洞察...")
+            insights = insight_generator.generate(data_summary, insights_file, enable_ai=True)
+        
+        # 检查洞察是否为空
+        has_content = any(insight.strip() for insight in insights)
+        if has_content:
+            log_callback(f"      [OK] 生成 {len(insights)} 条洞察（AI 生成）")
+        else:
+            log_callback(f"      [OK] 生成 {len(insights)} 条空洞察（AI 已禁用）")
         
         # ========== 4. 生成图表（支持并行） ==========
         log_callback("\n[4/5] 生成图表...")
