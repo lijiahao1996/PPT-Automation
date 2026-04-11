@@ -71,6 +71,28 @@
           "总销售额",
           "订单数"
         ]
+      },
+      "CHART:monthly_trend_custom": {
+        "description": "折线图最适合展示时间序列趋势，6个月数据量适中，双线可清晰反映销售额与订单数的联动变化",
+        "data_source": "自定义月度趋势",
+        "chart_type": "line",
+        "title": "自定义月度销售与订单趋势",
+        "x_field": "年月",
+        "y_field": [
+          "总销售额",
+          "订单数"
+        ]
+      },
+      "CHART:monthly_trend_official": {
+        "description": "与自定义月度趋势结构一致，折线图是时间趋势分析的标准选择，确保一致性与可比性",
+        "data_source": "月度趋势",
+        "chart_type": "line",
+        "title": "月度销售与订单趋势",
+        "x_field": "年月",
+        "y_field": [
+          "总销售额",
+          "订单数"
+        ]
       }
     },
     "insights": {
@@ -187,6 +209,38 @@
         "custom_prompt": ""
       },
       "CHART:monthly_trend_dual": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:monthly_trend_custom": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:monthly_trend_official": {
         "dimensions": [
           "趋势分析",
           "对比分析"
