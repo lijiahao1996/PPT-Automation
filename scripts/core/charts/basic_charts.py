@@ -153,6 +153,7 @@ class BasicChartsMixin:
         """折线图（支持单指标或多指标）"""
         fig, ax = plt.subplots(figsize=figsize)
         
+        # 获取 X 轴数据
         x_values = df[x_field].tolist()
         
         # 支持 y_field 为字符串或列表
@@ -169,19 +170,24 @@ class BasicChartsMixin:
         
         # 绘制多条线
         for i, y_f in enumerate(y_fields):
-            y_values = df[y_f].tolist()
+            # 确保 y_f 是字符串（列名）
+            if isinstance(y_f, str):
+                y_values = df[y_f].tolist()
+            else:
+                y_values = []
+            
             color = colors[i % len(colors)]
             
             marker = 'o' if show_markers else None
             ax.plot(x_values, y_values, marker=marker, linewidth=2.5,
                    color=color, markersize=8, markerfacecolor='white',
                    markeredgewidth=2, markeredgecolor=color,
-                   label=y_f)
+                   label=y_f if isinstance(y_f, str) else str(y_f))
             
             ax.fill_between(range(len(x_values)), y_values, alpha=0.15, color=color)
             
-            if show_values:
-                for j, (x, y) in enumerate(zip(x_values, y_values)):
+            if show_values and y_values:
+                for j, y in enumerate(y_values):
                     ax.text(j, y + max(y_values) * 0.02,
                            f'{y:,.0f}',
                            ha='center', fontsize=8, color=color)

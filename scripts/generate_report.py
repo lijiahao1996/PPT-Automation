@@ -64,11 +64,12 @@ logger, logs_dir = setup_logging()
 # ========== 动态生成 SKILL.md ==========
 def build_skill_always(log_callback=None):
     """根据当前配置动态生成 SKILL.md"""
-    from skills.data-insight.skill_builder import build_skill_from_config
+    import sys
     
     skill_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'SKILL.md')
     stats_rules_path = os.path.join(BASE_DIR, 'templates', 'stats_rules.json')
     placeholders_path = os.path.join(BASE_DIR, 'templates', 'placeholders.json')
+    skill_builder_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'skill_builder.py')
     
     if log_callback is None:
         log_callback = lambda x: None
@@ -85,8 +86,18 @@ def build_skill_always(log_callback=None):
             log_callback("⚠️ placeholders.json 不存在，无法生成 SKILL.md")
             return
         
+        if not os.path.exists(skill_builder_path):
+            log_callback("⚠️ skill_builder.py 不存在，无法生成 SKILL.md")
+            return
+        
+        # 动态导入 skill_builder 模块
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("skill_builder", skill_builder_path)
+        skill_builder = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(skill_builder)
+        
         # 调用 skill_builder 生成 SKILL.md
-        build_skill_from_config(
+        skill_builder.build_skill_from_config(
             stats_rules_path=stats_rules_path,
             placeholders_path=placeholders_path,
             output_path=skill_path
@@ -96,6 +107,8 @@ def build_skill_always(log_callback=None):
     
     except Exception as e:
         log_callback(f"⚠️ SKILL.md 生成失败：{e}，使用现有文件")
+        import traceback
+        log_callback(traceback.format_exc())
 
 
 

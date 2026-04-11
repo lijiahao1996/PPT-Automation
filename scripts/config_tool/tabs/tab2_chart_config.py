@@ -291,17 +291,43 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                 "title": chart_title
             }
             
-            if chart_type in ["bar_horizontal", "bar_vertical", "line", "scatter", "area", "histogram", "waterfall", "funnel", "bubble", "polar"]:
-                chart_config["x_field"] = x_field
-                chart_config["y_field"] = y_field
-                if chart_type == "bubble" and 'size_field_bubble' in st.session_state and st.session_state.size_field_bubble:
+            # 根据图表类型保存正确的字段名
+            if chart_type == "pie":
+                # 饼图使用 category_field 和 value_field
+                if x_field: chart_config["category_field"] = x_field
+                if y_field: chart_config["value_field"] = y_field
+            elif chart_type in ["multi_column", "column_clustered"]:
+                # 多列柱状图使用 category_field 和 series
+                if x_field: chart_config["category_field"] = x_field
+                # series 可能是字符串或 JSON 数组
+                try:
+                    if y_field.startswith('['):
+                        chart_config["series"] = json.loads(y_field)
+                    else:
+                        chart_config["series"] = [y_field] if y_field else []
+                except:
+                    chart_config["series"] = [y_field] if y_field else []
+            elif chart_type in ["bar_horizontal", "bar_vertical", "line", "scatter", "area", "histogram", "waterfall", "funnel"]:
+                if x_field: chart_config["x_field"] = x_field
+                if y_field: chart_config["y_field"] = y_field
+            elif chart_type == "bubble":
+                if x_field: chart_config["x_field"] = x_field
+                if y_field: chart_config["y_field"] = y_field
+                if 'size_field_bubble' in st.session_state and st.session_state.size_field_bubble:
                     chart_config["size_field"] = st.session_state.size_field_bubble
-            elif chart_type == "pie":
-                chart_config["category_field"] = x_field
-                chart_config["value_field"] = y_field
+            elif chart_type == "polar":
+                if x_field: chart_config["angle_field"] = x_field
+                if y_field: chart_config["radius_field"] = y_field
             elif chart_type in ["boxplot", "violin"]:
-                chart_config["category_field"] = x_field
-                chart_config["value_field"] = y_field
+                if x_field: chart_config["category_field"] = x_field
+                if y_field: chart_config["value_field"] = y_field
+            elif chart_type == "heatmap":
+                if x_field: chart_config["index_field"] = x_field
+                if y_field:
+                    try:
+                        chart_config["columns"] = json.loads(y_field)
+                    except:
+                        chart_config["columns"] = [y_field]
             
             key = f"CHART:{chart_key}"
             if key not in placeholders_config.setdefault('placeholders', {}).setdefault('charts', {}):
