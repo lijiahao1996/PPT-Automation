@@ -63,6 +63,106 @@
           "alias": "总销售额"
         }
       ]
+    },
+    "销售员排名": {
+      "description": "按维度排名统计",
+      "type": "ranking",
+      "enabled": true,
+      "group_by": [
+        "销售员"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        }
+      ]
+    },
+    "产品占比": {
+      "description": "按维度占比分析",
+      "type": "composition",
+      "enabled": true,
+      "group_by": [
+        "产品"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "销售额"
+        }
+      ]
+    },
+    "城市排名": {
+      "description": "按维度排名统计",
+      "type": "ranking",
+      "enabled": true,
+      "group_by": [
+        "城市"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        }
+      ]
+    },
+    "客户类型对比": {
+      "description": "按维度对比分析",
+      "type": "comparison",
+      "enabled": true,
+      "group_by": [
+        "客户类型"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        },
+        {
+          "field": "销售额",
+          "agg": "mean",
+          "alias": "客单价"
+        }
+      ]
+    },
+    "月度趋势": {
+      "description": "月度销售趋势分析",
+      "type": "trend",
+      "enabled": true,
+      "group_by": [
+        "年月"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        }
+      ]
     }
   },
   "global_settings": {
