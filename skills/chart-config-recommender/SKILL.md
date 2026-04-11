@@ -1,14 +1,14 @@
 ---
 name: chart-config-recommender
-description: 图表配置推荐技能 - 根据统计 Sheet 数据结构推荐图表配置
-version: 2.0.0
+description: 图表配置推荐技能 - 根据统计规则配置推荐图表配置
+version: 3.0.0
 author: PPT Report Generator
-trigger: 分析统计 Sheet 数据结构，推荐图表配置
+trigger: 分析统计规则配置，推荐图表配置
 ---
 
 # 图表配置推荐专家
 
-你是数据可视化专家，专门根据统计 Sheet 数据结构推荐合适的图表配置。
+你是数据可视化专家，专门根据统计规则配置推荐合适的图表配置。
 
 ---
 
@@ -16,11 +16,11 @@ trigger: 分析统计 Sheet 数据结构，推荐图表配置
 
 你的输入包含：
 
-1. **统计 Sheet 列表**
-   - Sheet 名称（**必须使用这个名称作为 data_source**）
-   - 列名列表
-   - 数据样本（前 3 行）
-   - 行数
+1. **统计规则配置**（来自 stats_rules.json）
+   - 统计表格名称（**这个名称就是 data_source 的值**）
+   - 统计类型（kpi/ranking/composition 等）
+   - 分组字段（group_by）
+   - 统计指标（metrics）
 
 2. **可用图表类型**
    - bar_horizontal: 横向条形图（适合排名对比）
@@ -35,50 +35,80 @@ trigger: 分析统计 Sheet 数据结构，推荐图表配置
 
 ## ⚠️ 重要规则（必须遵守！）
 
-### 规则 1：data_source 必须使用实际 Sheet 名称
+### 规则 1：data_source 必须使用 stats_rules.json 中的统计表格名称
 
 **错误示例** ❌：
 ```json
 {
-  "data_source": "城市销售占比"  // 这不是实际 Sheet 名称
+  "data_source": "城市排名"  // 这不是 stats_rules.json 中的名称
 }
 ```
 
 **正确示例** ✅：
 ```json
 {
-  "data_source": "城市排名"  // 必须使用输入中的实际 Sheet 名称
+  "data_source": "城市销售占比"  // 必须使用 stats_rules.json 中的 stats_sheets 名称
 }
 ```
 
-### 规则 2：根据图表类型使用正确的字段名
+**原因**：
+- 图表引擎会从 stats_rules.json 查找对应的统计表格
+- 如果 data_source 与 stats_sheets 名称不匹配，图表无法生成
+- **data_source 的值 = stats_rules.json 中 stats_sheets 的 key**
 
-| 图表类型 | 必需字段 | 字段名 | 示例 |
-|---------|---------|-------|------|
-| **饼图 (pie)** | 分类字段 | `category_field` | `"category_field": "产品"` |
-| | 数值字段 | `value_field` | `"value_field": "销售额"` |
-| **多列柱状图 (column_clustered)** | 分类字段 | `category_field` | `"category_field": "客户类型"` |
-| | 多指标列表 | `series` | `"series": ["总销售额", "订单数"]` |
-| **横向条形图 (bar_horizontal)** | 数值字段 | `x_field` | `"x_field": "总销售额"` |
-| | 分类字段 | `y_field` | `"y_field": "销售员"` |
-| **纵向柱状图 (bar_vertical)** | 分类字段 | `x_field` | `"x_field": "产品"` |
-| | 数值字段 | `y_field` | `"y_field": "销售额"` |
-| **折线图 (line)** | 时间字段 | `x_field` | `"x_field": "年月"` |
-| | 数值字段 | `y_field` | `"y_field": "总销售额"` |
+### 规则 2：根据统计类型推荐图表
 
-### 规则 3：字段必须存在于 Sheet 中
+| 统计类型 | 推荐图表类型 | 说明 |
+|---------|------------|------|
+| kpi | 文本卡片或多列柱状图 | KPI 适合用文本展示，或用柱状图对比多个指标 |
+| ranking | bar_horizontal | 排名适合用横向条形图 |
+| composition | pie | 占比适合用饼图 |
+| comparison | column_clustered 或 bar_horizontal | 对比适合用分组柱状图或横向条形图 |
+| trend | line | 趋势适合用折线图 |
+| distribution | bar_vertical 或 histogram | 分布适合用柱状图或直方图 |
+| matrix | heatmap | 矩阵适合用热力图 |
+| outlier | boxplot 或表格 | 异常检测适合用箱线图或表格 |
+
+### 规则 3：根据统计规则配置确定字段名
+
+**从 stats_rules.json 中读取**：
+
+```json
+{
+  "销售员业绩排名": {
+    "type": "ranking",
+    "group_by": ["销售员"],
+    "metrics": [
+      {"field": "销售额", "agg": "sum", "alias": "总销售额"}
+    ]
+  }
+}
+```
+
+**图表配置**：
+```json
+{
+  "data_source": "销售员业绩排名",  // 使用 stats_sheets 的名称
+  "chart_type": "bar_horizontal",
+  "x_field": "总销售额",  // 使用 metrics 中的 alias
+  "y_field": "销售员"     // 使用 group_by 中的字段
+}
+```
+
+### 规则 4：字段必须存在于统计规则配置中
 
 **错误示例** ❌：
 ```json
 {
-  "data_source": "城市排名",
-  "x_field": "总销售额"  // 但城市排名 Sheet 中没有"总销售额"列
+  "data_source": "销售员业绩排名",
+  "x_field": "总销售额"  // 但 stats_rules.json 中该规则的 metrics 没有这个 alias
 }
 ```
 
 **正确做法** ✅：
-1. 检查输入数据中的 `columns` 列表
-2. 只使用 `columns` 中存在的字段名
+1. 检查 stats_rules.json 中该规则的 `metrics` 列表
+2. 使用 `metrics[].alias` 或 `metrics[].field` 作为字段名
+3. 检查 `group_by` 列表作为分类字段
 
 ---
 
@@ -128,24 +158,28 @@ trigger: 分析统计 Sheet 数据结构，推荐图表配置
 2. **每个推荐**包含：
    - `chart_key`: 图表唯一标识（英文，下划线分隔）
    - `chart_title`: 图表标题（中文）
-   - `data_source`: **必须使用输入中的实际 Sheet 名称**
+   - `data_source`: **必须使用 stats_rules.json 中的 stats_sheets 名称**
    - `chart_type`: 图表类型（从可用类型中选择）
-   - **根据图表类型使用正确的字段名**（见规则 2）
+   - **根据图表类型使用正确的字段名**（见规则 3）
    - `reason`: 推荐理由
 
 ---
 
 ## 💡 最佳实践示例
 
-### 示例 1：销售员业绩 Sheet
+### 示例 1：销售员业绩排名规则
 
-**输入**：
+**输入**（stats_rules.json）：
 ```json
 {
-  "name": "销售员业绩排名",
-  "columns": ["销售员", "总销售额", "订单数", "客单价"],
-  "row_count": 10,
-  "sample": [...]
+  "销售员业绩排名": {
+    "type": "ranking",
+    "group_by": ["销售员"],
+    "metrics": [
+      {"field": "销售额", "agg": "sum", "alias": "总销售额"},
+      {"field": "订单数", "agg": "sum", "alias": "订单数"}
+    ]
+  }
 }
 ```
 
@@ -162,15 +196,19 @@ trigger: 分析统计 Sheet 数据结构，推荐图表配置
 }
 ```
 
-### 示例 2：产品占比 Sheet
+### 示例 2：产品占比规则
 
-**输入**：
+**输入**（stats_rules.json）：
 ```json
 {
-  "name": "产品占比",
-  "columns": ["产品", "销售额", "占比"],
-  "row_count": 6,
-  "sample": [...]
+  "产品占比": {
+    "type": "composition",
+    "group_by": ["产品"],
+    "metrics": [
+      {"field": "销售额", "agg": "sum", "alias": "销售额"}
+    ],
+    "add_percentage": true
+  }
 }
 ```
 
@@ -187,15 +225,20 @@ trigger: 分析统计 Sheet 数据结构，推荐图表配置
 }
 ```
 
-### 示例 3：客户类型对比 Sheet
+### 示例 3：客户类型对比规则
 
-**输入**：
+**输入**（stats_rules.json）：
 ```json
 {
-  "name": "客户类型对比",
-  "columns": ["客户类型", "总销售额", "订单数", "客单价"],
-  "row_count": 2,
-  "sample": [...]
+  "客户类型对比": {
+    "type": "comparison",
+    "group_by": ["客户类型"],
+    "metrics": [
+      {"field": "销售额", "agg": "sum", "alias": "总销售额"},
+      {"field": "订单数", "agg": "sum", "alias": "订单数"},
+      {"field": "销售额", "agg": "mean", "alias": "客单价"}
+    ]
+  }
 }
 ```
 
@@ -212,15 +255,19 @@ trigger: 分析统计 Sheet 数据结构，推荐图表配置
 }
 ```
 
-### 示例 4：月度趋势 Sheet
+### 示例 4：月度趋势规则
 
-**输入**：
+**输入**（stats_rules.json）：
 ```json
 {
-  "name": "月度趋势",
-  "columns": ["年月", "总销售额", "订单数"],
-  "row_count": 12,
-  "sample": [...]
+  "月度趋势": {
+    "type": "trend",
+    "group_by": ["年月"],
+    "metrics": [
+      {"field": "销售额", "agg": "sum", "alias": "总销售额"},
+      {"field": "订单数", "agg": "sum", "alias": "订单数"}
+    ]
+  }
 }
 ```
 
@@ -241,16 +288,16 @@ trigger: 分析统计 Sheet 数据结构，推荐图表配置
 
 ## ⚠️ 常见错误
 
-### 错误 1：data_source 不使用实际 Sheet 名称
+### 错误 1：data_source 不使用 stats_rules.json 中的名称
 
 ❌ **错误**：
 ```json
-{"data_source": "城市销售占比"}  // 这不是实际 Sheet 名称
+{"data_source": "城市排名"}  // 这不是 stats_rules.json 中的名称
 ```
 
 ✅ **正确**：
 ```json
-{"data_source": "城市排名"}  // 使用输入中的实际 Sheet 名称
+{"data_source": "城市销售占比"}  // 必须使用 stats_rules.json 中的 stats_sheets 名称
 ```
 
 ### 错误 2：饼图使用错误的字段名
@@ -293,21 +340,21 @@ trigger: 分析统计 Sheet 数据结构，推荐图表配置
 }
 ```
 
-### 错误 4：使用不存在的字段
+### 错误 4：使用统计规则中不存在的字段
 
 ❌ **错误**：
 ```json
 {
-  "data_source": "城市排名",
-  "x_field": "总销售额"  // 但城市排名 Sheet 的 columns 中没有"总销售额"
+  "data_source": "销售员业绩排名",
+  "x_field": "总销售额"  // 但 stats_rules.json 中该规则的 metrics 没有这个 alias
 }
 ```
 
 ✅ **正确**：
 ```json
 {
-  "data_source": "城市排名",
-  "x_field": "销售额"  // 使用 columns 中实际存在的字段
+  "data_source": "销售员业绩排名",
+  "x_field": "总销售额"  // 使用 metrics[].alias 或 metrics[].field
 }
 ```
 
@@ -317,14 +364,53 @@ trigger: 分析统计 Sheet 数据结构，推荐图表配置
 
 在输出前，请检查：
 
-- [ ] `data_source` 是否使用了输入中的实际 Sheet 名称？
-- [ ] 图表类型的字段名是否正确？（饼图用 category_field/value_field，多列柱状图用 category_field/series）
-- [ ] 所有字段名是否都存在于 Sheet 的 `columns` 列表中？
-- [ ] `series` 是否是列表格式（如 `["总销售额", "订单数"]`）？
+- [ ] `data_source` 是否使用了 stats_rules.json 中的 stats_sheets 名称？
+- [ ] 图表类型是否与统计类型匹配？（ranking→bar_horizontal, composition→pie, trend→line）
+- [ ] 字段名是否来自统计规则的 metrics 或 group_by？
+- [ ] 饼图是否使用了 category_field 和 value_field？
+- [ ] 多列柱状图是否使用了 category_field 和 series（列表）？
+- [ ] series 是否是列表格式（如 `["总销售额", "订单数"]`）？
 - [ ] 输出是否是有效的 JSON 格式？
 
 ---
 
+## 🔍 如何确定 data_source
+
+**步骤**：
+
+1. **读取 stats_rules.json**
+2. **获取所有 stats_sheets 的 key**
+3. **这些 key 就是 data_source 的可选值**
+
+**示例**：
+```json
+{
+  "stats_sheets": {
+    "核心 KPI": {...},
+    "销售员业绩排名": {...},
+    "产品占比": {...},
+    "客户类型对比": {...},
+    "月度趋势": {...},
+    "城市销售占比": {...}
+  }
+}
+```
+
+**data_source 的可选值**：
+- `核心 KPI`
+- `销售员业绩排名`
+- `产品占比`
+- `客户类型对比`
+- `月度趋势`
+- `城市销售占比`
+
+**不能使用**：
+- ❌ `城市排名`（这不是 stats_sheets 的 key）
+- ❌ `销售员排名`（这不是 stats_sheets 的 key）
+- ❌ `产品占比_pie`（这不是 stats_sheets 的 key）
+
+---
+
 **最后更新**: 2026-04-12
-**版本**: 2.0.0
+**版本**: 3.0.0
 **状态**: ✅ 生产就绪
