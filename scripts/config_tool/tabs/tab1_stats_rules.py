@@ -223,7 +223,7 @@ def render_tab1(base_dir, templates_dir, output_dir):
                         st.session_state.stats_config = current_config
                         st.session_state.ai_recommendations_list = []
                         
-                        st.info("💡 规则已保存，请滚动到下方查看"现有统计规则"")
+                        st.info("💡 规则已保存，请滚动到下方查看'现有统计规则'")
                     
                     except Exception as e:
                         st.error(f"❌ 保存失败：{e}")
