@@ -380,3 +380,105 @@ def render_tab1(base_dir, templates_dir, output_dir):
             import traceback
             with st.expander("📄 查看详细错误"):
                 st.code(traceback.format_exc())
+    
+    # ========== 集成数据概览功能 ==========
+    st.markdown("---")
+    st.header("📊 查看生成的数据")
+    st.markdown("*预览统计汇总 Excel 中的 Sheet 数据*")
+    
+    # 根据上传的文件名构建统计汇总文件名
+    summary_file = None
+    if 'uploaded_file_name' in st.session_state:
+        uploaded_name = st.session_state['uploaded_file_name']
+        if uploaded_name.endswith('.xlsx'):
+            summary_name = uploaded_name.replace('.xlsx', '_统计汇总.xlsx')
+        else:
+            summary_name = uploaded_name + '_统计汇总.xlsx'
+        summary_file = os.path.join(output_dir, summary_name)
+    
+    # 如果找不到，自动检测 output 目录
+    if not summary_file or not os.path.exists(summary_file):
+        for f in os.listdir(output_dir):
+            if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
+                summary_file = os.path.join(output_dir, f)
+                break
+    
+    if summary_file and os.path.exists(summary_file):
+        st.success("✅ 找到统计汇总文件")
+        
+        try:
+            xls = pd.ExcelFile(summary_file)
+            sheet_names = xls.sheet_names
+            
+            st.markdown(f"##### 📋 共有 {len(sheet_names)} 个统计 Sheet")
+            
+            # 创建概览表格
+            overview_data = []
+            for sheet_name in sheet_names:
+                try:
+                    df = pd.read_excel(summary_file, sheet_name=sheet_name, nrows=1)
+                    row_count = len(pd.read_excel(summary_file, sheet_name=sheet_name))
+                    col_count = len(df.columns)
+                    columns_list = df.columns.tolist()
+                    
+                    overview_data.append({
+                        'Sheet 名称': sheet_name,
+                        '行数': row_count,
+                        '列数': col_count,
+                        '字段列表': ', '.join(columns_list[:5]) + ('...' if len(columns_list) > 5 else '')
+                    })
+                except Exception as e:
+                    overview_data.append({
+                        'Sheet 名称': sheet_name,
+                        '行数': '读取失败',
+                        '列数': '-',
+                        '字段列表': f'错误：{e}'
+                    })
+            
+            overview_df = pd.DataFrame(overview_data)
+            st.dataframe(overview_df, width='stretch', hide_index=True)
+            
+            # 详细查看某个 Sheet
+            st.markdown("---")
+            st.subheader("🔍 详细查看")
+            
+            selected_sheet = st.selectbox("选择 Sheet 查看详细数据", sheet_names)
+            
+            if selected_sheet:
+                try:
+                    df_detail = pd.read_excel(summary_file, sheet_name=selected_sheet)
+                    st.dataframe(df_detail.head(100), width='stretch')
+                    
+                    st.markdown(f"##### 数据信息")
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        st.metric("总行数", len(df_detail))
+                    with col2:
+                        st.metric("总列数", len(df_detail.columns))
+                    with col3:
+                        st.metric("内存占用", f"{df_detail.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+                    with col4:
+                        st.metric("空值总数", df_detail.isnull().sum().sum())
+                    
+                    # 字段详情
+                    with st.expander("📊 查看字段详情"):
+                        field_info = []
+                        for col in df_detail.columns:
+                            field_info.append({
+                                '字段名': col,
+                                '数据类型': str(df_detail[col].dtype),
+                                '非空值': int(df_detail[col].notnull().sum()),
+                                '空值数': int(df_detail[col].isnull().sum()),
+                                '唯一值': int(df_detail[col].nunique())
+                            })
+                        st.dataframe(pd.DataFrame(field_info), width='stretch', hide_index=True)
+                except Exception as e:
+                    st.error(f"❌ 读取失败：{e}")
+        except Exception as e:
+            st.warning(f"⚠️ 读取统计汇总失败：{e}")
+    else:
+        st.warning("⚠️ 未找到统计汇总文件")
+        st.info("""💡 **如何生成数据**:
+1. 在上方配置统计规则（AI 推荐或自定义添加）
+2. 点击「▶ 执行统计并生成 Excel」按钮
+3. 返回此处查看生成的 Excel 文件""")
