@@ -193,30 +193,28 @@ def render_tab1(base_dir, templates_dir, output_dir):
                     st.json(rec)
             
             # 一键保存按钮放在最下面
-            not_added = [rec for rec in recommendations if rec['name'] not in st.session_state.stats_config.get('stats_sheets', {})]
-            
-            if not_added:
-                st.markdown("---")
-                if st.button("🚀 一键保存所有推荐规则", type="primary", use_container_width=True, key="save_all_ai_rules"):
-                    try:
-                        with open(stats_rules_file, 'r', encoding='utf-8') as f:
-                            current_config = json.load(f)
-                        
-                        added_count = 0
-                        for rec in not_added:
-                            if rec['name'] not in current_config['stats_sheets']:
-                                current_config['stats_sheets'][rec['name']] = {
-                                    'description': rec.get('description', ''),
-                                    'type': rec['type'],
-                                    'enabled': True,
-                                    'group_by': rec.get('group_by', []),
-                                    'metrics': rec.get('metrics', [])
-                                }
-                                added_count += 1
-                        
-                        with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                            json.dump(current_config, f, ensure_ascii=False, indent=2)
-                        
+            st.markdown("---")
+            if st.button("🚀 一键保存所有推荐规则", type="primary", use_container_width=True, key="save_all_ai_rules"):
+                try:
+                    with open(stats_rules_file, 'r', encoding='utf-8') as f:
+                        current_config = json.load(f)
+                    
+                    added_count = 0
+                    for rec in recommendations:
+                        if rec['name'] not in current_config['stats_sheets']:
+                            current_config['stats_sheets'][rec['name']] = {
+                                'description': rec.get('description', ''),
+                                'type': rec['type'],
+                                'enabled': True,
+                                'group_by': rec.get('group_by', []),
+                                'metrics': rec.get('metrics', [])
+                            }
+                            added_count += 1
+                    
+                    with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                        json.dump(current_config, f, ensure_ascii=False, indent=2)
+                    
+                    if added_count > 0:
                         st.success(f"✅ 已一键保存 {added_count} 条规则到 stats_rules.json")
                         st.balloons()
                         
@@ -224,11 +222,13 @@ def render_tab1(base_dir, templates_dir, output_dir):
                         st.session_state.ai_recommendations_list = []
                         
                         st.info("💡 规则已保存，请滚动到下方查看'现有统计规则'")
-                    
-                    except Exception as e:
-                        st.error(f"❌ 保存失败：{e}")
-                        import traceback
-                        st.code(traceback.format_exc())
+                    else:
+                        st.info("ℹ️ 所有规则都已添加")
+                
+                except Exception as e:
+                    st.error(f"❌ 保存失败：{e}")
+                    import traceback
+                    st.code(traceback.format_exc())
     
     st.markdown("---")
     
