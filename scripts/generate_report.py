@@ -174,8 +174,9 @@ def _generate_single_chart(args: Tuple) -> Tuple[str, str]:
             chart_engine.create_heatmap(df, **params)
         elif chart_type in ['multi_column', 'column_clustered']:
             chart_engine.create_multi_column(df, **params)
-        else:
-            log_callback(f"      [SKIP] 未知图表类型：{chart_type}")
+        elif chart_type == 'table':
+            # 表格类型：跳过图表生成，由后续的 TABLE 处理逻辑处理
+            log_callback(f"      [SKIP] 图表类型 {chart_type} 是表格，由 TABLE 处理逻辑处理")
             return (chart_key, None)
         
         return (chart_key, output_path)
@@ -556,6 +557,10 @@ def generate_report(template_name: str = None, output_name: str = None,
                 }
                 # 只添加该图表类型需要的参数
                 chart_type = config.get('chart_type')
+                
+                # 调试：输出配置信息
+                log_callback(f"      [DEBUG] {chart_key}: type={chart_type}, data_source={config.get('data_source', '')}")
+                log_callback(f"      [DEBUG]   字段：{json.dumps({k:v for k,v in config.items() if k not in ['chart_key', 'chart_title', 'data_source', 'chart_type', 'description']}, ensure_ascii=False)}")
                 
                 # 处理 y_field 可能是字符串或列表的情况
                 y_field_value = config.get('y_field', '')
