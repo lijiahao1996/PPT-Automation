@@ -148,7 +148,7 @@ def render_tab1(base_dir, templates_dir, output_dir):
             for i, rec in enumerate(recommendations):
                 already_added = rec['name'] in st.session_state.stats_config.get('stats_sheets', {})
                 
-                # 折叠后显示：规则名 + 添加按钮
+                # 折叠后显示：规则名 + 添加/删除按钮
                 col_title, col_btn = st.columns([4, 1])
                 
                 with col_title:
@@ -157,8 +157,28 @@ def render_tab1(base_dir, templates_dir, output_dir):
                 
                 with col_btn:
                     if already_added:
-                        st.success("✅ 已添加")
+                        # 已添加：显示删除按钮
+                        if st.button("🗑️ 删除", key=f"del_single_{rec['name']}_{i}", use_container_width=True):
+                            try:
+                                with open(stats_rules_file, 'r', encoding='utf-8') as f:
+                                    current_config = json.load(f)
+                                
+                                if rec['name'] in current_config['stats_sheets']:
+                                    del current_config['stats_sheets'][rec['name']]
+                                    
+                                    with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                                        json.dump(current_config, f, ensure_ascii=False, indent=2)
+                                    
+                                    st.success(f"✅ 已删除：{rec['name']}")
+                                    
+                                    st.session_state.stats_config = current_config
+                            
+                            except Exception as e:
+                                st.error(f"❌ 删除失败：{e}")
+                                import traceback
+                                st.code(traceback.format_exc())
                     else:
+                        # 未添加：显示添加按钮
                         if st.button("➕ 添加并保存", key=f"add_single_{rec['name']}_{i}", use_container_width=True):
                             try:
                                 with open(stats_rules_file, 'r', encoding='utf-8') as f:
@@ -300,10 +320,15 @@ def render_tab1(base_dir, templates_dir, output_dir):
     
     if st.session_state.stats_config.get('stats_sheets'):
         for name, rule in st.session_state.stats_config['stats_sheets'].items():
-            with st.expander(f"{'✅' if rule.get('enabled', True) else '❌'} {name}"):
-                st.json(rule)
-                
-                if st.button(f"🗑️ 删除", key=f"delete_{name}"):
+            # 折叠后显示：规则名 + 删除按钮
+            col_title, col_btn = st.columns([4, 1])
+            
+            with col_title:
+                with st.expander(f"{'✅' if rule.get('enabled', True) else '❌'} {name}", expanded=False):
+                    st.json(rule)
+            
+            with col_btn:
+                if st.button("🗑️ 删除", key=f"delete_{name}", use_container_width=True):
                     del st.session_state.stats_config['stats_sheets'][name]
                     with open(stats_rules_file, 'w', encoding='utf-8') as f:
                         json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)

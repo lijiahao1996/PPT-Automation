@@ -3,12 +3,12 @@
   "description": "统计规则配置 - 新增图表只需修改此文件",
   "last_updated": "2026-04-07",
   "stats_sheets": {
-    "销售员排名": {
-      "description": "按维度排名统计",
-      "type": "ranking",
+    "客户类型对比": {
+      "description": "按维度对比分析",
+      "type": "comparison",
       "enabled": true,
       "group_by": [
-        "销售员"
+        "客户类型"
       ],
       "metrics": [
         {
@@ -20,15 +20,20 @@
           "field": "销售额",
           "agg": "count",
           "alias": "订单数"
+        },
+        {
+          "field": "销售额",
+          "agg": "mean",
+          "alias": "客单价"
         }
       ]
     },
-    "城市排名": {
-      "description": "按维度排名统计",
-      "type": "ranking",
+    "月度趋势": {
+      "description": "月度销售趋势分析",
+      "type": "trend",
       "enabled": true,
       "group_by": [
-        "城市"
+        "年月"
       ],
       "metrics": [
         {
@@ -76,6 +81,26 @@
         }
       ]
     },
+    "销售员排名": {
+      "description": "按维度排名统计",
+      "type": "ranking",
+      "enabled": true,
+      "group_by": [
+        "销售员"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        }
+      ]
+    },
     "产品占比": {
       "description": "按维度占比分析",
       "type": "composition",
@@ -91,37 +116,12 @@
         }
       ]
     },
-    "客户类型对比": {
-      "description": "按维度对比分析",
-      "type": "comparison",
+    "城市排名": {
+      "description": "按维度排名统计",
+      "type": "ranking",
       "enabled": true,
       "group_by": [
-        "客户类型"
-      ],
-      "metrics": [
-        {
-          "field": "销售额",
-          "agg": "sum",
-          "alias": "总销售额"
-        },
-        {
-          "field": "销售额",
-          "agg": "count",
-          "alias": "订单数"
-        },
-        {
-          "field": "销售额",
-          "agg": "mean",
-          "alias": "客单价"
-        }
-      ]
-    },
-    "月度趋势": {
-      "description": "月度销售趋势分析",
-      "type": "trend",
-      "enabled": true,
-      "group_by": [
-        "年月"
+        "城市"
       ],
       "metrics": [
         {
