@@ -468,9 +468,15 @@ def generate_report(template_name: str = None, output_name: str = None,
         config = configparser.ConfigParser()
         config_path = os.path.join(BASE_DIR, 'config.ini')
         enable_ai = True
+        
         if os.path.exists(config_path):
             config.read(config_path, encoding='utf-8')
+            # 调试：显示配置值
+            ai_section = config.get('ai', 'enable_ai_insight', fallback='true')
             enable_ai = config.getboolean('ai', 'enable_ai_insight', fallback=True)
+            log_callback(f"      [DEBUG] config.ini [ai] enable_ai_insight = {ai_section} -> {enable_ai}")
+        else:
+            log_callback(f"      [WARN] config.ini 不存在，使用默认值 enable_ai=True")
         
         insights_file = os.path.join(BASE_DIR, 'artifacts', 'ai_insights.json')
         
