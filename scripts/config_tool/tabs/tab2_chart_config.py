@@ -185,10 +185,32 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                                 "description": rec.get('reason', ''),
                                 "data_source": rec.get('data_source', ''),
                                 "chart_type": rec.get('chart_type', 'bar_horizontal'),
-                                "title": rec.get('chart_title', ''),
-                                "x_field": rec.get('x_field', ''),
-                                "y_field": rec.get('y_field', '')
+                                "title": rec.get('chart_title', '')
                             }
+                            
+                            # 根据图表类型转换字段名
+                            chart_type = rec.get('chart_type', '')
+                            if chart_type == 'pie':
+                                # 饼图：x_field -> category_field, y_field -> value_field
+                                if rec.get('x_field'): chart_config['category_field'] = rec['x_field']
+                                if rec.get('y_field'): chart_config['value_field'] = rec['y_field']
+                            elif chart_type in ['multi_column', 'column_clustered']:
+                                # 多列柱状图：x_field -> category_field, y_field -> series
+                                if rec.get('x_field'): chart_config['category_field'] = rec['x_field']
+                                y_field = rec.get('y_field', '')
+                                if y_field:
+                                    try:
+                                        chart_config['series'] = json.loads(y_field) if y_field.startswith('[') else [y_field]
+                                    except:
+                                        chart_config['series'] = [y_field]
+                            elif chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter']:
+                                if rec.get('x_field'): chart_config['x_field'] = rec['x_field']
+                                if rec.get('y_field'): chart_config['y_field'] = rec['y_field']
+                            else:
+                                # 其他图表类型直接使用 AI 输出的字段
+                                for k, v in rec.items():
+                                    if k not in ['chart_key', 'chart_title', 'data_source', 'chart_type', 'description', 'reason']:
+                                        chart_config[k] = v
                             
                             chart_key = f"CHART:{rec.get('chart_key', '')}"
                             placeholders_config.setdefault('placeholders', {}).setdefault('charts', {})[chart_key] = chart_config
@@ -214,10 +236,30 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                             "description": rec.get('reason', ''),
                             "data_source": rec.get('data_source', ''),
                             "chart_type": rec.get('chart_type', 'bar_horizontal'),
-                            "title": rec.get('chart_title', ''),
-                            "x_field": rec.get('x_field', ''),
-                            "y_field": rec.get('y_field', '')
+                            "title": rec.get('chart_title', '')
                         }
+                        
+                        # 根据图表类型转换字段名
+                        chart_type = rec.get('chart_type', '')
+                        if chart_type == 'pie':
+                            if rec.get('x_field'): chart_config['category_field'] = rec['x_field']
+                            if rec.get('y_field'): chart_config['value_field'] = rec['y_field']
+                        elif chart_type in ['multi_column', 'column_clustered']:
+                            if rec.get('x_field'): chart_config['category_field'] = rec['x_field']
+                            y_field = rec.get('y_field', '')
+                            if y_field:
+                                try:
+                                    chart_config['series'] = json.loads(y_field) if y_field.startswith('[') else [y_field]
+                                except:
+                                    chart_config['series'] = [y_field]
+                        elif chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter']:
+                            if rec.get('x_field'): chart_config['x_field'] = rec['x_field']
+                            if rec.get('y_field'): chart_config['y_field'] = rec['y_field']
+                        else:
+                            for k, v in rec.items():
+                                if k not in ['chart_key', 'chart_title', 'data_source', 'chart_type', 'description', 'reason']:
+                                    chart_config[k] = v
+                        
                         placeholders_config.setdefault('placeholders', {}).setdefault('charts', {})[chart_key] = chart_config
                         added_count += 1
                 
