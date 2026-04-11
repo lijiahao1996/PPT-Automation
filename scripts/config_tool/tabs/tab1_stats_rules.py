@@ -189,10 +189,15 @@ def render_tab1(base_dir, templates_dir, output_dir):
                             
                             # 保存按钮
                             if st.button("💾 保存所有选择的规则到 stats_rules.json", type="primary", use_container_width=True, key="save_pending_rules"):
+                                st.write(f"[DEBUG] stats_rules_file = {stats_rules_file}")
+                                st.write(f"[DEBUG] pending_rules = {len(st.session_state.pending_ai_rules)}")
+                                
                                 try:
                                     # 读取当前文件
+                                    st.write("[DEBUG] 读取文件中...")
                                     with open(stats_rules_file, 'r', encoding='utf-8') as f:
                                         current_config = json.load(f)
+                                    st.write(f"[DEBUG] 读取成功，当前有 {len(current_config.get('stats_sheets', {}))} 条规则")
                                     
                                     added_count = 0
                                     for rec in st.session_state.pending_ai_rules:
@@ -205,25 +210,32 @@ def render_tab1(base_dir, templates_dir, output_dir):
                                                 'metrics': rec.get('metrics', [])
                                             }
                                             added_count += 1
+                                            st.write(f"[DEBUG] 添加：{rec['name']}")
+                                    
+                                    st.write(f"[DEBUG] 保存后共 {len(current_config.get('stats_sheets', {}))} 条规则")
                                     
                                     # 保存到文件
+                                    st.write(f"[DEBUG] 写入文件：{stats_rules_file}")
                                     with open(stats_rules_file, 'w', encoding='utf-8') as f:
                                         json.dump(current_config, f, ensure_ascii=False, indent=2)
                                     
-                                    st.success(f"✅ 已保存 {added_count} 条统计规则到 stats_rules.json")
+                                    st.write("[DEBUG] 写入完成！")
+                                    st.success(f"✅ 已保存 {added_count} 条规则")
                                     st.balloons()
                                     
-                                    # 更新 session_state
+                                    # 验证
+                                    with open(stats_rules_file, 'r', encoding='utf-8') as f:
+                                        verify = json.load(f)
+                                    st.write(f"[DEBUG] 验证：文件现有 {len(verify.get('stats_sheets', {}))} 条")
+                                    st.write(f"[DEBUG] 规则：{list(verify.get('stats_sheets', {}).keys())}")
+                                    
                                     st.session_state.stats_config = current_config
                                     st.session_state.pending_ai_rules = []
                                     
-                                    # 等待 2 秒后刷新
-                                    import time
-                                    time.sleep(2)
-                                    st.rerun()
+                                    st.info("💡 请刷新页面（F5）查看结果")
                                 
                                 except Exception as e:
-                                    st.error(f"❌ 保存失败：{e}")
+                                    st.error(f"❌ 失败：{e}")
                                     import traceback
                                     st.code(traceback.format_exc())
                     
