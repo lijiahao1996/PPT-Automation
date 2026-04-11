@@ -39,6 +39,30 @@
           "unit": "元"
         }
       ]
+    },
+    "AI 测试规则": {
+      "description": "测试规则",
+      "type": "kpi",
+      "enabled": true,
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        }
+      ]
+    },
+    "AI_Test_Rule": {
+      "description": "Test Rule",
+      "type": "kpi",
+      "enabled": true,
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        }
+      ]
     }
   },
   "global_settings": {
