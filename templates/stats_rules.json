@@ -96,7 +96,27 @@
         }
       ]
     },
-    "月度趋势": {
+    "销售员排名": {
+      "description": "按维度排名统计",
+      "type": "ranking",
+      "enabled": true,
+      "group_by": [
+        "销售员"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单数"
+        }
+      ]
+    },
+    "自定义月度趋势": {
       "description": "月度销售趋势分析",
       "type": "trend",
       "enabled": true,
@@ -116,12 +136,12 @@
         }
       ]
     },
-    "销售员排名": {
-      "description": "按维度排名统计",
-      "type": "ranking",
+    "月度趋势": {
+      "description": "月度销售趋势分析",
+      "type": "trend",
       "enabled": true,
       "group_by": [
-        "销售员"
+        "年月"
       ],
       "metrics": [
         {
