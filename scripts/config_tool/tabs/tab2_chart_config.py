@@ -5,7 +5,7 @@ import pandas as pd
 import json
 import os
 
-def render_tab2(templates_dir, output_dir):
+def render_tab2(templates_dir, output_dir, base_dir=None):
     st.header("📈 图表配置")
     st.markdown("配置 PPT 中显示的图表")
     
@@ -91,7 +91,7 @@ def render_tab2(templates_dir, output_dir):
                 
                 # 调用 AI 推荐图表
                 from ai.qwen_client import QwenClient
-                qwen = QwenClient()
+                qwen = QwenClient(base_dir=base_dir)
                 
                 if qwen.is_available():
                     prompt = f"""
@@ -155,6 +155,7 @@ def render_tab2(templates_dir, output_dir):
                         already_added = True
                         break
                 
+                # 折叠后显示：图表名 + 添加/删除按钮
                 col_title, col_btn = st.columns([4, 1])
                 
                 with col_title:
@@ -163,8 +164,19 @@ def render_tab2(templates_dir, output_dir):
                 
                 with col_btn:
                     if already_added:
-                        st.success("✅ 已添加")
+                        # 已添加：显示删除按钮
+                        if st.button("🗑️ 删除", key=f"del_chart_{rec.get('chart_key', '')}_{i}", use_container_width=True):
+                            chart_key = f"CHART:{rec.get('chart_key', '')}"
+                            if chart_key in placeholders_config.get('placeholders', {}).get('charts', {}):
+                                del placeholders_config['placeholders']['charts'][chart_key]
+                                
+                                with open(placeholders_file, 'w', encoding='utf-8') as f:
+                                    json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                                
+                                st.session_state.stats_config = placeholders_config
+                                st.rerun()
                     else:
+                        # 未添加：显示添加按钮
                         if st.button("➕ 添加并保存", key=f"add_chart_{rec.get('chart_key', '')}_{i}", use_container_width=True):
                             chart_config = {
                                 "description": rec.get('reason', ''),
@@ -181,15 +193,14 @@ def render_tab2(templates_dir, output_dir):
                             with open(placeholders_file, 'w', encoding='utf-8') as f:
                                 json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
                             
-                            st.success(f"✅ 已添加：{rec.get('chart_title', '')}")
-                            st.balloons()
+                            st.session_state.stats_config = placeholders_config
                             st.rerun()
                 
                 # 展开查看详情
                 with st.expander("查看配置详情", expanded=False):
                     st.json(rec)
             
-            # 一键保存按钮
+            # 一键保存按钮放在最下面
             st.markdown("---")
             if st.button("🚀 一键保存所有推荐图表", type="primary", use_container_width=True, key="save_all_charts"):
                 added_count = 0
@@ -325,13 +336,71 @@ def render_tab2(templates_dir, output_dir):
     
     if charts:
         for chart_key, chart_cfg in charts.items():
-            with st.expander(f"📈 {chart_key} - {chart_cfg.get('title', '')}"):
-                st.json(chart_cfg)
-                
-                if st.button(f"🗑️ 删除", key=f"delete_chart_{chart_key}"):
+            # 折叠后显示：图表名 + 编辑/删除按钮
+            col_title, col_btn1, col_btn2 = st.columns([3, 1, 1])
+            
+            with col_title:
+                with st.expander(f"📈 {chart_key} - {chart_cfg.get('title', '')}", expanded=False):
+                    st.json(chart_cfg)
+            
+            with col_btn1:
+                if st.button("✏️ 编辑", key=f"edit_chart_{chart_key}", use_container_width=True):
+                    st.session_state['editing_chart'] = chart_key
+                    st.rerun()
+            
+            with col_btn2:
+                if st.button("🗑️ 删除", key=f"delete_chart_{chart_key}", use_container_width=True):
                     del placeholders_config['placeholders']['charts'][chart_key]
                     with open(placeholders_file, 'w', encoding='utf-8') as f:
                         json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
                     st.rerun()
+            
+            # 编辑模式
+            if st.session_state.get('editing_chart') == chart_key:
+                st.markdown(f"#### ✏️ 编辑：{chart_key}")
+                
+                edit_key = st.text_input("图表 Key", value=chart_key.replace('CHART:', ''), key=f"edit_key_{chart_key}")
+                edit_title = st.text_input("图表标题", value=chart_cfg.get('title', ''), key=f"edit_title_{chart_key}")
+                edit_type = st.selectbox("图表类型", options=list(chart_types.keys()), 
+                                        format_func=lambda x: chart_types[x],
+                                        index=list(chart_types.keys()).index(chart_cfg.get('chart_type', 'bar_horizontal')) if chart_cfg.get('chart_type') in chart_types.keys() else 0,
+                                        key=f"edit_type_{chart_key}")
+                edit_source = st.selectbox("数据源", options=available_sheets, 
+                                          index=available_sheets.index(chart_cfg.get('data_source', '')) if chart_cfg.get('data_source', '') in available_sheets else 0,
+                                          key=f"edit_source_{chart_key}")
+                edit_x = st.text_input("X 轴字段", value=chart_cfg.get('x_field', ''), key=f"edit_x_{chart_key}")
+                edit_y = st.text_input("Y 轴字段", value=chart_cfg.get('y_field', ''), key=f"edit_y_{chart_key}")
+                edit_desc = st.text_area("描述", value=chart_cfg.get('description', ''), key=f"edit_desc_{chart_key}")
+                
+                col_save, col_cancel = st.columns(2)
+                with col_save:
+                    if st.button("💾 保存修改", type="primary", key=f"edit_save_{chart_key}"):
+                        new_key = f"CHART:{edit_key}"
+                        new_config = {
+                            "description": edit_desc,
+                            "data_source": edit_source,
+                            "chart_type": edit_type,
+                            "title": edit_title,
+                            "x_field": edit_x,
+                            "y_field": edit_y
+                        }
+                        
+                        # 如果 key 改变了，先删除旧的
+                        if new_key != chart_key:
+                            del placeholders_config['placeholders']['charts'][chart_key]
+                        
+                        placeholders_config['placeholders']['charts'][new_key] = new_config
+                        
+                        with open(placeholders_file, 'w', encoding='utf-8') as f:
+                            json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                        
+                        st.session_state['editing_chart'] = None
+                        st.success("✅ 已保存修改")
+                        st.rerun()
+                
+                with col_cancel:
+                    if st.button("❌ 取消编辑", key=f"edit_cancel_{chart_key}"):
+                        st.session_state['editing_chart'] = None
+                        st.rerun()
     else:
         st.info("暂无图表配置")

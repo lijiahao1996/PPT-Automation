@@ -36,21 +36,6 @@
         }
       ]
     },
-    "产品占比": {
-      "description": "按维度占比分析",
-      "type": "composition",
-      "enabled": true,
-      "group_by": [
-        "产品"
-      ],
-      "metrics": [
-        {
-          "field": "销售额",
-          "agg": "sum",
-          "alias": "销售额"
-        }
-      ]
-    },
     "客户类型对比": {
       "description": "按维度对比分析",
       "type": "comparison",

@@ -5,220 +5,209 @@
   "template_file": "销售分析报告_标准模板.pptx",
   "placeholders": {
     "charts": {
-      "CHART:sales_by_person": {
-        "description": "销售员业绩横向条形图",
-        "data_source": "销售员业绩",
+      "CHART:product_share": {
+        "description": "饼图直观呈现各产品在总销售额中的构成比例，适用于6个类别的分类占比分析",
+        "data_source": "产品占比",
+        "chart_type": "pie",
+        "title": "产品销售额占比分布",
+        "x_field": "产品",
+        "y_field": "销售额"
+      },
+      "CHART:customer_type_comparison": {
+        "description": "横向条形图清晰对比两类客户在销售额、订单数、客单价三个维度的差异（可分组或双轴），适合小类别（n=2）的多指标横向比较",
+        "data_source": "客户类型对比",
         "chart_type": "bar_horizontal",
-        "title": "销售员业绩表现分析",
+        "title": "新客与老客经营效能对比",
+        "x_field": "总销售额",
+        "y_field": "客户类型"
+      },
+      "CHART:city_ranking": {
+        "description": "横向条形图便于按销售额降序排列9个城市，避免城市名过长导致垂直标签重叠，突出排名关系",
+        "data_source": "城市排名",
+        "chart_type": "bar_horizontal",
+        "title": "城市销售业绩排名",
+        "x_field": "总销售额",
+        "y_field": "城市"
+      },
+      "CHART:salesperson_ranking": {
+        "description": "横向条形图适配9人排名场景，支持清晰标注销售员姓名与对应销售额，优于垂直柱状图的标签可读性",
+        "data_source": "销售员排名",
+        "chart_type": "bar_horizontal",
+        "title": "销售员业绩排名",
         "x_field": "总销售额",
         "y_field": "销售员"
       },
-      "CHART:product_pie": {
-        "description": "产品销售占比环形图",
-        "data_source": "产品占比",
-        "chart_type": "pie",
-        "category_field": "产品",
-        "value_field": "占比",
-        "title": "产品销售结构与占比",
-        "figsize": [
-          6,
-          6
-        ],
-        "slide_index": 4
+      "CHART:monthly_trend_sales": {
+        "description": "折线图最适配时间序列趋势分析，能清晰展现6个月销售额和订单数的变化方向与增速，支持双Y轴或双线叠加",
+        "data_source": "自定义月度趋势",
+        "chart_type": "line",
+        "title": "月度销售额与订单趋势",
+        "x_field": "年月",
+        "y_field": "总销售额"
       },
-      "CHART:city_ranking": {
-        "description": "城市销售业绩排名",
-        "data_source": "城市排名",
-        "chart_type": "bar_horizontal",
-        "x_field": "总销售额",
-        "y_field": "城市",
-        "title": "福建各城市销售业绩排名",
-        "slide_index": 5
-      },
-      "CHART:customer_comparison": {
-        "description": "新老客销售对比",
-        "data_source": "客户类型",
-        "chart_type": "column_clustered",
-        "category_field": "客户属性",
-        "series": [
-          "总销售额",
-          "订单数",
-          "客单价"
-        ],
-        "title": "新老客销售贡献对比",
-        "slide_index": 6
-      },
-      "CHART:monthly_trend": {
-        "description": "月度销售趋势",
+      "CHART:monthly_trend_orders": {
+        "description": "与‘自定义月度趋势’结构一致，复用相同图表类型确保视觉一致性；折线图精准表达时序增长/波动特征",
         "data_source": "月度趋势",
         "chart_type": "line",
+        "title": "月度订单量趋势",
         "x_field": "年月",
-        "y_field": "总销售额",
-        "title": "销售趋势分析",
-        "slide_index": 7
+        "y_field": "订单数"
       },
-      "CHART:heatmap": {
-        "description": "销售员 - 产品热力图",
-        "data_source": "销售员 - 产品",
-        "chart_type": "heatmap",
-        "index_field": "销售员",
-        "columns": null,
-        "title": "销售员 - 产品销售能力矩阵分析",
-        "slide_index": 8
+      "CHART:core_kpi": {
+        "description": "柱状簇图可清晰并列展示少量关键指标数值，便于快速对比；单位统一（无量纲或隐含），适合离散类别+单值映射",
+        "data_source": "核心 KPI",
+        "chart_type": "column_clustered",
+        "title": "核心 KPI 指标概览",
+        "x_field": "指标",
+        "y_field": "数值"
       },
-      "CHART:customer_city": {
-        "description": "客户属性与城市销售分析",
-        "data_source": "客户城市分析",
-        "chart_type": "bar_horizontal",
-        "x_field": "总销售额",
-        "y_field": "城市",
-        "title": "客户属性与城市销售分析",
-        "slide_index": 9
-      },
-      "CHART:age_scatter": {
-        "description": "客户年龄与销售额分布分析",
-        "data_source": "客户年龄分布",
-        "chart_type": "scatter",
-        "title": "客户年龄与销售额分布分析",
-        "x_field": "年龄段",
-        "y_field": "总销售额"
+      "CHART:monthly_trend_dual": {
+        "description": "同一时间轴上双指标折线图能揭示销售额与订单量的协同或背离关系，强化业务洞察；数据结构完全匹配",
+        "data_source": "月度趋势",
+        "chart_type": "line",
+        "title": "月度双指标趋势对比",
+        "x_field": "年月",
+        "y_field": [
+          "总销售额",
+          "订单数"
+        ]
       }
     },
     "insights": {
-      "CHART:sales_by_person": {
-        "dimensions": [
-          "排名分析",
-          "对比分析"
-        ],
-        "metrics": [
-          "总销售额",
-          "客单价"
-        ],
-        "baseline": "头部对比",
-        "style": "平衡型",
-        "word_count": 170,
-        "enabled": true,
-        "custom_prompt": "重点分析 TOP3 销售员的业绩贡献度和稳定性，指出潜在风险"
-      },
-      "CHART:product_pie": {
-        "dimensions": [
-          "占比分析",
-          "异常检测"
-        ],
-        "metrics": [
-          "销售额",
-          "占比"
-        ],
-        "baseline": "平均值",
-        "style": "问题导向",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": "指出爆品依赖风险，分析产品结构健康度"
-      },
-      "CHART:city_ranking": {
-        "dimensions": [
-          "排名分析",
-          "对比分析"
-        ],
-        "metrics": [
-          "总销售额",
-          "订单数"
-        ],
-        "baseline": "头部对比",
-        "style": "平衡型",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": "分析头部城市贡献度，识别潜力市场"
-      },
-      "CHART:customer_comparison": {
-        "dimensions": [
-          "对比分析",
-          "占比分析"
-        ],
-        "metrics": [
-          "总销售额",
-          "客单价",
-          "占比"
-        ],
-        "baseline": "无对比",
-        "style": "建议导向",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": "分析新老客结构健康度，给出拉新和维系建议"
-      },
-      "CHART:monthly_trend": {
+      "CHART:product_share": {
         "dimensions": [
           "趋势分析",
           "对比分析"
         ],
         "metrics": [
           "总销售额",
-          "环比增长"
+          "订单数",
+          "客单价"
         ],
         "baseline": "环比",
-        "style": "数据驱动",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": "分析月度波动原因，识别增长趋势"
-      },
-      "CHART:heatmap": {
-        "dimensions": [
-          "排名分析",
-          "相关性分析"
-        ],
-        "metrics": [
-          "销售额"
-        ],
-        "baseline": "平均值",
         "style": "平衡型",
         "word_count": 150,
         "enabled": true,
-        "custom_prompt": "分析销售员擅长品类，指出人货匹配优化空间"
+        "custom_prompt": ""
       },
-      "CHART:customer_city": {
+      "CHART:customer_type_comparison": {
         "dimensions": [
-          "分布分析",
+          "趋势分析",
           "对比分析"
         ],
         "metrics": [
           "总销售额",
-          "订单数"
+          "订单数",
+          "客单价"
         ],
-        "baseline": "平均值",
+        "baseline": "环比",
         "style": "平衡型",
         "word_count": 150,
         "enabled": true,
-        "custom_prompt": "分析客户 - 城市分布特征，识别重点市场"
+        "custom_prompt": ""
       },
-      "CHART:age_scatter": {
+      "CHART:city_ranking": {
         "dimensions": [
-          "分布分析",
-          "相关性分析",
+          "趋势分析",
           "对比分析"
         ],
         "metrics": [
           "总销售额",
-          "客单价",
-          "订单数"
+          "订单数",
+          "客单价"
         ],
-        "baseline": "平均值",
+        "baseline": "环比",
         "style": "平衡型",
         "word_count": 150,
         "enabled": true,
-        "custom_prompt": "重点分析哪个年龄段客户贡献最高，年轻客户（25-35 岁）与中年客户（36-50 岁）的消费差异，以及客户类型（新客/老客）在各年龄段的分布特征。指出潜在的年龄分层运营机会。\n"
+        "custom_prompt": ""
+      },
+      "CHART:salesperson_ranking": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:monthly_trend_sales": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:monthly_trend_orders": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:core_kpi": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:monthly_trend_dual": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
       }
     },
     "tables": {
-      "TABLE:abnormal_orders": {
-        "description": "异常订单明细表",
-        "data_source": "异常订单",
-        "columns": null,
-        "slide_index": 9
-      },
-      "TABLE:kpi_table": {
-        "description": "kpi指标表",
+      "TABLE:core_api": {
+        "description": "核心 KPI",
         "data_source": "核心 KPI",
-        "slide_index": 3
+        "slide_index": 9
       }
     },
     "text": {
@@ -231,11 +220,6 @@
         "description": "报告副标题",
         "default": "业绩复盘 · 洞察归因 · 策略建议",
         "slide_index": 0
-      },
-      "KPI:cards": {
-        "description": "核心 KPI 卡片内容",
-        "default": "",
-        "slide_index": 2
       }
     },
     "dates": {

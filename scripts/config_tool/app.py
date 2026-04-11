@@ -82,7 +82,7 @@ with tabs[0]:
 # ========== Tab 2: 图表配置 ==========
 with tabs[1]:
     from tabs.tab2_chart_config import render_tab2
-    render_tab2(templates_dir, output_dir)
+    render_tab2(templates_dir, output_dir, base_dir)
 
 # ========== Tab 3: 洞察配置 ==========
 with tabs[2]:
