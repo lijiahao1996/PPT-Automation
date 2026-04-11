@@ -87,7 +87,7 @@
       ]
     },
     "月度销售趋势": {
-      "description": "按年月粒度统计销售额趋势",
+      "description": "按订单时间（月粒度）分析销售额趋势",
       "type": "trend",
       "enabled": true,
       "group_by": [
@@ -117,7 +117,7 @@
         }
       ]
     },
-    "销售额异常检测": {
+    "异常订单检测": {
       "description": "识别销售额显著偏离均值的异常订单",
       "type": "outlier",
       "enabled": true,
@@ -126,7 +126,7 @@
         {
           "field": "销售额",
           "agg": "sum",
-          "alias": "总销售额"
+          "alias": "销售额"
         }
       ]
     }

@@ -4,9 +4,118 @@
   "generated_at": "2026-04-06 22:19:00",
   "template_file": "销售分析报告_标准模板.pptx",
   "placeholders": {
-    "charts": {},
+    "charts": {
+      "CHART:core_kpi_summary": {
+        "description": "纵向柱状图适合展示少量关键指标的绝对值对比，清晰传达各KPI量级差异",
+        "data_source": "核心 KPI",
+        "chart_type": "bar_vertical",
+        "title": "核心 KPI 指标概览",
+        "x_field": "指标",
+        "y_field": "数值"
+      },
+      "CHART:salesperson_ranking": {
+        "description": "横向条形图适合排名类数据，便于按销售额从高到低直观排序和比较销售员表现",
+        "data_source": "销售员业绩排名",
+        "chart_type": "bar_horizontal",
+        "title": "销售员业绩排名分析",
+        "x_field": "总销售额",
+        "y_field": "销售员"
+      },
+      "CHART:city_sales_pie": {
+        "description": "环形饼图适合展示各城市在总销售额中的占比结构，突出区域贡献度",
+        "data_source": "城市销售占比",
+        "chart_type": "pie",
+        "title": "城市销售占比分布",
+        "category_field": "",
+        "value_field": ""
+      },
+      "CHART:customer_segment_comparison": {
+        "description": "分组柱状图可同时对比新客与老客在销售额和订单数两个维度的表现，揭示客户价值差异",
+        "data_source": "客户属性对比",
+        "chart_type": "column_clustered",
+        "title": "新老客销售与订单对比",
+        "category_field": "",
+        "series": [
+          ""
+        ]
+      },
+      "CHART:monthly_sales_trend": {
+        "description": "折线图最适合时间序列趋势分析，能清晰呈现销售额随时间变化的增长或波动规律",
+        "data_source": "月度销售趋势",
+        "chart_type": "line",
+        "title": "月度销售趋势分析",
+        "x_field": "年月",
+        "y_field": [
+          "总销售额"
+        ]
+      }
+    },
     "insights": {
-      "CHART:product_share_pie": {
+      "CHART:core_kpi_summary": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:salesperson_ranking": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:city_sales_pie": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:customer_segment_comparison": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:monthly_sales_trend": {
         "dimensions": [
           "趋势分析",
           "对比分析"
