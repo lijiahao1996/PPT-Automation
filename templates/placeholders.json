@@ -6,48 +6,52 @@
   "placeholders": {
     "charts": {
       "CHART:core_kpi_summary": {
-        "description": "纵向柱状图适合展示少量关键指标的绝对值对比，清晰传达各KPI量级差异",
+        "description": "多列柱状图适合并列展示多个关键指标数值，便于横向对比",
         "data_source": "核心 KPI",
-        "chart_type": "bar_vertical",
-        "title": "核心 KPI 指标概览",
-        "x_field": "指标",
-        "y_field": "数值"
+        "chart_type": "column_clustered",
+        "title": "核心 KPI 汇总",
+        "x_field": "",
+        "y_field": ""
       },
       "CHART:salesperson_ranking": {
-        "description": "横向条形图适合排名类数据，便于按销售额从高到低直观排序和比较销售员表现",
+        "description": "横向条形图适合展示排名对比，便于直观识别高绩效销售员",
         "data_source": "销售员业绩排名",
         "chart_type": "bar_horizontal",
-        "title": "销售员业绩排名分析",
+        "title": "销售员业绩排名",
         "x_field": "总销售额",
         "y_field": "销售员"
       },
-      "CHART:city_sales_pie": {
-        "description": "环形饼图适合展示各城市在总销售额中的占比结构，突出区域贡献度",
+      "CHART:city_composition": {
+        "description": "饼图适合展示各城市在总销售额中的占比结构",
         "data_source": "城市销售占比",
         "chart_type": "pie",
         "title": "城市销售占比分布",
-        "category_field": "",
-        "value_field": ""
+        "x_field": "",
+        "y_field": ""
       },
-      "CHART:customer_segment_comparison": {
-        "description": "分组柱状图可同时对比新客与老客在销售额和订单数两个维度的表现，揭示客户价值差异",
+      "CHART:customer_attribute_comparison": {
+        "description": "多列柱状图适合对比不同客户属性在多个业务指标上的表现",
         "data_source": "客户属性对比",
         "chart_type": "column_clustered",
-        "title": "新老客销售与订单对比",
-        "category_field": "",
-        "series": [
-          ""
-        ]
+        "title": "新老客经营效能对比",
+        "x_field": "",
+        "y_field": ""
       },
       "CHART:monthly_sales_trend": {
-        "description": "折线图最适合时间序列趋势分析，能清晰呈现销售额随时间变化的增长或波动规律",
+        "description": "折线图适合展示时间序列下的销售变化趋势",
         "data_source": "月度销售趋势",
         "chart_type": "line",
-        "title": "月度销售趋势分析",
+        "title": "月度销售趋势",
         "x_field": "年月",
-        "y_field": [
-          "总销售额"
-        ]
+        "y_field": "总销售额"
+      },
+      "CHART:anomaly_orders_table": {
+        "description": "异常订单检测数据维度丰富、样本量少（仅3行），适合用表格呈现完整字段细节",
+        "data_source": "异常订单检测",
+        "chart_type": "table",
+        "title": "异常订单明细",
+        "x_field": "",
+        "y_field": ""
       }
     },
     "insights": {
@@ -83,7 +87,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:city_sales_pie": {
+      "CHART:city_composition": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -99,7 +103,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:customer_segment_comparison": {
+      "CHART:customer_attribute_comparison": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -116,6 +120,22 @@
         "custom_prompt": ""
       },
       "CHART:monthly_sales_trend": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:anomaly_orders_table": {
         "dimensions": [
           "趋势分析",
           "对比分析"
