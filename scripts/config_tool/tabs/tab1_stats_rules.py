@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tab 1: 统计规则配置 - AI 增强版"""
+"""Tab 1: 统计规则配置 - AI 增强版 + 自定义添加"""
 import streamlit as st
 import pandas as pd
 import json
@@ -86,11 +86,11 @@ def render_tab1(base_dir, templates_dir, output_dir):
     # AI 智能分析
     st.subheader("🤖 AI 智能分析")
     
-    use_ai = st.checkbox("✨ 使用 AI 自动推荐统计规则", value=False, key="use_ai_check")
-    
     # 初始化待添加规则（移到外层，避免 rerun 后丢失）
     if 'ai_recommendations' not in st.session_state:
         st.session_state.ai_recommendations = []
+    
+    use_ai = st.checkbox("✨ 使用 AI 自动推荐统计规则", value=False, key="use_ai_check")
     
     if use_ai and os.path.exists(raw_data_file):
         if st.button("🤖 开始 AI 智能分析", type="primary", key="start_ai_analysis"):
@@ -141,8 +141,6 @@ def render_tab1(base_dir, templates_dir, output_dir):
         recommendations = st.session_state['ai_recommendations_list']
         
         if recommendations:
-            st.success(f"🤖 AI 推荐了 {len(recommendations)} 条统计规则")
-            
             st.markdown("### 推荐规则列表")
             
             for i, rec in enumerate(recommendations):
@@ -234,7 +232,99 @@ def render_tab1(base_dir, templates_dir, output_dir):
     
     st.markdown("---")
     
+    # ========== 自定义添加统计规则 ==========
+    st.subheader("📝 自定义添加统计规则")
+    st.caption("手动配置统计规则，不依赖 AI 推荐")
+    
+    stats_types = {
+        "kpi": "📊 核心 KPI - 汇总指标",
+        "ranking": "🏆 排名统计 - 销售员/城市排名",
+        "composition": "🥧 占比分析 - 产品占比",
+        "comparison": "⚖️ 对比分析 - 新老客对比",
+        "trend": "📈 趋势分析 - 月度趋势",
+        "distribution": "📊 分布分析 - 星期分布",
+        "matrix": "🔲 矩阵分析 - 销售员 - 产品",
+        "outlier": "⚠️ 异常检测 - 异常订单"
+    }
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        custom_sheet_name = st.text_input("统计表格名称", placeholder="例如：销售员业绩", key="custom_sheet_name")
+        custom_stat_type = st.selectbox("统计类型", options=list(stats_types.keys()), format_func=lambda x: stats_types[x], key="custom_stat_type")
+        custom_enabled = st.checkbox("启用", value=True, key="custom_enabled")
+        custom_description = st.text_area("描述", placeholder="例如：销售员业绩排名", height=60, key="custom_desc")
+    
+    with col2:
+        custom_group_fields = st.text_area("分组字段（每行一个）", placeholder="销售员\n城市", height=100, key="custom_groups")
+        custom_metrics = st.text_area("统计指标（JSON 格式）", 
+                                     value='[{"field": "销售额", "agg": "sum", "alias": "总销售额"}]',
+                                     height=150, key="custom_metrics")
+    
+    if st.button("➕ 添加自定义统计规则", use_container_width=True, key="add_custom_rule"):
+        if not custom_sheet_name.strip():
+            st.error("❌ 请填写统计表格名称")
+        elif not custom_group_fields.strip():
+            st.error("❌ 请填写分组字段")
+        else:
+            try:
+                metrics = json.loads(custom_metrics)
+                groups = [g.strip() for g in custom_group_fields.strip().split('\n') if g.strip()]
+                
+                rule = {
+                    "description": custom_description,
+                    "type": custom_stat_type,
+                    "enabled": custom_enabled,
+                    "group_by": groups,
+                    "metrics": metrics
+                }
+                
+                if custom_sheet_name not in st.session_state.stats_config.get("stats_sheets", {}):
+                    st.session_state.stats_config["stats_sheets"][custom_sheet_name] = rule
+                    
+                    # 保存到文件
+                    with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                        json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
+                    
+                    st.success(f"✅ 已添加自定义规则：{custom_sheet_name}")
+                    st.balloons()
+                    st.rerun()
+                else:
+                    st.warning(f"⚠️ 统计规则已存在：{custom_sheet_name}")
+            
+            except json.JSONDecodeError as e:
+                st.error(f"❌ 指标配置格式错误：{e}")
+    
+    st.markdown("---")
+    
     # 现有统计规则
+    st.subheader("📋 现有统计规则")
+    
+    # 重新读取最新的 stats_rules.json（确保显示最新数据）
+    if os.path.exists(stats_rules_file):
+        with open(stats_rules_file, 'r', encoding='utf-8') as f:
+            latest_config = json.load(f)
+        st.session_state.stats_config = latest_config
+    
+    if st.session_state.stats_config.get('stats_sheets'):
+        for name, rule in st.session_state.stats_config['stats_sheets'].items():
+            # 折叠后显示：规则名 + 删除按钮
+            col_title, col_btn = st.columns([4, 1])
+            
+            with col_title:
+                with st.expander(f"{'✅' if rule.get('enabled', True) else '❌'} {name}", expanded=False):
+                    st.json(rule)
+            
+            with col_btn:
+                if st.button("🗑️ 删除", key=f"delete_{name}", use_container_width=True):
+                    del st.session_state.stats_config['stats_sheets'][name]
+                    with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                        json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
+                    st.rerun()
+    else:
+        st.info("暂无统计规则")
+    
+    st.markdown("---")
     st.subheader("💾 操作")
     
     if st.button("▶ 执行统计并生成 Excel", type="primary", use_container_width=True):
@@ -290,30 +380,3 @@ def render_tab1(base_dir, templates_dir, output_dir):
             import traceback
             with st.expander("📄 查看详细错误"):
                 st.code(traceback.format_exc())
-    
-    st.markdown("---")
-    st.subheader("📋 现有统计规则")
-    
-    # 重新读取最新的 stats_rules.json（确保显示最新数据）
-    if os.path.exists(stats_rules_file):
-        with open(stats_rules_file, 'r', encoding='utf-8') as f:
-            latest_config = json.load(f)
-        st.session_state.stats_config = latest_config
-    
-    if st.session_state.stats_config.get('stats_sheets'):
-        for name, rule in st.session_state.stats_config['stats_sheets'].items():
-            # 折叠后显示：规则名 + 删除按钮
-            col_title, col_btn = st.columns([4, 1])
-            
-            with col_title:
-                with st.expander(f"{'✅' if rule.get('enabled', True) else '❌'} {name}", expanded=False):
-                    st.json(rule)
-            
-            with col_btn:
-                if st.button("🗑️ 删除", key=f"delete_{name}", use_container_width=True):
-                    del st.session_state.stats_config['stats_sheets'][name]
-                    with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                        json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
-                    st.rerun()
-    else:
-        st.info("暂无统计规则")
