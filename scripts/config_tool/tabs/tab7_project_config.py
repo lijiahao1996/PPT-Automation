@@ -59,6 +59,22 @@ def render_tab7(base_dir):
     
     st.markdown("---")
     
+    # AI 功能开关
+    st.subheader("🤖 AI 功能配置")
+    
+    enable_ai = config.getboolean('ai', 'enable_ai_insight', fallback=True)
+    enable_ai = st.checkbox(
+        "启用 AI 洞察生成",
+        value=enable_ai,
+        key="cfg_enable_ai",
+        help="禁用后将跳过 AI 洞察生成，节省 Token 消耗（但 PPT 中的洞察占位符将为空）"
+    )
+    
+    if not enable_ai:
+        st.warning("⚠️ **AI 洞察已禁用**\n\n生成 PPT 时将跳过 AI 洞察步骤，节省 Token 费用。\n\n注意：PPT 中的 `{{INSIGHT:xxx}}` 占位符将被替换为空。", icon="⚠️")
+    
+    st.markdown("---")
+    
     # 高级配置
     st.subheader("⚙️ 高级配置")
     
@@ -97,6 +113,10 @@ def render_tab7(base_dir):
                 'output_dir': output_dir,
                 'artifacts_dir': artifacts_dir,
                 'logs_dir': logs_dir
+            }
+            
+            config['ai'] = {
+                'enable_ai_insight': str(enable_ai).lower()
             }
             
             config['advanced'] = {

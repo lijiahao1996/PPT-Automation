@@ -74,17 +74,28 @@ class InsightGenerator:
                 return config.get('special_insights', {})
         return None
     
-    def generate(self, data_summary: Dict, output_path: str = None) -> List[str]:
+    def generate(self, data_summary: Dict, output_path: str = None, enable_ai: bool = True) -> List[str]:
         """
         生成 AI 洞察
         
         Args:
             data_summary: 统计数据字典 {sheet_name: DataFrame}
             output_path: 保存洞察 JSON 的路径
+            enable_ai: 是否启用 AI 生成（禁用时返回空洞察）
         
         Returns:
             List[str]: 洞察列表
         """
+        # 检查是否禁用 AI
+        if not enable_ai:
+            logger.info("AI 洞察已禁用，返回空洞察")
+            # 返回空洞察列表（数量根据配置动态确定）
+            charts_config = self._load_charts_config()
+            insights_config = self._load_insights_config()
+            insight_count = len(insights_config) if insights_config else (len(charts_config) if charts_config else 0)
+            total_count = insight_count + 2  # +2 为结论和策略
+            return ["" for _ in range(total_count)]
+        
         logger.info("开始生成 AI 洞察...")
         
         # 构建数据上下文

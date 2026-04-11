@@ -8,16 +8,12 @@ echo ========================================
 echo   PPT Report Generator v5.0
 echo ========================================
 echo.
-echo Starting Web Interface...
+echo 使用说明:
+echo 1. Web 界面模式：python -m streamlit run scripts\config_tool\app.py --server.port 8501
+echo 2. 直接生成模式：python scripts\generate_report.py [模板] [输出]
 echo.
-echo Access: http://localhost:8501/
+echo 示例:
+echo   python scripts\generate_report.py 报告模板.pptx 我的报告.pptx
 echo.
-echo Press Ctrl+C to stop
-echo.
-python -m streamlit run scripts\config_tool\app.py --server.port 8501 --server.address localhost
-if errorlevel 1 (
-    echo.
-    echo [ERROR] Failed to start web interface
-    echo.
-    pause
-)
+echo 按任意键退出...
+pause >nul

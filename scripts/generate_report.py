@@ -462,8 +462,20 @@ def generate_report(template_name: str = None, output_name: str = None,
         
         # ========== 3. 生成 AI 洞察 ==========
         log_callback("\n[3/5] 生成 AI 洞察...")
+        
+        # 检查是否禁用 AI
+        config = configparser.ConfigParser()
+        config_path = os.path.join(BASE_DIR, 'config.ini')
+        enable_ai = True
+        if os.path.exists(config_path):
+            config.read(config_path, encoding='utf-8')
+            enable_ai = config.getboolean('ai', 'enable_ai_insight', fallback=True)
+        
+        if not enable_ai:
+            log_callback("      [INFO] AI 洞察已禁用，使用空洞察")
+        
         insights_file = os.path.join(BASE_DIR, 'artifacts', 'ai_insights.json')
-        insights = insight_generator.generate(data_summary, insights_file)
+        insights = insight_generator.generate(data_summary, insights_file, enable_ai=enable_ai)
         log_callback(f"      [OK] 生成 {len(insights)} 条洞察")
         
         # ========== 4. 生成图表（支持并行） ==========
