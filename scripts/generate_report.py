@@ -471,9 +471,10 @@ def generate_report(template_name: str = None, output_name: str = None,
         
         if os.path.exists(config_path):
             config.read(config_path, encoding='utf-8')
-            # 调试：显示配置值
-            ai_section = config.get('ai', 'enable_ai_insight', fallback='true')
-            enable_ai = config.getboolean('ai', 'enable_ai_insight', fallback=True)
+            # 读取 AI 开关配置
+            ai_section = config.get('ai', 'enable_ai_insight', fallback='True')
+            # 兼容多种布尔值表示
+            enable_ai = ai_section.lower() in ['true', '1', 'yes', 'on']
             log_callback(f"      [DEBUG] config.ini [ai] enable_ai_insight = {ai_section} -> {enable_ai}")
         else:
             log_callback(f"      [WARN] config.ini 不存在，使用默认值 enable_ai=True")

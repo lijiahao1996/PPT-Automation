@@ -116,7 +116,7 @@ def render_tab7(base_dir):
             }
             
             config['ai'] = {
-                'enable_ai_insight': str(enable_ai).lower()
+                'enable_ai_insight': 'True' if enable_ai else 'False'
             }
             
             config['advanced'] = {
