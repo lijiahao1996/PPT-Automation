@@ -164,7 +164,15 @@ def render_tab1(base_dir, templates_dir, output_dir):
                                             'group_by': rec.get('group_by', []),
                                             'metrics': rec.get('metrics', [])
                                         }
-                                        st.success(f"✅ 已添加：{rec['name']}")
+                                        
+                                        # 同时保存到 stats_rules.json
+                                        try:
+                                            with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                                                json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
+                                            st.success(f"✅ 已添加并保存：{rec['name']}")
+                                        except Exception as e:
+                                            st.warning(f"⚠️ 已添加到内存，但保存失败：{e}")
+                                        
                                         st.rerun()
                         
                         # 批量添加按钮
@@ -180,7 +188,15 @@ def render_tab1(base_dir, templates_dir, output_dir):
                                         'metrics': rec.get('metrics', [])
                                     }
                                     added_count += 1
-                            st.success(f"✅ 已添加 {added_count} 条统计规则")
+                            
+                            # 批量保存到 stats_rules.json
+                            try:
+                                with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                                    json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
+                                st.success(f"✅ 已添加 {added_count} 条统计规则并保存到 stats_rules.json")
+                            except Exception as e:
+                                st.warning(f"⚠️ 已添加到内存，但保存失败：{e}")
+                            
                             st.rerun()
                     
                 except Exception as e:
