@@ -722,9 +722,15 @@ def generate_report(template_name: str = None, output_name: str = None,
                 }
                 # 只添加该图表类型需要的参数
                 chart_type = config.get('chart_type')
+                
+                # 处理 y_field 可能是字符串或列表的情况
+                y_field_value = config.get('y_field', '')
+                
                 if chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter', 'area', 'histogram', 'waterfall', 'funnel']:
                     if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
-                    if config.get('y_field'): task_config['params']['y_field'] = config['y_field']
+                    if y_field_value:
+                        # 如果是列表（多指标），直接使用；如果是字符串，也直接使用
+                        task_config['params']['y_field'] = y_field_value
                 elif chart_type == 'pie':
                     if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
                     if config.get('value_field'): task_config['params']['value_field'] = config['value_field']

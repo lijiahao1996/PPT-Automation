@@ -150,26 +150,41 @@ class BasicChartsMixin:
                     figsize: Tuple[int, int] = (12, 6),
                     show_markers: bool = True,
                     show_values: bool = True) -> str:
-        """折线图"""
+        """折线图（支持单指标或多指标）"""
         fig, ax = plt.subplots(figsize=figsize)
         
         x_values = df[x_field].tolist()
-        y_values = df[y_field].tolist()
         
-        line_color = self.colors.get('colors', {}).get('primary', '#1F4E79')
+        # 支持 y_field 为字符串或列表
+        if isinstance(y_field, str):
+            y_fields = [y_field]
+        elif isinstance(y_field, list):
+            y_fields = y_field
+        else:
+            y_fields = [str(y_field)]
         
-        marker = 'o' if show_markers else None
-        ax.plot(x_values, y_values, marker=marker, linewidth=2.5,
-               color=line_color, markersize=8, markerfacecolor='white',
-               markeredgewidth=2, markeredgecolor=line_color)
+        # 多颜色循环
+        colors = self.colors.get('chart_palettes', {}).get('default', 
+                   ['#1F4E79', '#27AE60', '#E74C3C', '#F39C12', '#9B59B6', '#3498DB'])
         
-        ax.fill_between(range(len(x_values)), y_values, alpha=0.2, color=line_color)
-        
-        if show_values:
-            for i, (x, y) in enumerate(zip(x_values, y_values)):
-                ax.text(i, y + max(y_values) * 0.02,
-                       f'{y:,.0f}',
-                       ha='center', fontsize=9, color='#2C3E50')
+        # 绘制多条线
+        for i, y_f in enumerate(y_fields):
+            y_values = df[y_f].tolist()
+            color = colors[i % len(colors)]
+            
+            marker = 'o' if show_markers else None
+            ax.plot(x_values, y_values, marker=marker, linewidth=2.5,
+                   color=color, markersize=8, markerfacecolor='white',
+                   markeredgewidth=2, markeredgecolor=color,
+                   label=y_f)
+            
+            ax.fill_between(range(len(x_values)), y_values, alpha=0.15, color=color)
+            
+            if show_values:
+                for j, (x, y) in enumerate(zip(x_values, y_values)):
+                    ax.text(j, y + max(y_values) * 0.02,
+                           f'{y:,.0f}',
+                           ha='center', fontsize=8, color=color)
         
         ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
         ax.set_xlabel('')
@@ -178,6 +193,10 @@ class BasicChartsMixin:
         ax.grid(True, linestyle='--', alpha=0.7)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
+        
+        # 添加图例（多指标时）
+        if len(y_fields) > 1:
+            ax.legend(loc='best', framealpha=0.95)
         
         plt.tight_layout()
         
