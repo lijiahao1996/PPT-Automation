@@ -212,7 +212,27 @@ class StatsEngine:
     
     def _calc_matrix(self, df: pd.DataFrame, config: Dict) -> pd.DataFrame:
         """计算矩阵（透视表）"""
+        # 支持两种配置格式：
+        # 1. pivot 格式：{"index": "支付方式", "columns": "商品类别", "values": "支付金额"}
+        # 2. group_by + metrics 格式：{"group_by": ["支付方式", "商品类别"], "metrics": [{"field": "支付金额", "agg": "sum"}]}
+        
         pivot_config = config.get('pivot', {})
+        
+        # 如果是 group_by + metrics 格式，转换为 pivot 格式
+        if not pivot_config and config.get('group_by'):
+            group_by = config.get('group_by', [])
+            metrics = config.get('metrics', [])
+            
+            if len(group_by) >= 2 and metrics:
+                pivot_config = {
+                    'index': group_by[0],  # 第一个分组字段作为行
+                    'columns': group_by[1],  # 第二个分组字段作为列
+                    'values': metrics[0].get('field', ''),  # 第一个指标字段作为值
+                    'aggfunc': metrics[0].get('agg', 'sum')  # 聚合方法
+                }
+        
+        if not pivot_config.get('index') or not pivot_config.get('columns') or not pivot_config.get('values'):
+            raise ValueError(f"矩阵配置不完整：需要 index, columns, values 字段。当前配置：{config}")
         
         result_df = pd.pivot_table(
             df,
@@ -226,14 +246,39 @@ class StatsEngine:
         return result_df.reset_index()
     
     def _calc_outliers(self, df: pd.DataFrame, config: Dict) -> pd.DataFrame:
-        """检测异常值"""
-        field = config.get('field', '销售额')
+        """检测异常值（3σ原则）"""
+        # 支持两种配置格式：
+        # 1. field + outlier_method 格式：{"field": "销售额", "outlier_method": "3sigma"}
+        # 2. metrics 格式：{"metrics": [{"field": "支付金额 (元)", "agg": "max"}]}
+        
+        # 从 metrics 中获取字段
+        metrics = config.get('metrics', [])
+        if metrics:
+            # 使用第一个指标字段作为异常检测字段
+            field = metrics[0].get('field', '支付金额 (元)')
+        else:
+            field = config.get('field', '支付金额 (元)')
+        
         method = config.get('outlier_method', '3sigma')
-        columns = config.get('columns', list(df.columns))
+        
+        # 检查字段是否存在
+        if field not in df.columns:
+            raise ValueError(f"异常检测字段 '{field}' 不存在于数据中。可用字段：{list(df.columns)}")
+        
+        # 确保字段是数值类型
+        try:
+            df[field] = pd.to_numeric(df[field], errors='coerce')
+        except Exception as e:
+            raise ValueError(f"字段 '{field}' 无法转换为数值类型：{e}")
         
         if method == '3sigma':
             mean = df[field].mean()
             std = df[field].std()
+            
+            if pd.isna(mean) or pd.isna(std) or std == 0:
+                # 数据不足或标准差为 0，返回空 DataFrame
+                return pd.DataFrame(columns=list(df.columns) + ['异常类型'])
+            
             upper_bound = mean + 3 * std
             lower_bound = mean - 3 * std
             
@@ -245,10 +290,14 @@ class StatsEngine:
             outliers['异常类型'] = outliers[field].apply(
                 lambda x: '异常高值' if x > upper_bound else '异常低值'
             )
+            
+            # 如果没有异常值，返回空 DataFrame
+            if len(outliers) == 0:
+                return pd.DataFrame(columns=list(df.columns) + ['异常类型'])
+            
+            return outliers[list(df.columns) + ['异常类型']]
         else:
-            outliers = pd.DataFrame(columns=columns + ['异常类型'])
-        
-        return outliers[columns] if len(outliers) > 0 else outliers
+            return pd.DataFrame(columns=list(df.columns) + ['异常类型'])
     
     def _preprocess_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """
