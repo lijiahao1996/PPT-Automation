@@ -29,6 +29,7 @@ from core.data_loader import DataLoader
 from core.chart_engine import ChartEngine
 from core.template_engine import TemplateEngine
 from core.validator import PresetValidators, DataQualityError
+from core.ppt_chart_engine import PPTChartEngine
 from ai.insight_generator import InsightGenerator
 
 # ========== 统一日志配置 ==========
@@ -533,73 +534,70 @@ def generate_report(template_name: str = None, output_name: str = None,
         else:
             log_callback(f"      [OK] 生成 {len(insights)} 条空洞察（AI 已禁用）")
         
-        # ========== 4. 生成图表（支持并行） ==========
+        # ========== 4. 生成图表（支持并行 + 原生图表） ==========
         log_callback("\n[4/5] 生成图表...")
         temp_dir = os.path.join(BASE_DIR, 'artifacts', 'temp')
         os.makedirs(temp_dir, exist_ok=True)
         
         chart_paths = {}
+        native_charts = []  # 存储需要创建原生图表的配置
         
         # 从 placeholders.json 读取图表配置
         chart_placeholders = placeholders.get('placeholders', {}).get('charts', {})
         
-        if parallel_charts:
-            log_callback("      [INFO] 使用并行模式生成图表...")
-            tasks = []
-            for key, config in chart_placeholders.items():
-                chart_key = key.split(':')[1] if ':' in key else key
-                task_config = {
-                    'sheet': config.get('data_source'),
-                    'type': config.get('chart_type'),
-                    'params': {
-                        'title': config.get('title', ''),
-                        'output_path': os.path.join(temp_dir, f'chart_{chart_key}.png'),
-                    }
-                }
-                # 只添加该图表类型需要的参数
-                chart_type = config.get('chart_type')
-                
-                # 调试：输出配置信息
-                log_callback(f"      [DEBUG] {chart_key}: type={chart_type}, data_source={config.get('data_source', '')}")
-                log_callback(f"      [DEBUG]   字段：{json.dumps({k:v for k,v in config.items() if k not in ['chart_key', 'chart_title', 'data_source', 'chart_type', 'description']}, ensure_ascii=False)}")
-                
-                # 处理 y_field 可能是字符串或列表的情况
-                y_field_value = config.get('y_field', '')
-                
-                if chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter', 'area', 'histogram', 'waterfall', 'funnel']:
-                    if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
-                    if y_field_value:
-                        # 如果是列表（多指标），直接使用；如果是字符串，也直接使用
-                        task_config['params']['y_field'] = y_field_value
-                elif chart_type == 'pie':
-                    if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
-                    if config.get('value_field'): task_config['params']['value_field'] = config['value_field']
-                elif chart_type in ['multi_column', 'column_clustered']:
-                    if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
-                    if config.get('series'): task_config['params']['series'] = config['series']
-                elif chart_type == 'heatmap':
-                    if config.get('index_field'): task_config['params']['index_field'] = config['index_field']
-                    if config.get('columns'): task_config['params']['columns'] = config['columns']
-                elif chart_type in ['boxplot', 'violin']:
-                    if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
-                    if config.get('value_field'): task_config['params']['value_field'] = config['value_field']
-                elif chart_type == 'bubble':
-                    if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
-                    if config.get('y_field'): task_config['params']['y_field'] = config['y_field']
-                    if config.get('size_field'): task_config['params']['size_field'] = config['size_field']
-                elif chart_type == 'errorbar':
-                    if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
-                    if config.get('y_field'): task_config['params']['y_field'] = config['y_field']
-                    if config.get('error_field'): task_config['params']['error_field'] = config['error_field']
-                elif chart_type == 'polar':
-                    if config.get('angle_field'): task_config['params']['angle_field'] = config['angle_field']
-                    if config.get('radius_field'): task_config['params']['radius_field'] = config['radius_field']
-                
-                if config.get('figsize'):
-                    task_config['params']['figsize'] = tuple(config['figsize'])
-                
-                tasks.append((chart_key, task_config, data_summary, chart_engine, temp_dir, log_callback))
+        # 分离图片图表和原生图表
+        for key, config in chart_placeholders.items():
+            chart_key = key.split(':')[1] if ':' in key else key
+            render_mode = config.get('render_mode', 'image')  # 默认图片方式
             
+            log_callback(f"      [DEBUG] {chart_key}: mode={render_mode}, type={config.get('chart_type', '')}")
+            
+            if render_mode == 'native':
+                # 原生图表，稍后处理
+                native_charts.append((key, config))
+            else:
+                # 图片图表，使用原有逻辑
+                if parallel_charts:
+                    task_config = {
+                        'sheet': config.get('data_source'),
+                        'type': config.get('chart_type'),
+                        'params': {
+                            'title': config.get('title', ''),
+                            'output_path': os.path.join(temp_dir, f'chart_{chart_key}.png'),
+                        }
+                    }
+                    
+                    chart_type = config.get('chart_type')
+                    y_field_value = config.get('y_field', '')
+                    
+                    if chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter', 'area', 'histogram', 'waterfall', 'funnel']:
+                        if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
+                        if y_field_value: task_config['params']['y_field'] = y_field_value
+                    elif chart_type == 'pie':
+                        if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
+                        if config.get('value_field'): task_config['params']['value_field'] = config['value_field']
+                    elif chart_type in ['multi_column', 'column_clustered']:
+                        if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
+                        if config.get('series'): task_config['params']['series'] = config['series']
+                    elif chart_type == 'heatmap':
+                        if config.get('index_field'): task_config['params']['index_field'] = config['index_field']
+                        if config.get('columns'): task_config['params']['columns'] = config['columns']
+                    elif chart_type in ['boxplot', 'violin']:
+                        if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
+                        if config.get('value_field'): task_config['params']['value_field'] = config['value_field']
+                    elif chart_type == 'bubble':
+                        if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
+                        if config.get('y_field'): task_config['params']['y_field'] = config['y_field']
+                        if config.get('size_field'): task_config['params']['size_field'] = config['size_field']
+                    
+                    if config.get('figsize'):
+                        task_config['params']['figsize'] = tuple(config['figsize'])
+                    
+                    tasks.append((chart_key, task_config, data_summary, chart_engine, temp_dir, log_callback))
+        
+        # 生成图片图表
+        if parallel_charts and tasks:
+            log_callback("      [INFO] 使用并行模式生成图片图表...")
             with ThreadPoolExecutor(max_workers=6) as executor:
                 futures = {executor.submit(_generate_single_chart, task): task[0] for task in tasks}
                 
@@ -608,11 +606,10 @@ def generate_report(template_name: str = None, output_name: str = None,
                     if path and os.path.exists(path):
                         chart_paths[chart_key] = path
                         log_callback(f"      [OK] {chart_key}: {path}")
-        else:
-            # 串行生成（略，同上）
-            log_callback("      [WARN] 串行模式暂不支持动态配置，请使用并行模式")
         
-        log_callback(f"      [OK] 共生成 {len(chart_paths)} 个图表")
+        # 创建原生图表（在填充模板时处理）
+        log_callback(f"      [OK] 图片图表生成完成：{len(chart_paths)} 个")
+        log_callback(f"      [INFO] 待创建原生图表：{len(native_charts)} 个")
         
         # ========== 5. 填充模板（动态占位符） ==========
         log_callback("\n[5/5] 填充 PPT 模板...")
@@ -643,6 +640,55 @@ def generate_report(template_name: str = None, output_name: str = None,
                     replaced_count += 1
         
         log_callback(f"      [OK] 图表占位符已替换 ({replaced_count} 个图表)")
+        
+        # ========== 创建原生图表（可编辑） ==========
+        if native_charts:
+            log_callback("\n      [INFO] 开始创建原生图表...")
+            ppt_chart_engine = PPTChartEngine()
+            
+            for key, config in native_charts:
+                chart_key = key.split(':')[1] if ':' in key else key
+                data_source = config.get('data_source', '')
+                chart_type = config.get('chart_type', '')
+                title = config.get('title', '')
+                
+                if data_source not in data_summary:
+                    log_callback(f"      [WARN] 原生图表 {chart_key} 数据源不存在：{data_source}")
+                    continue
+                
+                df = data_summary[data_source]
+                
+                # 查找占位符
+                placeholder_name = f'[CHART:{chart_key}]'
+                chart_created = False
+                
+                for slide_idx, slide in enumerate(prs.slides):
+                    if chart_created:
+                        break
+                    for shape in slide.shapes:
+                        if hasattr(shape, 'text_frame'):
+                            for paragraph in shape.text_frame.paragraphs:
+                                if placeholder_name in paragraph.text:
+                                    # 在占位符位置创建原生图表
+                                    success = ppt_chart_engine.create_chart_in_placeholder(
+                                        shape, df, chart_type, title,
+                                        category_field=config.get('category_field'),
+                                        series=config.get('series'),
+                                        x_field=config.get('x_field'),
+                                        y_field=config.get('y_field'),
+                                        value_field=config.get('value_field')
+                                    )
+                                    
+                                    if success:
+                                        log_callback(f"      [OK] 原生图表 {chart_key}: slide {slide_idx+1}")
+                                    else:
+                                        log_callback(f"      [ERROR] 原生图表 {chart_key} 创建失败")
+                                    
+                                    chart_created = True
+                                    break
+                
+                if not chart_created:
+                    log_callback(f"      [WARN] 原生图表 {chart_key} 未找到占位符")
         
         # ========== 动态处理所有 TABLE 类型变量 ==========
         table_placeholders = placeholders.get('placeholders', {}).get('tables', {})

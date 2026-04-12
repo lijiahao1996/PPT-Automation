@@ -501,6 +501,24 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
             with col_title:
                 with st.expander(f"📈 {chart_key} - {chart_cfg.get('title', '')}", expanded=False):
                     st.json(chart_cfg)
+                    
+                    # 添加渲染模式选择器
+                    render_mode = chart_cfg.get('render_mode', 'image')
+                    new_render_mode = st.selectbox(
+                        "图表渲染方式",
+                        options=["image", "native"],
+                        format_func=lambda x: "🖼️ 图片方式（不可编辑）" if x == "image" else "📊 原生方式（可编辑）",
+                        value=render_mode,
+                        key=f"render_mode_{chart_key}",
+                        help="图片方式：生成 PNG 插入 PPT（速度快）\n原生方式：在 PPT 中创建可编辑图表（可后期修改）"
+                    )
+                    
+                    if new_render_mode != render_mode:
+                        chart_cfg['render_mode'] = new_render_mode
+                        with open(placeholders_file, 'w', encoding='utf-8') as f:
+                            json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                        st.success(f"✅ 已更新 {chart_key} 的渲染方式为 {new_render_mode}")
+                        st.rerun()
             
             with col_btn1:
                 if st.button("✏️ 编辑", key=f"edit_chart_{chart_key}", use_container_width=True):
