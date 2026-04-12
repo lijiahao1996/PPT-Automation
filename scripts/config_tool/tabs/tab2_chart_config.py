@@ -504,11 +504,14 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                     
                     # 添加渲染模式选择器
                     render_mode = chart_cfg.get('render_mode', 'image')
+                    render_mode_options = ["image", "native"]
+                    render_mode_index = render_mode_options.index(render_mode) if render_mode in render_mode_options else 0
+                    
                     new_render_mode = st.selectbox(
                         "图表渲染方式",
-                        options=["image", "native"],
+                        options=render_mode_options,
                         format_func=lambda x: "🖼️ 图片方式（不可编辑）" if x == "image" else "📊 原生方式（可编辑）",
-                        value=render_mode,
+                        index=render_mode_index,
                         key=f"render_mode_{chart_key}",
                         help="图片方式：生成 PNG 插入 PPT（速度快）\n原生方式：在 PPT 中创建可编辑图表（可后期修改）"
                     )
