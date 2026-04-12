@@ -46,6 +46,7 @@ with st.sidebar:
     
     templates_dir = os.path.join(base_dir, "templates")
     output_dir = os.path.join(base_dir, "output")
+    artifacts_dir = os.path.join(base_dir, "artifacts")
     
     # 检测 output 目录中的实际文件
     raw_data_file_name = None
@@ -77,27 +78,27 @@ tabs = st.tabs(TAB_LABELS)
 # ========== Tab 1: 统计规则配置 ==========
 with tabs[0]:
     from tabs.tab1_stats_rules import render_tab1
-    render_tab1(base_dir, templates_dir, output_dir)
+    render_tab1(base_dir, artifacts_dir, output_dir)
 
 # ========== Tab 2: 图表配置 ==========
 with tabs[1]:
     from tabs.tab2_chart_config import render_tab2
-    render_tab2(templates_dir, output_dir, base_dir)
+    render_tab2(artifacts_dir, output_dir, base_dir)
 
 # ========== Tab 3: 洞察配置 ==========
 with tabs[2]:
     from tabs.tab3_insight_config import render_tab3
-    render_tab3(templates_dir)
+    render_tab3(artifacts_dir)
 
 # ========== Tab 4: 自定义变量 ==========
 with tabs[3]:
     from tabs.tab4_custom_vars import render_tab4
-    render_tab4(templates_dir)
+    render_tab4(artifacts_dir)
 
 # ========== Tab 5: AI 综合洞察 ==========
 with tabs[4]:
     from tabs.tab5_conclusion_strategy import render_tab5
-    render_tab5(templates_dir)
+    render_tab5(artifacts_dir)
 
 # ========== Tab 6: PPT 变量总览 ==========
 with tabs[5]:
@@ -105,8 +106,8 @@ with tabs[5]:
     
     # 加载最新配置
     from app_config import load_json_file
-    stats_rules_file = os.path.join(templates_dir, "stats_rules.json")
-    placeholders_file = os.path.join(templates_dir, "placeholders.json")
+    stats_rules_file = os.path.join(artifacts_dir, "stats_rules.json")
+    placeholders_file = os.path.join(artifacts_dir, "placeholders.json")
     
     current_stats = load_json_file(stats_rules_file, {"stats_sheets": {}})
     current_placeholders = load_json_file(placeholders_file, {"placeholders": {}})

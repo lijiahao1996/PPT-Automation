@@ -49,7 +49,7 @@ class InsightGenerator:
     
     def _load_charts_config(self) -> Optional[Dict]:
         """动态加载图表配置"""
-        placeholders_path = os.path.join(self.base_dir, 'templates', 'placeholders.json')
+        placeholders_path = os.path.join(self.base_dir, 'artifacts', 'placeholders.json')
         if os.path.exists(placeholders_path):
             with open(placeholders_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
@@ -58,7 +58,7 @@ class InsightGenerator:
     
     def _load_insights_config(self) -> Optional[Dict]:
         """动态加载洞察配置"""
-        placeholders_path = os.path.join(self.base_dir, 'templates', 'placeholders.json')
+        placeholders_path = os.path.join(self.base_dir, 'artifacts', 'placeholders.json')
         if os.path.exists(placeholders_path):
             with open(placeholders_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
@@ -67,7 +67,7 @@ class InsightGenerator:
     
     def _load_special_insights_config(self) -> Optional[Dict]:
         """加载特殊洞察配置（结论 & 策略）"""
-        placeholders_path = os.path.join(self.base_dir, 'templates', 'placeholders.json')
+        placeholders_path = os.path.join(self.base_dir, 'artifacts', 'placeholders.json')
         if os.path.exists(placeholders_path):
             with open(placeholders_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)

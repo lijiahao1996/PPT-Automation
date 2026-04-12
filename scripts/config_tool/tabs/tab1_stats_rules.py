@@ -6,10 +6,10 @@ import json
 import os
 import sys
 
-def render_tab1(base_dir, templates_dir, output_dir):
+def render_tab1(base_dir, artifacts_dir, output_dir):
     st.header("📋 统计规则配置")
     
-    stats_rules_file = os.path.join(templates_dir, "stats_rules.json")
+    stats_rules_file = os.path.join(artifacts_dir, "stats_rules.json")
     
     from app_config import get_output_dirs, ensure_output_dirs
     dirs = ensure_output_dirs(base_dir)

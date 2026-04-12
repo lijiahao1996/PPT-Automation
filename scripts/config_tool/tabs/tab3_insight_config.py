@@ -4,11 +4,11 @@ import streamlit as st
 import json
 import os
 
-def render_tab3(templates_dir):
+def render_tab3(artifacts_dir):
     st.header("💡 洞察配置")
     st.markdown("为每个图表配置 AI 洞察分析要点")
     
-    placeholders_file = os.path.join(templates_dir, "placeholders.json")
+    placeholders_file = os.path.join(artifacts_dir, "placeholders.json")
     
     if os.path.exists(placeholders_file):
         with open(placeholders_file, 'r', encoding='utf-8') as f:

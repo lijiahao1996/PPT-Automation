@@ -24,6 +24,8 @@ output/*.json
 # 临时文件（运行时生成，不提交）
 artifacts/*
 !artifacts/.gitkeep
+!artifacts/stats_rules.json
+!artifacts/placeholders.json
 
 # 原始数据（敏感数据，不提交）
 # 如需共享数据样本，请手动添加脱敏版本

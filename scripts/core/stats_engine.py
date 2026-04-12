@@ -31,7 +31,7 @@ class StatsEngine:
         
         # 加载配置
         if config_path is None:
-            config_path = os.path.join(self.base_dir, 'templates', 'stats_rules.json')
+            config_path = os.path.join(self.base_dir, 'artifacts', 'stats_rules.json')
         
         self.config = self._load_config(config_path)
         self.global_settings = self.config.get('global_settings', {})

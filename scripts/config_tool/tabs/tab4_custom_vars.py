@@ -6,14 +6,14 @@ import json
 import os
 from datetime import datetime
 
-def render_tab4(templates_dir):
+def render_tab4(artifacts_dir):
     st.header("⚙️ 自定义变量")
     st.markdown("自定义 PPT 模板中的变量，支持文本、表格、日期、图片、视频、链接等多种类型")
     
-    placeholders_file = os.path.join(templates_dir, "placeholders.json")
+    placeholders_file = os.path.join(artifacts_dir, "placeholders.json")
     
     # 创建资源目录
-    resources_dir = os.path.join(os.path.dirname(templates_dir), "resources")
+    resources_dir = os.path.join(os.path.dirname(os.path.dirname(artifacts_dir)), "resources")
     images_dir = os.path.join(resources_dir, "images")
     videos_dir = os.path.join(resources_dir, "videos")
     

@@ -32,7 +32,8 @@ class TemplateEngine:
         # 支持 EXE 打包：优先使用 EXE_WORK_DIR 环境变量
         self.base_dir = os.environ.get('EXE_WORK_DIR') or base_dir or os.path.dirname(os.path.dirname(__file__))
         self.templates_dir = os.path.join(self.base_dir, 'templates')
-        self.placeholders_file = os.path.join(self.templates_dir, 'placeholders.json')
+        self.artifacts_dir = os.path.join(self.base_dir, 'artifacts')
+        self.placeholders_file = os.path.join(self.artifacts_dir, 'placeholders.json')
         
         # 确保目录存在
         os.makedirs(self.templates_dir, exist_ok=True)

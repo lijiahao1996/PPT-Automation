@@ -6,11 +6,11 @@ import json
 import os
 import sys
 
-def render_tab2(templates_dir, output_dir, base_dir=None):
+def render_tab2(artifacts_dir, output_dir, base_dir=None):
     st.header("📈 图表配置")
     st.markdown("配置 PPT 中显示的图表")
     
-    placeholders_file = os.path.join(templates_dir, "placeholders.json")
+    placeholders_file = os.path.join(artifacts_dir, "placeholders.json")
     
     # 获取目录结构
     from app_config import get_output_dirs, ensure_output_dirs

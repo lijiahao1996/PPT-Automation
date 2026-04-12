@@ -69,8 +69,8 @@ def build_skill_always(log_callback=None):
     import sys
     
     skill_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'SKILL.md')
-    stats_rules_path = os.path.join(BASE_DIR, 'templates', 'stats_rules.json')
-    placeholders_path = os.path.join(BASE_DIR, 'templates', 'placeholders.json')
+    stats_rules_path = os.path.join(BASE_DIR, 'artifacts', 'stats_rules.json')
+    placeholders_path = os.path.join(BASE_DIR, 'artifacts', 'placeholders.json')
     skill_builder_path = os.path.join(BASE_DIR, 'skills', 'data-insight', 'skill_builder.py')
     
     if log_callback is None:
