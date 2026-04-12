@@ -311,18 +311,43 @@ def render_tab8(base_dir, output_dir, templates_dir):
     # ========== 显示结果 ==========
     if st.session_state.execution_result and st.session_state.execution_result.get('success'):
         result = st.session_state.execution_result
-        if result.get('files', {}).get('ppt_report'):
-            latest_ppt = result['files']['ppt_report']
-            ppt_path = os.path.join(output_dir, latest_ppt)
-            if os.path.exists(ppt_path):
-                st.success("✅ PPT 报告生成成功！")
-                with open(ppt_path, 'rb') as f:
-                    st.download_button(
-                        label=f"📄 下载 PPT 报告 ({latest_ppt})",
-                        data=f.read(),
-                        file_name=latest_ppt,
-                        mime='application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                        width='stretch'
-                    )
+        
+        st.success("✅ PPT 报告生成成功！")
+        
+        # 下载区域
+        st.markdown("---")
+        st.subheader("📥 下载生成的文件")
+        
+        col_down1, col_down2 = st.columns(2)
+        
+        # 下载统计汇总 Excel
+        with col_down1:
+            if files['summary']:
+                summary_path = os.path.join(output_dir, files['summary'])
+                if os.path.exists(summary_path):
+                    with open(summary_path, 'rb') as f:
+                        st.download_button(
+                            label=f"📊 下载统计汇总 ({files['summary']})",
+                            data=f.read(),
+                            file_name=files['summary'],
+                            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            use_container_width=True
+                        )
+        
+        # 下载 PPT 报告
+        with col_down2:
+            if result.get('files', {}).get('ppt_report'):
+                latest_ppt = result['files']['ppt_report']
+                ppt_path = os.path.join(output_dir, latest_ppt)
+                if os.path.exists(ppt_path):
+                    with open(ppt_path, 'rb') as f:
+                        st.download_button(
+                            label=f"📄 下载 PPT 报告 ({latest_ppt})",
+                            data=f.read(),
+                            file_name=latest_ppt,
+                            mime='application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                            use_container_width=True
+                        )
+    
     elif st.session_state.execution_result and not st.session_state.execution_result.get('success'):
         st.error("❌ PPT 报告生成失败，请查看上方日志")
