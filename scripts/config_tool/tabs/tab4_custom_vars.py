@@ -12,6 +12,9 @@ def render_tab4(artifacts_dir):
     
     placeholders_file = os.path.join(artifacts_dir, "placeholders.json")
     
+    # 确保目录存在
+    os.makedirs(artifacts_dir, exist_ok=True)
+    
     # 创建资源目录
     resources_dir = os.path.join(os.path.dirname(os.path.dirname(artifacts_dir)), "resources")
     images_dir = os.path.join(resources_dir, "images")
@@ -20,11 +23,15 @@ def render_tab4(artifacts_dir):
     os.makedirs(images_dir, exist_ok=True)
     os.makedirs(videos_dir, exist_ok=True)
     
+    # 加载配置（文件不存在时创建默认）
     if os.path.exists(placeholders_file):
         with open(placeholders_file, 'r', encoding='utf-8') as f:
             placeholders_config = json.load(f)
     else:
         placeholders_config = {"placeholders": {"charts": {}, "insights": {}, "text": {}, "tables": {}, "dates": {}, "images": {}, "videos": {}, "links": {}}}
+        # 创建默认配置文件
+        with open(placeholders_file, 'w', encoding='utf-8') as f:
+            json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
     
     # ========== 区块 1: 文本变量 ==========
     st.markdown("### 📝 文本变量")

@@ -19,13 +19,17 @@ def render_tab1(base_dir, artifacts_dir, output_dir):
     # 确保目录存在
     os.makedirs(uploaded_dir, exist_ok=True)
     os.makedirs(summary_dir, exist_ok=True)
+    os.makedirs(artifacts_dir, exist_ok=True)
     
-    # 加载配置
+    # 加载配置（文件不存在时创建默认）
     if os.path.exists(stats_rules_file):
         with open(stats_rules_file, 'r', encoding='utf-8') as f:
             stats_config = json.load(f)
     else:
         stats_config = {"stats_sheets": {}}
+        # 创建默认配置文件
+        with open(stats_rules_file, 'w', encoding='utf-8') as f:
+            json.dump(stats_config, f, ensure_ascii=False, indent=2)
     
     # ========== 文件选择 ==========
     st.subheader("📤 选择/上传 Excel")

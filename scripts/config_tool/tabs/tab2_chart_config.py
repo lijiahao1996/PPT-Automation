@@ -17,7 +17,10 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
     dirs = ensure_output_dirs(base_dir)
     summary_dir = dirs['summary']
     
-    # 加载配置
+    # 确保 artifacts 目录存在
+    os.makedirs(artifacts_dir, exist_ok=True)
+    
+    # 加载配置（文件不存在时创建默认）
     if os.path.exists(placeholders_file):
         with open(placeholders_file, 'r', encoding='utf-8') as f:
             placeholders_config = json.load(f)
@@ -25,6 +28,9 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
     else:
         placeholders_config = {"version": "3.0", "placeholders": {"charts": {}, "insights": {}, "text": {}}}
         st.info("📝 创建新配置")
+        # 创建默认配置文件
+        with open(placeholders_file, 'w', encoding='utf-8') as f:
+            json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
     
     chart_types = {
         "bar_horizontal": "横向条形图", "bar_vertical": "纵向柱状图",

@@ -10,11 +10,18 @@ def render_tab5(artifacts_dir):
     
     placeholders_file = os.path.join(artifacts_dir, "placeholders.json")
     
+    # 确保目录存在
+    os.makedirs(artifacts_dir, exist_ok=True)
+    
+    # 加载配置（文件不存在时创建默认）
     if os.path.exists(placeholders_file):
         with open(placeholders_file, 'r', encoding='utf-8') as f:
             placeholders_config = json.load(f)
     else:
         placeholders_config = {"placeholders": {}}
+        # 创建默认配置文件
+        with open(placeholders_file, 'w', encoding='utf-8') as f:
+            json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
     
     # 初始化 special_insights 为列表结构，支持多个变量
     if "special_insights" not in placeholders_config:
