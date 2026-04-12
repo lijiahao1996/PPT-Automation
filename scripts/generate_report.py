@@ -659,7 +659,7 @@ def generate_report(template_name: str = None, output_name: str = None,
                 df = data_summary[data_source]
                 
                 # 查找占位符
-                placeholder_name = f'CHART:{chart_key}'
+                placeholder_name = f'[CHART:{chart_key}]'
                 chart_created = False
                 
                 for slide_idx, slide in enumerate(prs.slides):
