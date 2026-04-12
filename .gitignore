@@ -33,9 +33,8 @@ artifacts/*
 logs/*.log
 logs/*.txt
 
-# 错误截图（调试用，不提交）
-*.png
-!resources/images/*.png
+# 用户上传资源（不提交，用户自行管理）
+resources/
 
 # IDE
 .vscode/

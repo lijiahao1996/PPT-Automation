@@ -1,0 +1,27 @@
+services:
+  ppt-generator:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: ppt-generator
+    ports:
+      - "8501:8501"
+    volumes:
+      # 持久化输出目录
+      - ./output:/app/output
+      - ./artifacts:/app/artifacts
+      - ./logs:/app/logs
+      # 用户上传的资源目录（需要手动创建）
+      - ./resources:/app/resources
+      # 模板和配置可挂载本地修改
+      - ./templates:/app/templates
+      - ./config.ini:/app/config.ini
+    environment:
+      - QWEN_API_KEY=${QWEN_API_KEY:-}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

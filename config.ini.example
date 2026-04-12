@@ -1,0 +1,14 @@
+[api_keys]
+qwen_api_key = sk-your-api-key-here
+
+[paths]
+output_dir = output
+artifacts_dir = artifacts
+logs_dir = logs
+
+[advanced]
+session_max_age = 7
+log_level = INFO
+
+[ai]
+enable_ai_insight = True
