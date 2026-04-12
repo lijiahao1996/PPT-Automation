@@ -97,14 +97,35 @@ def render_tab1(base_dir, templates_dir, output_dir):
             try:
                 df = pd.read_excel(raw_data_file)
                 
-                # 构建数据样本
-                sample_data = df.head(5).to_dict('records')
+                # 构建数据样本（处理 Timestamp 序列化问题）
+                sample_data = []
+                for _, row in df.head(5).iterrows():
+                    row_dict = {}
+                    for col, val in row.items():
+                        if hasattr(val, 'strftime'):  # Timestamp 转为字符串
+                            row_dict[col] = val.strftime('%Y-%m-%d %H:%M:%S')
+                        elif pd.isna(val):  # NaN 转为 None
+                            row_dict[col] = None
+                        else:
+                            row_dict[col] = val
+                    sample_data.append(row_dict)
+                
+                # 构建列信息（处理 Timestamp 序列化问题）
                 columns_info = []
                 for col in df.columns:
+                    sample_vals = df[col].head(3).dropna().tolist()
+                    # 处理 Timestamp 转为字符串
+                    processed_samples = []
+                    for v in sample_vals:
+                        if hasattr(v, 'strftime'):
+                            processed_samples.append(v.strftime('%Y-%m-%d %H:%M:%S'))
+                        else:
+                            processed_samples.append(v)
+                    
                     col_info = {
                         'name': col,
                         'type': str(df[col].dtype),
-                        'sample': df[col].head(3).dropna().tolist()
+                        'sample': processed_samples
                     }
                     columns_info.append(col_info)
                 
