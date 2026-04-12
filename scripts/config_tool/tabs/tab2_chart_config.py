@@ -290,7 +290,6 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                                 "chart_type": rec.get('chart_type', 'bar_horizontal'),
                                 "title": rec.get('chart_title', ''),
                                 "render_mode": "native"  # 默认原生方式（可编辑）
-                                "title": rec.get('chart_title', '')
                             }
                             
                             # 根据图表类型转换字段名（支持 AI 输出的多种字段名）
