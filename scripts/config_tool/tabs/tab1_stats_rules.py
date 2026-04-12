@@ -109,6 +109,11 @@ def render_tab1(base_dir, templates_dir, output_dir):
                     columns_info.append(col_info)
                 
                 # 调用 AI（使用 stats-rule-recommender SKILL）
+                # 添加 scripts 目录到路径
+                scripts_dir = os.path.join(base_dir, 'scripts')
+                if scripts_dir not in sys.path:
+                    sys.path.insert(0, scripts_dir)
+                
                 from ai.qwen_client import QwenClient
                 qwen = QwenClient(base_dir=base_dir)
                 
