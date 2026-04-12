@@ -9,61 +9,67 @@
         "description": "多列柱状图适合并列展示多个关键指标数值，便于横向对比",
         "data_source": "核心 KPI",
         "chart_type": "multi_column",
-        "title": "核心 KPI 指标汇总",
+        "title": "核心 KPI 指标概览",
         "category_field": "指标",
         "series": [
           "数值"
-        ]
+        ],
+        "render_mode": "native"
       },
       "CHART:city_sales_ranking_horizontal": {
-        "description": "横向条形图适合展示高基数分类（75城）的排名，便于阅读城市名称和对比金额",
+        "description": "横向条形图适合展示高基数分类（75个城市）的排名对比，避免标签重叠",
         "data_source": "城市销售排名",
         "chart_type": "bar_horizontal",
-        "title": "城市销售金额排名（前10）",
+        "title": "城市销售金额排名（横向）",
         "x_field": "城市总支付金额",
-        "y_field": "城市"
+        "y_field": "城市",
+        "render_mode": "native"
       },
       "CHART:category_composition_pie": {
-        "description": "饼图直观呈现各商品类别的构成比例，适用于6类有限分类的占比分析",
+        "description": "饼图直观呈现各商品类别的构成比例，适用于6个类别的占比分析",
         "data_source": "商品类别占比",
         "chart_type": "pie",
         "title": "商品类别支付金额占比",
         "category_field": "商品类别",
-        "value_field": "类别支付金额"
+        "value_field": "类别支付金额",
+        "render_mode": "native"
       },
       "CHART:gender_comparison_multi_column": {
-        "description": "多列柱状图可同步对比同一分组（性别）下的多个业务指标，突出男女差异",
+        "description": "多列柱状图可同时对比同一分组下的多个统计指标，突出性别差异",
         "data_source": "性别与订单对比",
         "chart_type": "multi_column",
-        "title": "性别维度订单表现对比",
+        "title": "性别维度多指标对比",
         "category_field": "性别",
         "series": [
           "性别总支付金额",
           "性别平均订单金额",
           "性别总购买数量"
-        ]
+        ],
+        "render_mode": "native"
       },
       "CHART:order_trend_line": {
-        "description": "折线图最适合展示时间序列趋势；日支付金额为主趋势指标，日订单数可作为次要Y轴（后续扩展）",
+        "description": "折线图最适合展示时间序列上的连续变化趋势，41天数据具备时序特征",
         "data_source": "订单日期趋势",
         "chart_type": "line",
-        "title": "订单日支付金额与订单数趋势",
+        "title": "订单日期支付趋势",
         "x_field": "订单日期",
-        "y_field": "日支付金额"
+        "y_field": "日支付金额",
+        "render_mode": "native"
       },
       "CHART:order_status_distribution_pie": {
-        "description": "饼图清晰表达不同订单状态对总支付金额的贡献占比，4类状态适配饼图",
+        "description": "饼图清晰表达四类订单状态在总支付金额中的结构占比",
         "data_source": "订单状态分布",
         "chart_type": "pie",
-        "title": "订单状态分布（按支付金额）",
+        "title": "订单状态支付金额占比",
         "category_field": "订单状态",
-        "value_field": "状态支付金额"
+        "value_field": "状态支付金额",
+        "render_mode": "native"
       },
       "CHART:city_category_heatmap": {
-        "description": "热力图能高效呈现75×6稀疏矩阵的交叉强度，识别城市-品类销售热点",
+        "description": "热力图擅长展现二维矩阵（75城市 × 6品类）的数值密度分布，识别区域偏好",
         "data_source": "城市-商品类别矩阵",
         "chart_type": "heatmap",
-        "title": "城市 × 商品类别销售矩阵热力图",
+        "title": "城市-商品类别销售热力图",
         "index_field": "城市",
         "columns": [
           "家居用品",
@@ -72,15 +78,17 @@
           "美妆护肤",
           "运动户外",
           "食品生鲜"
-        ]
+        ],
+        "render_mode": "native"
       },
       "CHART:abnormal_order_scatter": {
-        "description": "散点图可揭示异常高值订单在单价与支付金额空间中的离群位置，辅助诊断",
+        "description": "散点图可揭示单价与支付金额的关系，辅助识别异常高值订单",
         "data_source": "异常订单检测",
         "chart_type": "scatter",
         "title": "异常订单散点分析（单价 vs 支付金额）",
         "x_field": "单价 (元)",
-        "y_field": "支付金额 (元)"
+        "y_field": "支付金额 (元)",
+        "render_mode": "native"
       }
     },
     "insights": {

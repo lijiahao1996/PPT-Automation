@@ -541,6 +541,7 @@ def generate_report(template_name: str = None, output_name: str = None,
         
         chart_paths = {}
         native_charts = []  # 存储需要创建原生图表的配置
+        tasks = []  # 图片图表的任务列表
         
         # 从 placeholders.json 读取图表配置
         chart_placeholders = placeholders.get('placeholders', {}).get('charts', {})
@@ -557,43 +558,42 @@ def generate_report(template_name: str = None, output_name: str = None,
                 native_charts.append((key, config))
             else:
                 # 图片图表，使用原有逻辑
-                if parallel_charts:
-                    task_config = {
-                        'sheet': config.get('data_source'),
-                        'type': config.get('chart_type'),
-                        'params': {
-                            'title': config.get('title', ''),
-                            'output_path': os.path.join(temp_dir, f'chart_{chart_key}.png'),
-                        }
+                task_config = {
+                    'sheet': config.get('data_source'),
+                    'type': config.get('chart_type'),
+                    'params': {
+                        'title': config.get('title', ''),
+                        'output_path': os.path.join(temp_dir, f'chart_{chart_key}.png'),
                     }
-                    
-                    chart_type = config.get('chart_type')
-                    y_field_value = config.get('y_field', '')
-                    
-                    if chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter', 'area', 'histogram', 'waterfall', 'funnel']:
-                        if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
-                        if y_field_value: task_config['params']['y_field'] = y_field_value
-                    elif chart_type == 'pie':
-                        if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
-                        if config.get('value_field'): task_config['params']['value_field'] = config['value_field']
-                    elif chart_type in ['multi_column', 'column_clustered']:
-                        if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
-                        if config.get('series'): task_config['params']['series'] = config['series']
-                    elif chart_type == 'heatmap':
-                        if config.get('index_field'): task_config['params']['index_field'] = config['index_field']
-                        if config.get('columns'): task_config['params']['columns'] = config['columns']
-                    elif chart_type in ['boxplot', 'violin']:
-                        if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
-                        if config.get('value_field'): task_config['params']['value_field'] = config['value_field']
-                    elif chart_type == 'bubble':
-                        if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
-                        if config.get('y_field'): task_config['params']['y_field'] = config['y_field']
-                        if config.get('size_field'): task_config['params']['size_field'] = config['size_field']
-                    
-                    if config.get('figsize'):
-                        task_config['params']['figsize'] = tuple(config['figsize'])
-                    
-                    tasks.append((chart_key, task_config, data_summary, chart_engine, temp_dir, log_callback))
+                }
+                
+                chart_type = config.get('chart_type')
+                y_field_value = config.get('y_field', '')
+                
+                if chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter', 'area', 'histogram', 'waterfall', 'funnel']:
+                    if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
+                    if y_field_value: task_config['params']['y_field'] = y_field_value
+                elif chart_type == 'pie':
+                    if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
+                    if config.get('value_field'): task_config['params']['value_field'] = config['value_field']
+                elif chart_type in ['multi_column', 'column_clustered']:
+                    if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
+                    if config.get('series'): task_config['params']['series'] = config['series']
+                elif chart_type == 'heatmap':
+                    if config.get('index_field'): task_config['params']['index_field'] = config['index_field']
+                    if config.get('columns'): task_config['params']['columns'] = config['columns']
+                elif chart_type in ['boxplot', 'violin']:
+                    if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
+                    if config.get('value_field'): task_config['params']['value_field'] = config['value_field']
+                elif chart_type == 'bubble':
+                    if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
+                    if config.get('y_field'): task_config['params']['y_field'] = config['y_field']
+                    if config.get('size_field'): task_config['params']['size_field'] = config['size_field']
+                
+                if config.get('figsize'):
+                    task_config['params']['figsize'] = tuple(config['figsize'])
+                
+                tasks.append((chart_key, task_config, data_summary, chart_engine, temp_dir, log_callback))
         
         # 生成图片图表
         if parallel_charts and tasks:
