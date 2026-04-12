@@ -23,16 +23,11 @@
           "field": "销售额",
           "agg": "mean",
           "alias": "平均客单价"
-        },
-        {
-          "field": "销售额",
-          "agg": "max",
-          "alias": "最高单笔销售额"
         }
       ]
     },
     "销售员业绩排名": {
-      "description": "按销售员汇总销售额与订单数进行排名",
+      "description": "按销售员汇总销售额与订单数并排名",
       "type": "ranking",
       "enabled": true,
       "group_by": [
@@ -67,7 +62,7 @@
       ]
     },
     "客户属性对比": {
-      "description": "新客与其他客户属性（如后续可能出现的老客）销售对比",
+      "description": "新客 vs 其他客户属性（需后续扩展，当前样本全为新客）",
       "type": "comparison",
       "enabled": true,
       "group_by": [
@@ -87,7 +82,7 @@
       ]
     },
     "月度销售趋势": {
-      "description": "按订单时间（月粒度）分析销售额趋势",
+      "description": "按年月粒度统计销售额趋势",
       "type": "trend",
       "enabled": true,
       "group_by": [
@@ -102,7 +97,7 @@
       ]
     },
     "销售员-产品矩阵": {
-      "description": "销售员与产品交叉维度的销售额汇总",
+      "description": "销售员与产品交叉维度销售额统计",
       "type": "matrix",
       "enabled": true,
       "group_by": [
@@ -117,7 +112,7 @@
         }
       ]
     },
-    "异常订单检测": {
+    "订单金额异常检测": {
       "description": "识别销售额显著偏离均值的异常订单",
       "type": "outlier",
       "enabled": true,
@@ -126,7 +121,7 @@
         {
           "field": "销售额",
           "agg": "sum",
-          "alias": "销售额"
+          "alias": "总销售额"
         }
       ]
     }
