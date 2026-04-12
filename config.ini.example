@@ -7,7 +7,6 @@ artifacts_dir = artifacts
 logs_dir = logs
 
 [advanced]
-session_max_age = 7
 log_level = INFO
 
 [ai]

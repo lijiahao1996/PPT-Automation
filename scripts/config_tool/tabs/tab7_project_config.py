@@ -82,26 +82,13 @@ def render_tab7(base_dir):
     # 高级配置
     st.subheader("⚙️ 高级配置")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        session_max_age = config.getint('advanced', 'session_max_age', fallback=7)
-        session_max_age = st.number_input(
-            "会话有效期（天）", 
-            min_value=1, 
-            max_value=30, 
-            value=session_max_age, 
-            key="cfg_session_age",
-            help="帆软会话的有效期"
-        )
-    
-    with col2:
-        log_level = config.get('advanced', 'log_level', fallback='INFO')
-        log_level = st.selectbox(
-            "日志级别", 
-            options=['DEBUG', 'INFO', 'WARNING', 'ERROR'], 
-            index=['DEBUG', 'INFO', 'WARNING', 'ERROR'].index(log_level) if log_level in ['DEBUG', 'INFO', 'WARNING', 'ERROR'] else 1, 
-            key="cfg_log_level"
-        )
+    log_level = config.get('advanced', 'log_level', fallback='INFO')
+    log_level = st.selectbox(
+        "日志级别", 
+        options=['DEBUG', 'INFO', 'WARNING', 'ERROR'], 
+        index=['DEBUG', 'INFO', 'WARNING', 'ERROR'].index(log_level) if log_level in ['DEBUG', 'INFO', 'WARNING', 'ERROR'] else 1, 
+        key="cfg_log_level"
+    )
     
     st.markdown("---")
     
@@ -124,7 +111,6 @@ def render_tab7(base_dir):
             }
             
             config['advanced'] = {
-                'session_max_age': str(session_max_age),
                 'log_level': log_level
             }
             
@@ -145,7 +131,6 @@ artifacts_dir = {artifacts_dir}
 logs_dir = {logs_dir}
 
 [advanced]
-session_max_age = {session_max_age}
 log_level = {log_level}
 """)
             
