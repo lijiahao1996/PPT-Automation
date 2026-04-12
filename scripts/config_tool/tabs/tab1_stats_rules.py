@@ -111,7 +111,7 @@ def render_tab1(base_dir, artifacts_dir, output_dir):
     
     if use_ai and selected_file:
         if st.button("开始 AI 分析", type="primary", key="ai_btn"):
-            with st.spinner("分析中..."):
+            with st.spinner("正在动态生成 Skill 并分析..."):
                 try:
                     df = pd.read_excel(os.path.join(uploaded_dir, selected_file))
                     
@@ -133,6 +133,21 @@ def render_tab1(base_dir, artifacts_dir, output_dir):
                         pvals = [v.strftime('%Y-%m-%d %H:%M:%S') if hasattr(v, 'strftime') else str(v) for v in vals]
                         cols.append({'name': c, 'type': str(df[c].dtype), 'sample': pvals})
                     
+                    # ========== 动态生成 SKILL.md ==========
+                    skill_builder_path = os.path.join(base_dir, 'skills', 'stats-rule-recommender', 'skill_builder.py')
+                    if os.path.exists(skill_builder_path):
+                        import importlib.util
+                        spec = importlib.util.spec_from_file_location("skill_builder", skill_builder_path)
+                        skill_builder = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(skill_builder)
+                        
+                        # 基于上传的 Excel 动态生成 SKILL.md
+                        skill_builder.build_skill_from_excel(
+                            uploaded_dir=uploaded_dir,
+                            output_path=os.path.join(base_dir, 'skills', 'stats-rule-recommender', 'SKILL.md')
+                        )
+                    
+                    # ========== 调用 AI ==========
                     sys.path.insert(0, os.path.join(base_dir, 'scripts'))
                     from ai.qwen_client import QwenClient
                     qwen = QwenClient(base_dir=base_dir)

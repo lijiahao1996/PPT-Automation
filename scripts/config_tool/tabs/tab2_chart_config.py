@@ -128,6 +128,23 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                     
                     st.session_state['sheet_analysis'] = sheet_analysis
                     
+                    # ========== 动态生成 SKILL.md ==========
+                    # chart-config-recommender 基于 stats_rules.json 生成（因为图表依赖统计规则）
+                    stats_rules_path = os.path.join(base_dir, 'artifacts', 'stats_rules.json')
+                    chart_skill_builder_path = os.path.join(base_dir, 'skills', 'chart-config-recommender', 'skill_builder.py')
+                    
+                    if os.path.exists(chart_skill_builder_path) and os.path.exists(stats_rules_path):
+                        import importlib.util
+                        spec = importlib.util.spec_from_file_location("chart_skill_builder", chart_skill_builder_path)
+                        chart_skill_builder = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(chart_skill_builder)
+                        
+                        # 动态生成 chart-config-recommender SKILL.md
+                        chart_skill_builder.build_skill_from_config(
+                            stats_rules_path=stats_rules_path,
+                            output_path=os.path.join(base_dir, 'skills', 'chart-config-recommender', 'SKILL.md')
+                        )
+                    
                     # 调用 AI（使用 chart-config-recommender SKILL）
                     if base_dir:
                         scripts_dir = os.path.join(base_dir, 'scripts')
@@ -138,7 +155,7 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                         qwen = QwenClient(base_dir=base_dir)
                         
                         if qwen.is_available():
-                            # 读取 SKILL.md
+                            # 读取动态生成的 SKILL.md
                             skill_path = os.path.join(base_dir, 'skills', 'chart-config-recommender', 'SKILL.md')
                             with open(skill_path, 'r', encoding='utf-8') as f:
                                 skill_content = f.read()
