@@ -29,11 +29,13 @@ def render_tab8(base_dir, output_dir, templates_dir):
         st.session_state.execution_running = False
     if 'execution_result' not in st.session_state:
         st.session_state.execution_result = None
+    if 'execution_completed' not in st.session_state:
+        st.session_state.execution_completed = False
     
-    # 强制重置运行状态
-    if 'force_reset' in st.session_state and st.session_state.force_reset:
+    # 执行完成后自动重置运行状态
+    if st.session_state.get('execution_completed', False):
         st.session_state.execution_running = False
-        st.session_state.force_reset = False
+        st.session_state.execution_completed = False
     
     def clear_logs():
         st.session_state.execution_logs = []
@@ -253,11 +255,11 @@ def render_tab8(base_dir, output_dir, templates_dir):
                 error_msg = f"{str(e)}\n\n{traceback.format_exc()}"
                 log_callback(f"❌ 错误：{str(e)}")
             finally:
-                st.session_state.execution_running = False
-                st.session_state.force_reset = True
+                # 不直接设置 session_state，由主线程处理
+                pass
         
-        # 启动线程
-        thread = threading.Thread(target=run_pipeline, daemon=True)
+        # 启动线程（非 daemon 模式）
+        thread = threading.Thread(target=run_pipeline, daemon=False)
         thread.start()
         
         # 等待完成
@@ -279,8 +281,32 @@ def render_tab8(base_dir, output_dir, templates_dir):
                 logs_text = ''.join(st.session_state.execution_logs)
                 log_container.markdown(f'<div class="log-container">{logs_text}</div>', unsafe_allow_html=True)
         
+        # 线程结束后处理
+        if thread.is_alive():
+            log_callback("⚠️ 执行超时（超过 5 分钟）")
+        
+        # 确保最后更新一次日志
+        while not log_queue.empty():
+            try:
+                log_entry = log_queue.get_nowait()
+                st.session_state.execution_logs.append(log_entry)
+            except:
+                break
+        
+        if st.session_state.execution_logs:
+            logs_text = ''.join(st.session_state.execution_logs)
+            log_container.markdown(f'<div class="log-container">{logs_text}</div>', unsafe_allow_html=True)
+        
         progress_bar.progress(100)
-        st.rerun()
+        
+        # 保存执行结果
+        if result['success']:
+            st.session_state.execution_result = result
+        
+        # 标记执行完成（下次渲染时会自动重置 execution_running）
+        st.session_state.execution_completed = True
+        
+        # 不再自动 rerun，让用户手动操作
     
     # ========== 显示结果 ==========
     if st.session_state.execution_result and st.session_state.execution_result.get('success'):
@@ -289,6 +315,7 @@ def render_tab8(base_dir, output_dir, templates_dir):
             latest_ppt = result['files']['ppt_report']
             ppt_path = os.path.join(output_dir, latest_ppt)
             if os.path.exists(ppt_path):
+                st.success("✅ PPT 报告生成成功！")
                 with open(ppt_path, 'rb') as f:
                     st.download_button(
                         label=f"📄 下载 PPT 报告 ({latest_ppt})",
@@ -297,3 +324,5 @@ def render_tab8(base_dir, output_dir, templates_dir):
                         mime='application/vnd.openxmlformats-officedocument.presentationml.presentation',
                         width='stretch'
                     )
+    elif st.session_state.execution_result and not st.session_state.execution_result.get('success'):
+        st.error("❌ PPT 报告生成失败，请查看上方日志")
