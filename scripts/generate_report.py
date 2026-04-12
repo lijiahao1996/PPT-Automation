@@ -844,7 +844,10 @@ def generate_report(template_name: str = None, output_name: str = None,
             base_name = summary_file.replace('_统计汇总.xlsx', '')
             output_name = f'{base_name}_报告_{timestamp}_v1.pptx'
         
-        output_path = os.path.join(BASE_DIR, 'output', output_name)
+        # 保存到 report 目录
+        report_dir = os.path.join(BASE_DIR, 'output', 'report')
+        os.makedirs(report_dir, exist_ok=True)
+        output_path = os.path.join(report_dir, output_name)
         template_engine.save(prs, output_path)
         
         print("\n" + "=" * 70)

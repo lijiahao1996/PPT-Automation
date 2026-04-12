@@ -12,6 +12,12 @@ def render_tab1(base_dir, templates_dir, output_dir):
     
     stats_rules_file = os.path.join(templates_dir, "stats_rules.json")
     
+    # 获取目录结构
+    from app_config import get_output_dirs, ensure_output_dirs
+    dirs = ensure_output_dirs(base_dir)
+    uploaded_dir = dirs['uploaded']
+    summary_dir = dirs['summary']
+    
     # 加载配置
     if 'stats_config' not in st.session_state:
         if os.path.exists(stats_rules_file):
@@ -28,30 +34,45 @@ def render_tab1(base_dir, templates_dir, output_dir):
     
     stats_config = st.session_state.stats_config
     
-    # 获取数据文件
-    from app_config import get_default_raw_data_filename
-    raw_data_file_name = get_default_raw_data_filename()
-    raw_data_file = os.path.join(output_dir, raw_data_file_name)
+    # ========== 上传的 Excel 文件选择 ==========
+    st.subheader("📤 选择/上传原始数据 Excel")
     
-    if 'uploaded_file_name' in st.session_state:
-        raw_data_file = os.path.join(output_dir, st.session_state['uploaded_file_name'])
-        raw_data_file_name = st.session_state['uploaded_file_name']
+    # 获取 uploaded 目录下的所有 Excel 文件
+    uploaded_files = []
+    if os.path.exists(uploaded_dir):
+        uploaded_files = [f for f in os.listdir(uploaded_dir) 
+                         if f.endswith(('.xlsx', '.xls')) and not f.startswith('~')]
+        uploaded_files.sort(reverse=True)  # 最新的在前
     
-    # 统计汇总文件名
-    if raw_data_file_name.endswith('.xlsx'):
-        summary_file_name = raw_data_file_name.replace('.xlsx', '_统计汇总.xlsx')
+    # 优先使用刚上传的文件
+    if 'uploaded_file_name' in st.session_state and st.session_state['uploaded_file_name'] in uploaded_files:
+        default_index = uploaded_files.index(st.session_state['uploaded_file_name'])
     else:
-        summary_file_name = raw_data_file_name + '_统计汇总.xlsx'
-    summary_file = os.path.join(output_dir, summary_file_name)
+        default_index = 0
+    
+    if uploaded_files:
+        selected_file = st.selectbox(
+            "选择已上传的 Excel 文件",
+            options=uploaded_files,
+            index=min(default_index, len(uploaded_files) - 1),
+            key="uploaded_file_select"
+        )
+        
+        # 更新 session_state
+        if selected_file != st.session_state.get('uploaded_file_name'):
+            st.session_state['uploaded_file_name'] = selected_file
+            st.rerun()
+    else:
+        st.info("💡 暂无上传的 Excel 文件，请在下方上传")
+        selected_file = None
     
     # Excel 上传功能
-    st.subheader("📤 上传原始数据 Excel")
-    uploaded_file = st.file_uploader("上传 Excel 文件", type=["xlsx", "xls"], key="upload_excel")
+    uploaded_file = st.file_uploader("上传新的 Excel 文件", type=["xlsx", "xls"], key="upload_excel")
     
     if uploaded_file is not None:
-        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(uploaded_dir, exist_ok=True)
         uploaded_file_name = uploaded_file.name
-        output_file = os.path.join(output_dir, uploaded_file_name)
+        output_file = os.path.join(uploaded_dir, uploaded_file_name)
         st.session_state['uploaded_file_name'] = uploaded_file_name
         
         try:
@@ -72,12 +93,21 @@ def render_tab1(base_dir, templates_dir, output_dir):
             with st.expander("📋 查看数据预览", expanded=True):
                 st.dataframe(df_preview, width='stretch')
             
+            # 上传后自动刷新选中
+            st.session_state['uploaded_file_name'] = uploaded_file_name
+            st.rerun()
+            
         except Exception as e:
             st.error(f"❌ 上传失败：{e}")
     
-    if os.path.exists(raw_data_file):
-        file_size = os.path.getsize(raw_data_file)
-        st.success(f"✅ 数据文件：`{os.path.basename(raw_data_file)}` ({round(file_size/1024, 1)} KB)")
+    # 显示当前选中的文件信息
+    if selected_file:
+        raw_data_file = os.path.join(uploaded_dir, selected_file)
+        if os.path.exists(raw_data_file):
+            file_size = os.path.getsize(raw_data_file)
+            st.success(f"✅ 当前数据文件：`{selected_file}` ({round(file_size/1024, 1)} KB)")
+        else:
+            st.error(f"❌ 文件不存在：{selected_file}")
     else:
         st.info("💡 请先上传 Excel 数据文件")
     
@@ -92,9 +122,10 @@ def render_tab1(base_dir, templates_dir, output_dir):
     
     use_ai = st.checkbox("✨ 使用 AI 自动推荐统计规则", value=False, key="use_ai_check")
     
-    if use_ai and os.path.exists(raw_data_file):
+    if use_ai and selected_file:
         if st.button("🤖 开始 AI 智能分析", type="primary", key="start_ai_analysis"):
             try:
+                raw_data_file = os.path.join(uploaded_dir, selected_file)
                 df = pd.read_excel(raw_data_file)
                 
                 # 构建数据样本（处理 Timestamp 序列化问题）
@@ -148,7 +179,7 @@ def render_tab1(base_dir, templates_dir, output_dir):
                     prompt = f"""
 请根据以下 Excel 数据结构，推荐合适的统计规则配置：
 
-Excel 文件：{raw_data_file_name}
+Excel 文件：{selected_file}
 列信息：
 {json.dumps(columns_info, ensure_ascii=False, indent=2)}
 
@@ -180,99 +211,48 @@ Excel 文件：{raw_data_file_name}
                 with st.expander("📄 查看详细错误"):
                     st.code(traceback.format_exc())
     
-    # 显示推荐列表（在外层，使用 session_state 保存的推荐）
+    # 显示 AI 推荐列表
     if 'ai_recommendations_list' in st.session_state:
         recommendations = st.session_state['ai_recommendations_list']
         
         if recommendations:
-            st.markdown("### 推荐规则列表")
+            st.markdown("### AI 推荐统计规则")
             
             for i, rec in enumerate(recommendations):
-                already_added = rec['name'] in st.session_state.stats_config.get('stats_sheets', {})
+                already_added = rec.get('name', '') in stats_config.get('stats_sheets', {})
                 
-                # 折叠后显示：规则名 + 添加/删除按钮
-                col_title, col_btn = st.columns([4, 1])
+                st.markdown(f"**{i+1}. {rec.get('name', '')}** - {rec.get('description', '')}")
+                st.json(rec)
                 
-                with col_title:
-                    status_icon = "✅" if already_added else "⬜"
-                    st.write(f"{status_icon} **{rec['name']}** - {rec.get('ai_reason', '')}")
-                
-                with col_btn:
-                    if already_added:
-                        # 已添加：显示删除按钮
-                        if st.button("🗑️ 删除", key=f"del_{rec['name']}_{i}", use_container_width=True):
-                            with open(stats_rules_file, 'r', encoding='utf-8') as f:
-                                current_config = json.load(f)
-                            
-                            if rec['name'] in current_config['stats_sheets']:
-                                del current_config['stats_sheets'][rec['name']]
-                                
-                                with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                                    json.dump(current_config, f, ensure_ascii=False, indent=2)
-                                
-                                st.session_state.stats_config = current_config
-                                st.rerun()
-                    else:
-                        # 未添加：显示添加按钮
-                        if st.button("➕ 添加并保存", key=f"add_{rec['name']}_{i}", use_container_width=True):
-                            with open(stats_rules_file, 'r', encoding='utf-8') as f:
-                                current_config = json.load(f)
-                            
-                            current_config['stats_sheets'][rec['name']] = {
-                                'description': rec.get('description', ''),
-                                'type': rec['type'],
-                                'enabled': True,
-                                'group_by': rec.get('group_by', []),
-                                'metrics': rec.get('metrics', [])
-                            }
-                            
-                            with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                                json.dump(current_config, f, ensure_ascii=False, indent=2)
-                            
-                            st.session_state.stats_config = current_config
-                            st.rerun()
-                
-                # 展开查看详情
-                with st.expander("查看配置详情", expanded=False):
-                    st.json(rec)
+                if already_added:
+                    st.success("✅ 已添加")
+                else:
+                    if st.button("➕ 添加并保存", key=f"add_rec_{i}"):
+                        stats_config['stats_sheets'][rec.get('name', '')] = rec
+                        with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                            json.dump(stats_config, f, ensure_ascii=False, indent=2)
+                        st.success(f"✅ 已添加：{rec.get('name', '')}")
+                        st.session_state['ai_recommendations_list'] = None
+                        st.rerun()
             
-            # 一键保存按钮放在最下面
+            # 一键保存按钮
             st.markdown("---")
-            if st.button("🚀 一键保存所有推荐规则", type="primary", use_container_width=True, key="save_all_ai_rules"):
-                try:
-                    with open(stats_rules_file, 'r', encoding='utf-8') as f:
-                        current_config = json.load(f)
-                    
-                    added_count = 0
-                    for rec in recommendations:
-                        if rec['name'] not in current_config['stats_sheets']:
-                            current_config['stats_sheets'][rec['name']] = {
-                                'description': rec.get('description', ''),
-                                'type': rec['type'],
-                                'enabled': True,
-                                'group_by': rec.get('group_by', []),
-                                'metrics': rec.get('metrics', [])
-                            }
-                            added_count += 1
-                    
-                    with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                        json.dump(current_config, f, ensure_ascii=False, indent=2)
-                    
-                    if added_count > 0:
-                        st.success(f"✅ 已一键保存 {added_count} 条规则到 stats_rules.json")
-                        st.balloons()
-                        
-                        st.session_state.stats_config = current_config
-                        st.session_state.ai_recommendations_list = []
-                        
-                        st.info("💡 规则已保存，请滚动到下方查看'现有统计规则'")
-                    else:
-                        st.info("ℹ️ 所有规则都已添加")
+            if st.button("📥 一键保存所有推荐规则", type="primary", use_container_width=True):
+                added_count = 0
+                for rec in recommendations:
+                    if rec.get('name', '') not in stats_config.get('stats_sheets', {}):
+                        stats_config['stats_sheets'][rec.get('name', '')] = rec
+                        added_count += 1
                 
-                except Exception as e:
-                    st.error(f"❌ 保存失败：{e}")
-                    import traceback
-                    st.code(traceback.format_exc())
+                with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                    json.dump(stats_config, f, ensure_ascii=False, indent=2)
+                
+                if added_count > 0:
+                    st.success(f"✅ 已一键保存 {added_count} 条统计规则")
+                    st.session_state['ai_recommendations_list'] = None
+                    st.rerun()
+                else:
+                    st.info("ℹ️ 所有推荐规则都已添加")
     
     st.markdown("---")
     
@@ -294,119 +274,85 @@ Excel 文件：{raw_data_file_name}
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        custom_sheet_name = st.text_input("统计表格名称", placeholder="例如：销售员业绩", key="custom_sheet_name")
-        custom_stat_type = st.selectbox("统计类型", options=list(stats_types.keys()), format_func=lambda x: stats_types[x], key="custom_stat_type")
-        custom_enabled = st.checkbox("启用", value=True, key="custom_enabled")
-        custom_description = st.text_area("描述", placeholder="例如：销售员业绩排名", height=60, key="custom_desc")
+        sheet_name = st.text_input("统计表格名称", placeholder="例如：销售员业绩", key="custom_sheet_name")
+        stat_type = st.selectbox("统计类型", options=list(stats_types.keys()), format_func=lambda x: stats_types[x], key="custom_stat_type")
+        enabled = st.checkbox("启用", value=True, key="custom_enabled")
+        description = st.text_area("描述", placeholder="例如：销售员业绩排名", height=60, key="custom_desc")
     
     with col2:
-        custom_group_fields = st.text_area("分组字段（每行一个）", placeholder="销售员\n城市", height=100, key="custom_groups")
-        custom_metrics = st.text_area("统计指标（JSON 格式）", 
+        group_fields = st.text_area("分组字段（每行一个）", placeholder="销售员\n城市", height=100, key="custom_groups")
+        metrics_config = st.text_area("统计指标（JSON 格式）", 
                                      value='[{"field": "销售额", "agg": "sum", "alias": "总销售额"}]',
                                      height=150, key="custom_metrics")
     
-    if st.button("➕ 添加自定义统计规则", use_container_width=True, key="add_custom_rule"):
-        if not custom_sheet_name.strip():
+    if st.button("➕ 添加自定义统计规则", key="add_custom_rule"):
+        if not sheet_name.strip():
             st.error("❌ 请填写统计表格名称")
-        elif not custom_group_fields.strip():
+        elif not group_fields.strip():
             st.error("❌ 请填写分组字段")
         else:
             try:
-                metrics = json.loads(custom_metrics)
-                groups = [g.strip() for g in custom_group_fields.strip().split('\n') if g.strip()]
+                metrics = json.loads(metrics_config)
+                groups = [g.strip() for g in group_fields.strip().split('\n') if g.strip()]
                 
                 rule = {
-                    "description": custom_description,
-                    "type": custom_stat_type,
-                    "enabled": custom_enabled,
+                    "description": description,
+                    "type": stat_type,
+                    "enabled": enabled,
                     "group_by": groups,
                     "metrics": metrics
                 }
                 
-                if custom_sheet_name not in st.session_state.stats_config.get("stats_sheets", {}):
-                    st.session_state.stats_config["stats_sheets"][custom_sheet_name] = rule
+                if sheet_name not in stats_config.get('stats_sheets', {}):
+                    stats_config['stats_sheets'][sheet_name] = rule
                     
-                    # 保存到文件
                     with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                        json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
+                        json.dump(stats_config, f, ensure_ascii=False, indent=2)
                     
-                    st.success(f"✅ 已添加自定义规则：{custom_sheet_name}")
-                    st.balloons()
+                    st.success(f"✅ 已添加自定义规则：{sheet_name}")
                     st.rerun()
                 else:
-                    st.warning(f"⚠️ 统计规则已存在：{custom_sheet_name}")
+                    st.warning(f"⚠️ 统计规则已存在：{sheet_name}")
             
             except json.JSONDecodeError as e:
                 st.error(f"❌ 指标配置格式错误：{e}")
     
     st.markdown("---")
     
-    # 现有统计规则
-    st.subheader("📋 现有统计规则")
-    
-    # 重新读取最新的 stats_rules.json（确保显示最新数据）
-    if os.path.exists(stats_rules_file):
-        with open(stats_rules_file, 'r', encoding='utf-8') as f:
-            latest_config = json.load(f)
-        st.session_state.stats_config = latest_config
-    
-    if st.session_state.stats_config.get('stats_sheets'):
-        for name, rule in st.session_state.stats_config['stats_sheets'].items():
-            # 折叠后显示：规则名 + 删除按钮
-            col_title, col_btn = st.columns([4, 1])
-            
-            with col_title:
-                with st.expander(f"{'✅' if rule.get('enabled', True) else '❌'} {name}", expanded=False):
-                    st.json(rule)
-            
-            with col_btn:
-                if st.button("🗑️ 删除", key=f"delete_{name}", use_container_width=True):
-                    del st.session_state.stats_config['stats_sheets'][name]
-                    with open(stats_rules_file, 'w', encoding='utf-8') as f:
-                        json.dump(st.session_state.stats_config, f, ensure_ascii=False, indent=2)
-                    st.rerun()
-    else:
-        st.info("暂无统计规则")
-    
-    st.markdown("---")
+    # ========== 执行统计并生成 Excel ==========
     st.subheader("💾 操作")
     
     if st.button("▶ 执行统计并生成 Excel", type="primary", use_container_width=True):
         try:
-            # 先读取最新的 stats_rules.json
-            with open(stats_rules_file, 'r', encoding='utf-8') as f:
-                latest_config = json.load(f)
+            # 保存当前配置到 stats_rules.json
+            with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                json.dump(stats_config, f, ensure_ascii=False, indent=2)
+            st.info("📝 配置已保存")
             
-            st.info(f"📝 读取配置：{len(latest_config.get('stats_sheets', {}))} 条规则")
+            if not selected_file:
+                st.error("❌ 请先选择或上传 Excel 文件")
+                st.stop()
             
             with st.spinner("⚙️ 正在执行统计引擎..."):
-                sys.path.insert(0, os.path.join(base_dir, 'scripts'))
+                scripts_dir = os.path.join(base_dir, 'scripts')
+                if scripts_dir not in sys.path:
+                    sys.path.insert(0, scripts_dir)
+                
                 from core.stats_engine import StatsEngine
-                from core.data_loader import DataLoader
                 
-                # 使用用户上传的文件名
-                use_file_name = st.session_state.get('uploaded_file_name')
+                # 从 uploaded 目录读取原始数据
+                raw_data_file = os.path.join(uploaded_dir, selected_file)
+                raw_df = pd.read_excel(raw_data_file)
                 
-                if not use_file_name:
-                    # 如果没有上传，自动检测 output 目录中的第一个非统计汇总文件
-                    for f in os.listdir(output_dir):
-                        if f.endswith('.xlsx') and '统计汇总' not in f and not f.startswith('~'):
-                            use_file_name = f
-                            st.session_state['uploaded_file_name'] = f
-                            break
+                # 生成到 summary 目录
+                summary_file_name = selected_file.replace('.xlsx', '_统计汇总.xlsx') if selected_file.endswith('.xlsx') else selected_file + '_统计汇总.xlsx'
+                output_path = os.path.join(summary_dir, summary_file_name)
                 
-                if not use_file_name:
-                    st.error("❌ 未找到数据文件，请先上传 Excel")
-                    st.stop()
-                
-                st.info(f"📊 使用数据文件：{use_file_name}")
-                
-                data_loader = DataLoader(base_dir)
-                raw_df = data_loader.load_raw_data(use_file_name)
-                
-                stats_engine = StatsEngine(base_dir=base_dir)
-                output_path = os.path.join(output_dir, summary_file_name)
+                stats_engine = StatsEngine(base_dir=base_dir, raw_data_file=selected_file)
                 results = stats_engine.run_all(raw_df, output_path=output_path)
+                
+                # 保存生成的统计汇总文件名到 session_state（Tab 2 优先使用）
+                st.session_state['generated_summary_name'] = summary_file_name
                 
                 st.success(f"✅ 已生成 {len(results)} 个统计 Sheet！")
                 
@@ -416,7 +362,7 @@ Excel 文件：{raw_data_file_name}
                         st.write(f"**{sheet_name}**: {len(df)} 行")
                     
                     # 显示跳过的规则
-                    all_rules = set(st.session_state.stats_config.get('stats_sheets', {}).keys())
+                    all_rules = set(stats_config.get('stats_sheets', {}).keys())
                     generated = set(results.keys())
                     skipped = all_rules - generated
                     
@@ -436,104 +382,83 @@ Excel 文件：{raw_data_file_name}
             with st.expander("📄 查看详细错误"):
                 st.code(traceback.format_exc())
     
-    # ========== 集成数据概览功能 ==========
     st.markdown("---")
-    st.header("📊 查看生成的数据")
-    st.markdown("*预览统计汇总 Excel 中的 Sheet 数据*")
     
-    # 根据上传的文件名构建统计汇总文件名
-    summary_file = None
-    if 'uploaded_file_name' in st.session_state:
-        uploaded_name = st.session_state['uploaded_file_name']
-        if uploaded_name.endswith('.xlsx'):
-            summary_name = uploaded_name.replace('.xlsx', '_统计汇总.xlsx')
-        else:
-            summary_name = uploaded_name + '_统计汇总.xlsx'
-        summary_file = os.path.join(output_dir, summary_name)
+    # ========== 现有统计规则 ==========
+    st.subheader("📋 现有统计规则")
     
-    # 如果找不到，自动检测 output 目录
-    if not summary_file or not os.path.exists(summary_file):
-        for f in os.listdir(output_dir):
-            if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
-                summary_file = os.path.join(output_dir, f)
-                break
+    edit_rule_name = st.session_state.get('editing_rule_name', None)
     
-    if summary_file and os.path.exists(summary_file):
-        st.success("✅ 找到统计汇总文件")
-        
-        try:
-            xls = pd.ExcelFile(summary_file)
-            sheet_names = xls.sheet_names
-            
-            st.markdown(f"##### 📋 共有 {len(sheet_names)} 个统计 Sheet")
-            
-            # 创建概览表格
-            overview_data = []
-            for sheet_name in sheet_names:
-                try:
-                    df = pd.read_excel(summary_file, sheet_name=sheet_name, nrows=1)
-                    row_count = len(pd.read_excel(summary_file, sheet_name=sheet_name))
-                    col_count = len(df.columns)
-                    columns_list = df.columns.tolist()
+    if stats_config.get('stats_sheets'):
+        for name, rule in stats_config['stats_sheets'].items():
+            if edit_rule_name == name:
+                st.markdown(f"#### ✏️ 编辑：{name}")
+                
+                edit_sheet_name = st.text_input("统计表格名称", value=name, key=f"edit_sheet_input_{name}")
+                edit_type = st.selectbox("统计类型", options=list(stats_types.keys()),
+                                        format_func=lambda x: stats_types[x],
+                                        index=list(stats_types.keys()).index(rule.get('type', 'kpi')) if rule.get('type') in stats_types.keys() else 0,
+                                        key=f"edit_type_{name}")
+                edit_enabled = st.checkbox("启用", value=rule.get('enabled', True), key=f"edit_enabled_{name}")
+                edit_description = st.text_area("描述", value=rule.get('description', ''), key=f"edit_desc_{name}")
+                edit_groups = st.text_area("分组字段（每行一个）", value='\n'.join(rule.get('group_by', [])), key=f"edit_groups_{name}")
+                edit_metrics = st.text_area("统计指标（JSON 格式）", 
+                                           value=json.dumps(rule.get('metrics', []), ensure_ascii=False, indent=2),
+                                           key=f"edit_metrics_{name}")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("💾 保存修改", type="primary", key=f"edit_save_{name}"):
+                        try:
+                            metrics = json.loads(edit_metrics)
+                            groups = [g.strip() for g in edit_groups.strip().split('\n') if g.strip()]
+                            
+                            new_rule = {
+                                "description": edit_description,
+                                "type": edit_type,
+                                "enabled": edit_enabled,
+                                "group_by": groups,
+                                "metrics": metrics
+                            }
+                            
+                            # 如果名称改变了，先删除旧的
+                            if edit_sheet_name != name:
+                                del stats_config["stats_sheets"][name]
+                            
+                            stats_config["stats_sheets"][edit_sheet_name] = new_rule
+                            
+                            with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                                json.dump(stats_config, f, ensure_ascii=False, indent=2)
+                            
+                            st.session_state['editing_rule_name'] = None
+                            st.success("✅ 已保存并自动保存文件")
+                            st.rerun()
+                        except json.JSONDecodeError as e:
+                            st.error(f"❌ 指标配置格式错误：{e}")
+                
+                with col2:
+                    if st.button("❌ 取消编辑", key=f"edit_cancel_{name}"):
+                        st.session_state['editing_rule_name'] = None
+                        st.rerun()
+                
+                st.markdown("---")
+            else:
+                with st.expander(f"{'✅' if rule.get('enabled', True) else '❌'} {name} - {rule.get('description', '')}"):
+                    st.json(rule)
                     
-                    overview_data.append({
-                        'Sheet 名称': sheet_name,
-                        '行数': row_count,
-                        '列数': col_count,
-                        '字段列表': ', '.join(columns_list[:5]) + ('...' if len(columns_list) > 5 else '')
-                    })
-                except Exception as e:
-                    overview_data.append({
-                        'Sheet 名称': sheet_name,
-                        '行数': '读取失败',
-                        '列数': '-',
-                        '字段列表': f'错误：{e}'
-                    })
-            
-            overview_df = pd.DataFrame(overview_data)
-            st.dataframe(overview_df, width='stretch', hide_index=True)
-            
-            # 详细查看某个 Sheet
-            st.markdown("---")
-            st.subheader("🔍 详细查看")
-            
-            selected_sheet = st.selectbox("选择 Sheet 查看详细数据", sheet_names)
-            
-            if selected_sheet:
-                try:
-                    df_detail = pd.read_excel(summary_file, sheet_name=selected_sheet)
-                    st.dataframe(df_detail.head(100), width='stretch')
-                    
-                    st.markdown(f"##### 数据信息")
-                    col1, col2, col3, col4 = st.columns(4)
+                    col1, col2 = st.columns(2)
                     with col1:
-                        st.metric("总行数", len(df_detail))
+                        if st.button(f"✏️ 编辑", key=f"edit_btn_{name}"):
+                            st.session_state['editing_rule_name'] = name
+                            st.rerun()
                     with col2:
-                        st.metric("总列数", len(df_detail.columns))
-                    with col3:
-                        st.metric("内存占用", f"{df_detail.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
-                    with col4:
-                        st.metric("空值总数", df_detail.isnull().sum().sum())
-                    
-                    # 字段详情
-                    with st.expander("📊 查看字段详情"):
-                        field_info = []
-                        for col in df_detail.columns:
-                            field_info.append({
-                                '字段名': col,
-                                '数据类型': str(df_detail[col].dtype),
-                                '非空值': int(df_detail[col].notnull().sum()),
-                                '空值数': int(df_detail[col].isnull().sum()),
-                                '唯一值': int(df_detail[col].nunique())
-                            })
-                        st.dataframe(pd.DataFrame(field_info), width='stretch', hide_index=True)
-                except Exception as e:
-                    st.error(f"❌ 读取失败：{e}")
-        except Exception as e:
-            st.warning(f"⚠️ 读取统计汇总失败：{e}")
+                        if st.button(f"🗑️ 删除", key=f"delete_{name}"):
+                            del stats_config["stats_sheets"][name]
+                            try:
+                                with open(stats_rules_file, 'w', encoding='utf-8') as f:
+                                    json.dump(stats_config, f, ensure_ascii=False, indent=2)
+                            except Exception as e:
+                                st.error(f"保存失败：{e}")
+                            st.rerun()
     else:
-        st.warning("⚠️ 未找到统计汇总文件")
-        st.info("""💡 **如何生成数据**:
-1. 在上方配置统计规则（AI 推荐或自定义添加）
-2. 点击「▶ 执行统计并生成 Excel」按钮
-3. 返回此处查看生成的 Excel 文件""")
+        st.info("暂无统计规则，请添加")

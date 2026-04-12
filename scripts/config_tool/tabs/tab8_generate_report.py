@@ -41,37 +41,37 @@ def render_tab8(base_dir, output_dir, templates_dir):
         st.session_state.execution_logs = []
         st.session_state.execution_result = None
     
+    # 获取目录结构
+    from app_config import get_output_dirs, ensure_output_dirs
+    dirs = ensure_output_dirs(base_dir)
+    uploaded_dir = dirs['uploaded']
+    summary_dir = dirs['summary']
+    report_dir = dirs['report']
+    
     # ========== 检测当前文件状态 ==========
     st.subheader("📊 当前状态")
     
     files = {'raw_data': None, 'summary': None, 'ppt_reports': []}
     
-    # 每次运行时重新检测 output 目录中的最新文件（不依赖 session_state）
-    if os.path.exists(output_dir):
-        latest_raw = None
-        latest_summary = None
-        
-        for f in os.listdir(output_dir):
-            if f.endswith('.xlsx') and not f.startswith('~'):
-                if '统计汇总' in f:
-                    # 找到最新的统计汇总文件
-                    if latest_summary is None or f > latest_summary:
-                        latest_summary = f
-                else:
-                    # 找到最新的原始数据文件
-                    if latest_raw is None or f > latest_raw:
-                        latest_raw = f
-        
-        files['raw_data'] = latest_raw
-        files['summary'] = latest_summary
-        
-        # 更新 session_state（如果检测到新文件）
-        if latest_raw and ('uploaded_file_name' not in st.session_state or st.session_state['uploaded_file_name'] != latest_raw):
-            st.session_state['uploaded_file_name'] = latest_raw
+    # 检测 uploaded 目录中的原始数据
+    if os.path.exists(uploaded_dir):
+        uploaded_files = [f for f in os.listdir(uploaded_dir) 
+                         if f.endswith(('.xlsx', '.xls')) and not f.startswith('~')]
+        uploaded_files.sort(reverse=True)
+        if uploaded_files:
+            files['raw_data'] = uploaded_files[0]
     
-    # 检测 PPT
-    if os.path.exists(output_dir):
-        ppt_files = [f for f in os.listdir(output_dir) if f.endswith('.pptx') and not f.startswith('~')]
+    # 检测 summary 目录中的统计汇总
+    if os.path.exists(summary_dir):
+        summary_files = [f for f in os.listdir(summary_dir) 
+                        if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~')]
+        summary_files.sort(reverse=True)
+        if summary_files:
+            files['summary'] = summary_files[0]
+    
+    # 检测 report 目录中的 PPT 报告
+    if os.path.exists(report_dir):
+        ppt_files = [f for f in os.listdir(report_dir) if f.endswith('.pptx') and not f.startswith('~')]
         ppt_files.sort(reverse=True)
         files['ppt_reports'] = ppt_files
     
@@ -80,14 +80,16 @@ def render_tab8(base_dir, output_dir, templates_dir):
     
     with col_s1:
         if files['raw_data']:
-            file_size = os.path.getsize(os.path.join(output_dir, files['raw_data']))
+            file_path = os.path.join(uploaded_dir, files['raw_data'])
+            file_size = os.path.getsize(file_path)
             st.success(f"✅ 原始数据\n\n`{files['raw_data']}`\n\n{round(file_size/1024, 1)} KB")
         else:
             st.info("ℹ️ 原始数据\n\n未上传\n\n请先在「📋 统计规则配置」页签上传 Excel")
     
     with col_s2:
         if files['summary']:
-            file_size = os.path.getsize(os.path.join(output_dir, files['summary']))
+            file_path = os.path.join(summary_dir, files['summary'])
+            file_size = os.path.getsize(file_path)
             st.success(f"✅ 统计汇总\n\n`{files['summary']}`\n\n{round(file_size/1024, 1)} KB")
         else:
             st.warning("⚠️ 统计汇总\n\n未生成\n\n请先在「📋 统计规则配置」页签生成数据")
@@ -96,12 +98,12 @@ def render_tab8(base_dir, output_dir, templates_dir):
         # 只显示与当前数据匹配的 PPT
         if files['raw_data'] and files['summary']:
             base_name = files['raw_data'].replace('.xlsx', '')
-            matching_ppt = [f for f in os.listdir(output_dir) if f.endswith('.pptx') and base_name in f and not f.startswith('~')]
+            matching_ppt = [f for f in files['ppt_reports'] if base_name in f]
             
             if matching_ppt:
-                matching_ppt.sort(reverse=True)
                 latest_ppt = matching_ppt[0]
-                file_size = os.path.getsize(os.path.join(output_dir, latest_ppt))
+                file_path = os.path.join(report_dir, latest_ppt)
+                file_size = os.path.getsize(file_path)
                 st.success(f"✅ PPT 报告\n\n`{latest_ppt}`\n\n{round(file_size/1024, 1)} KB")
             else:
                 st.info("ℹ️ PPT 报告\n\n未生成\n\n点击按钮生成")

@@ -81,39 +81,30 @@ DEFAULT_PLACEHOLDERS_CONFIG = {
     }
 }
 
-# ========== 统计类型映射 ==========
-STATS_TYPES = {
-    "kpi": "📊 核心 KPI - 汇总指标",
-    "ranking": "🏆 排名统计 - 销售员/城市排名",
-    "composition": "🥧 占比分析 - 产品占比",
-    "comparison": "⚖️ 对比分析 - 新老客对比",
-    "trend": "📈 趋势分析 - 月度趋势",
-    "distribution": "📊 分布分析 - 星期分布",
-    "matrix": "🔲 矩阵分析 - 销售员 - 产品",
-    "outlier": "⚠️ 异常检测 - 异常订单"
-}
+# ========== 目录配置 ==========
+def get_output_dirs(base_dir):
+    """获取 output 目录结构"""
+    output_dir = os.path.join(base_dir, "output")
+    return {
+        "base": output_dir,
+        "uploaded": os.path.join(output_dir, "uploaded"),     # 上传的 Excel
+        "summary": os.path.join(output_dir, "summary"),       # 统计汇总 Excel
+        "report": os.path.join(output_dir, "report"),         # PPT 报告
+    }
 
-# ========== 图表类型映射 ==========
-CHART_TYPES = {
-    "bar_horizontal": "📊 横向条形图",
-    "bar_vertical": "📊 纵向柱状图",
-    "pie": "🥧 环形饼图",
-    "column_clustered": "📊 多列柱状图",
-    "line": "📈 折线图",
-    "heatmap": "🔥 热力图",
-    "scatter": "⚡ 散点图",
-    "area": "📊 面积图",
-    "histogram": "📊 直方图",
-    "boxplot": "📦 箱线图",
-    "bubble": "🎈 气泡图",
-    "errorbar": "📏 误差棒图",
-    "polar": "🎯 极坐标图",
-    "violin": "🎻 小提琴图",
-    "waterfall": "💧 瀑布图",
-    "funnel": "🌀 漏斗图"
-}
+def ensure_output_dirs(base_dir):
+    """确保 output 子目录存在"""
+    dirs = get_output_dirs(base_dir)
+    for dir_path in dirs.values():
+        os.makedirs(dir_path, exist_ok=True)
+    return dirs
 
 # ========== 工具函数 ==========
+def validate_path(path):
+    """验证路径是否存在"""
+    import os
+    return os.path.exists(path)
+
 def get_default_raw_data_filename():
     """获取默认原始数据文件名"""
     import configparser
@@ -127,20 +118,12 @@ def get_default_raw_data_filename():
         return config.get('paths', 'raw_data_file', fallback='帆软销售明细.xlsx')
     return '帆软销售明细.xlsx'
 
-
 def get_summary_filename(raw_data_filename):
     """根据原始数据文件名生成统计汇总文件名"""
     if raw_data_filename.endswith('.xlsx'):
         return raw_data_filename.replace('.xlsx', '_统计汇总.xlsx')
     else:
         return raw_data_filename + '_统计汇总.xlsx'
-
-
-def validate_path(path):
-    """验证路径是否存在"""
-    import os
-    return os.path.exists(path)
-
 
 def load_json_file(filepath, default=None):
     """加载 JSON 文件，失败时返回默认值"""
@@ -155,13 +138,3 @@ def load_json_file(filepath, default=None):
             pass
     
     return default if default is not None else {}
-
-
-def save_json_file(filepath, data):
-    """保存 JSON 文件"""
-    import json
-    import os
-    
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    with open(filepath, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
