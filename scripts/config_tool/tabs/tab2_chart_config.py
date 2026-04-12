@@ -188,10 +188,10 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                                 "title": rec.get('chart_title', '')
                             }
                             
-                            # 根据图表类型转换字段名
+                            # 根据图表类型转换字段名（支持 AI 输出的多种字段名）
                             chart_type = rec.get('chart_type', '')
                             
-                            # 收集所有可能的字段（AI 可能输出不同的字段名）
+                            # 收集所有可能的字段（AI 可能输出 category_field/x_field 等）
                             all_fields = {}
                             for k, v in rec.items():
                                 if k not in ['chart_key', 'chart_title', 'data_source', 'chart_type', 'description', 'reason']:
@@ -199,6 +199,7 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                             
                             if chart_type == 'pie':
                                 # 饼图：需要 category_field 和 value_field
+                                # AI 可能输出：category_field/value_field 或 x_field/y_field
                                 if all_fields.get('category_field'): chart_config['category_field'] = all_fields['category_field']
                                 elif all_fields.get('x_field'): chart_config['category_field'] = all_fields['x_field']
                                 
@@ -206,19 +207,22 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                                 elif all_fields.get('y_field'): chart_config['value_field'] = all_fields['y_field']
                             
                             elif chart_type in ['multi_column', 'column_clustered']:
-                                # 多列柱状图：需要 category_field 和 series
+                                # 多列柱状图：需要 category_field 和 series（数组）
+                                # AI 可能输出：category_field/x_field, series/y_field/fields
                                 if all_fields.get('category_field'): chart_config['category_field'] = all_fields['category_field']
                                 elif all_fields.get('x_field'): chart_config['category_field'] = all_fields['x_field']
                                 
-                                # series 可能是 series/y_field/fields
+                                # series 可能是 series/y_field/fields，可能是字符串或数组
                                 series_val = all_fields.get('series') or all_fields.get('y_field') or all_fields.get('fields')
                                 if series_val:
                                     if isinstance(series_val, list):
                                         chart_config['series'] = series_val
                                     else:
                                         try:
+                                            # 尝试解析 JSON 数组
                                             chart_config['series'] = json.loads(str(series_val)) if str(series_val).startswith('[') else [series_val]
                                         except:
+                                            # 转为列表
                                             chart_config['series'] = [series_val]
                             
                             elif chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter']:
@@ -257,10 +261,10 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                             "title": rec.get('chart_title', '')
                         }
                         
-                        # 根据图表类型转换字段名
+                        # 根据图表类型转换字段名（支持 AI 输出的多种字段名）
                         chart_type = rec.get('chart_type', '')
                         
-                        # 收集所有可能的字段（AI 可能输出不同的字段名）
+                        # 收集所有可能的字段（AI 可能输出 category_field/x_field 等）
                         all_fields = {}
                         for k, v in rec.items():
                             if k not in ['chart_key', 'chart_title', 'data_source', 'chart_type', 'description', 'reason']:
@@ -275,11 +279,11 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                             elif all_fields.get('y_field'): chart_config['value_field'] = all_fields['y_field']
                         
                         elif chart_type in ['multi_column', 'column_clustered']:
-                            # 多列柱状图：需要 category_field 和 series
+                            # 多列柱状图：需要 category_field 和 series（数组）
                             if all_fields.get('category_field'): chart_config['category_field'] = all_fields['category_field']
                             elif all_fields.get('x_field'): chart_config['category_field'] = all_fields['x_field']
                             
-                            # series 可能是 series/y_field/fields
+                            # series 可能是 series/y_field/fields，可能是字符串或数组
                             series_val = all_fields.get('series') or all_fields.get('y_field') or all_fields.get('fields')
                             if series_val:
                                 if isinstance(series_val, list):
