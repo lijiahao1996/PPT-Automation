@@ -1,7 +1,4 @@
 {
-  "version": "1.0",
-  "description": "统计规则配置 - 新增图表只需修改此文件",
-  "last_updated": "2026-04-07",
   "stats_sheets": {
     "核心 KPI": {
       "description": "核心经营指标汇总",
@@ -32,7 +29,7 @@
         {
           "field": "新客户数",
           "agg": "sum",
-          "alias": "总新客户数"
+          "alias": "新增客户总数"
         },
         {
           "field": "退货率(%)",
@@ -42,7 +39,7 @@
       ]
     },
     "客户分段排名": {
-      "description": "按客户分段的销售业绩排名",
+      "description": "按客户分段的销售表现排名",
       "type": "ranking",
       "enabled": true,
       "group_by": [
@@ -52,17 +49,22 @@
         {
           "field": "销售额(元)",
           "agg": "sum",
-          "alias": "总销售额"
+          "alias": "分段总销售额"
         },
         {
           "field": "订单数",
           "agg": "sum",
-          "alias": "总订单数"
+          "alias": "分段总订单数"
+        },
+        {
+          "field": "新客户数",
+          "agg": "sum",
+          "alias": "分段新增客户数"
         }
       ]
     },
     "客户分段占比": {
-      "description": "各客户分段销售额占比分析",
+      "description": "各客户分段对核心指标的贡献占比",
       "type": "composition",
       "enabled": true,
       "group_by": [
@@ -77,7 +79,7 @@
       ]
     },
     "月度趋势": {
-      "description": "关键指标月度趋势分析",
+      "description": "关键指标月度变化趋势",
       "type": "trend",
       "enabled": true,
       "group_by": [
@@ -105,12 +107,26 @@
           "alias": "月平均退货率"
         }
       ]
+    },
+    "复购率与新客户对比": {
+      "description": "复购率与新客户数的关联分析",
+      "type": "comparison",
+      "enabled": true,
+      "group_by": [
+        "客户分段"
+      ],
+      "metrics": [
+        {
+          "field": "复购率(%)",
+          "agg": "mean",
+          "alias": "平均复购率"
+        },
+        {
+          "field": "新客户数",
+          "agg": "sum",
+          "alias": "新客户总数"
+        }
+      ]
     }
-  },
-  "global_settings": {
-    "decimal_places": 2,
-    "thousands_separator": true,
-    "output_dir": "output",
-    "output_filename": "销售统计汇总.xlsx"
   }
 }

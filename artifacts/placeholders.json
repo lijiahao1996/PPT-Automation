@@ -1,47 +1,56 @@
 {
   "version": "3.0",
-  "description": "销售分析报告 PPT 占位符定义（完全配置化版）",
-  "generated_at": "2026-04-06 22:19:00",
-  "template_file": "销售分析报告_标准模板.pptx",
   "placeholders": {
     "charts": {
       "CHART:core_kpi_summary": {
-        "description": "多列柱状图适合展示多个独立 KPI 的数值对比，清晰传达关键绩效指标",
+        "description": "多列柱状图适合并列展示多个独立KPI数值，便于横向比较",
         "data_source": "核心 KPI",
         "chart_type": "multi_column",
-        "title": "核心 KPI 指标汇总",
+        "title": "核心 KPI 指标概览",
+        "render_mode": "native",
         "category_field": "指标",
         "series": [
           "数值"
-        ],
-        "render_mode": "native"
+        ]
       },
       "CHART:customer_segment_ranking": {
-        "description": "横向条形图适合展示有限分类（5类）的排名对比，便于直观识别高价值分段",
+        "description": "横向条形图适合按销售额对客户分段进行排序展示，清晰呈现层级关系",
         "data_source": "客户分段排名",
         "chart_type": "bar_horizontal",
-        "title": "客户分段销售与订单排名",
-        "x_field": "总销售额",
-        "y_field": "客户分段",
-        "render_mode": "native"
+        "title": "客户分段业绩排名",
+        "render_mode": "native",
+        "x_field": "分段总销售额",
+        "y_field": "客户分段"
       },
       "CHART:customer_segment_composition": {
-        "description": "饼图最适合呈现部分-整体占比关系，直观反映各客户分段对总销售额的贡献结构",
+        "description": "饼图直观展示各客户分段在总销售额中的占比结构",
         "data_source": "客户分段占比",
         "chart_type": "pie",
         "title": "客户分段销售额占比",
+        "render_mode": "native",
         "category_field": "客户分段",
-        "value_field": "销售额",
-        "render_mode": "native"
+        "value_field": "销售额"
       },
       "CHART:monthly_trend": {
-        "description": "折线图最适配时间序列趋势分析，能清晰展现销售额、订单数等指标的动态变化",
+        "description": "折线图最适合展示时间序列下的销售额变化趋势",
         "data_source": "月度趋势",
         "chart_type": "line",
         "title": "月度经营趋势分析",
+        "render_mode": "native",
         "x_field": "月份",
-        "y_field": "月销售额",
-        "render_mode": "native"
+        "y_field": "月销售额"
+      },
+      "CHART:repurchase_vs_new_customers": {
+        "description": "多列柱状图可同步对比同一分段下的复购行为与拉新效果，支持双维度分析",
+        "data_source": "复购率与新客户对比",
+        "chart_type": "multi_column",
+        "title": "复购率与新客户数对比",
+        "render_mode": "native",
+        "category_field": "客户分段",
+        "series": [
+          "平均复购率",
+          "新客户总数"
+        ]
       }
     },
     "insights": {
@@ -108,181 +117,24 @@
         "word_count": 150,
         "enabled": true,
         "custom_prompt": ""
-      }
-    },
-    "tables": {
-      "TABLE:core_api": {
-        "description": "核心 KPI",
-        "data_source": "核心 KPI",
-        "slide_index": 9
-      }
-    },
-    "text": {
-      "TEXT:report_title": {
-        "description": "报告标题",
-        "default": "销售数据分析报告",
-        "slide_index": 0
       },
-      "TEXT:report_subtitle": {
-        "description": "报告副标题",
-        "default": "业绩复盘 · 洞察归因 · 策略建议",
-        "slide_index": 0
-      }
-    },
-    "dates": {
-      "DATE:report_date": {
-        "description": "报告生成日期",
-        "default": "2026-04-10",
-        "format": "%Y-%m-%d",
-        "slide_index": 0
-      }
-    },
-    "images": {
-      "IMAGE:logo": {
-        "description": "",
-        "path": "resources\\images\\Snipaste_2026-04-10_02-06-00.png",
-        "type": "logo",
-        "slide_index": 0
-      },
-      "IMAGE:redhat": {
-        "description": "红帽",
-        "path": "resources\\images\\Snipaste_2026-03-07_18-19-39.png",
-        "type": "logo",
-        "slide_index": 0
-      }
-    },
-    "videos": {
-      "VIDEO:video": {
-        "description": "",
-        "path": "resources\\videos\\12014118_1920_1080_50fps.mp4",
-        "slide_index": 3
-      }
-    },
-    "links": {
-      "LINK:website": {
-        "description": "",
-        "url": "https://www.ljh.cool",
-        "type": "url",
-        "slide_index": 0
-      }
-    }
-  },
-  "slide_mapping": {
-    "0": {
-      "name": "封面页",
-      "layout": "title"
-    },
-    "1": {
-      "name": "目录页",
-      "layout": "toc"
-    },
-    "2": {
-      "name": "核心指标",
-      "layout": "kpi"
-    },
-    "3": {
-      "name": "销售员业绩",
-      "layout": "chart_text"
-    },
-    "4": {
-      "name": "产品结构",
-      "layout": "chart_text"
-    },
-    "5": {
-      "name": "城市排名",
-      "layout": "chart_text"
-    },
-    "6": {
-      "name": "客户类型",
-      "layout": "chart_text"
-    },
-    "7": {
-      "name": "时间趋势",
-      "layout": "chart_text"
-    },
-    "8": {
-      "name": "销售员 - 产品",
-      "layout": "chart_text"
-    },
-    "9": {
-      "name": "异常订单",
-      "layout": "table_text"
-    },
-    "10": {
-      "name": "客户年龄分布",
-      "layout": "chart_text"
-    },
-    "11": {
-      "name": "核心结论",
-      "layout": "content"
-    },
-    "12": {
-      "name": "落地策略",
-      "layout": "content"
-    },
-    "13": {
-      "name": "结束页",
-      "layout": "title"
-    }
-  },
-  "report_settings": {
-    "date_range_auto_detect": true,
-    "date_range_format": "统计周期：{start} - {end} | 日期：{today}"
-  },
-  "special_insights": {
-    "conclusion": {
-      "description": "AI 自动生成 4 条核心结论",
-      "dimensions": [
-        "业绩结构",
-        "增长亮点",
-        "核心短板",
-        "业务风险"
-      ],
-      "style": "数据驱动",
-      "word_count": 200,
-      "custom_prompt": "请从以下 4 个维度生成核心结论：\n1. 业绩结构：分析销售、产品、客户、区域的集中度风险\n2. 增长亮点：识别增长最快的指标和驱动因素\n3. 核心短板：指出最明显的业务弱点和瓶颈\n4. 业务风险：预警潜在的结构性风险和外部威胁"
-    },
-    "strategy": {
-      "description": "AI 自动生成 4 条落地策略",
-      "dimensions": [
-        "客户运营策略",
-        "产品组合策略",
-        "团队管理策略",
-        "营销节奏策略"
-      ],
-      "style": "建议导向",
-      "word_count": 300,
-      "custom_prompt": "请从以下 4 个维度生成落地策略：\n1. 客户运营策略：新老客分层运营、复购提升、LTV 优化\n2. 产品组合策略：爆品依赖降低、连带率提升、产品矩阵优化\n3. 团队管理策略：销售产能规划、激励机制、培训体系\n4. 营销节奏策略：活动节奏、渠道投放、促销时机"
-    },
-    "variables": [
-      {
-        "key": "conclusion",
-        "name": "结论说明",
-        "description": "AI 自动生成 4 条核心结论",
+      "CHART:repurchase_vs_new_customers": {
         "dimensions": [
-          "业绩结构",
-          "增长亮点",
-          "核心短板",
-          "业务风险"
+          "趋势分析",
+          "对比分析"
         ],
-        "style": "数据驱动",
-        "word_count": 250,
-        "custom_prompt": "请从以下 4 个维度生成核心结论：\n1、业绩结构：分析销售、产品、客户、区域的集中度风险\n2、增长亮点：识别增长最快的指标和驱动因素\n3、核心短板：指出最明显的业务弱点和瓶颈\n4、业务风险：预警潜在的结构性风险和外部威胁"
-      },
-      {
-        "key": "strategy",
-        "name": "策略说明",
-        "description": "AI 自动生成 4 条落地策略\n",
-        "dimensions": [
-          "业绩结构",
-          "增长亮点",
-          "核心短板",
-          "业务风险"
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
         ],
-        "style": "建议导向",
-        "word_count": 250,
-        "custom_prompt": "请从以下 4 个维度生成落地策略：\n1、客户运营策略：新老客分层运营、复购提升、LTV 优化\n2、产品组合策略：爆品依赖降低、连带率提升、产品矩阵优化\n3、团队管理策略：销售产能规划、激励机制、培训体系\n4、营销节奏策略：活动节奏、渠道投放、促销时机"
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
       }
-    ]
+    },
+    "text": {}
   }
 }

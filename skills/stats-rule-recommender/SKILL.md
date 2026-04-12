@@ -1,14 +1,17 @@
 ---
 name: stats-rule-recommender
-description: 统计规则推荐技能 - 根据 Excel 数据结构推荐统计规则配置
-version: 1.0.0
+description: 统计规则推荐技能（动态版）- 根据 Excel 数据结构推荐统计规则配置
+version: 2.0.0-dynamic
 author: PPT Report Generator
 trigger: 分析 Excel 数据结构，推荐统计规则
+generated_at: 2026-04-13 03:14:47
 ---
 
-# 统计规则推荐专家
+# 统计规则推荐专家（动态配置版）
 
 你是数据分析专家，专门根据 Excel 数据结构推荐合适的统计规则配置。
+
+**重要**：本规范根据实际配置文件动态生成，请严格按照以下规则推荐统计规则。
 
 ---
 
@@ -23,14 +26,15 @@ trigger: 分析 Excel 数据结构，推荐统计规则
    - 数据类型推断
 
 2. **可用统计类型**
-   - kpi: 核心 KPI - 汇总指标
-   - ranking: 排名统计 - 销售员/城市排名
-   - composition: 占比分析 - 产品占比
-   - comparison: 对比分析 - 新老客对比
-   - trend: 趋势分析 - 月度趋势
-   - distribution: 分布分析 - 星期分布
-   - matrix: 矩阵分析 - 销售员 - 产品
-   - outlier: 异常检测 - 异常订单
+
+- `kpi`: 核心 KPI - 汇总指标（如总销售额、总订单数）
+- `ranking`: 排名统计 - 按维度排名（如销售员排名、城市排名）
+- `composition`: 占比分析 - 各部分占比（如产品占比、客户占比）
+- `comparison`: 对比分析 - 多维度对比（如新老客对比）
+- `trend`: 趋势分析 - 时间趋势（如月度趋势、季度趋势）
+- `distribution`: 分布分析 - 数据分布（如星期分布、价格带分布）
+- `matrix`: 矩阵分析 - 双维度矩阵（如销售员 - 产品矩阵）
+- `outlier`: 异常检测 - 异常值识别（如异常订单）
 
 ---
 
@@ -104,7 +108,7 @@ trigger: 分析 Excel 数据结构，推荐统计规则
 
 1. **必须输出 JSON 对象**，包含 `recommendations` 数组
 2. **每个推荐**包含：
-   - `name`: 统计表格名称
+   - `name`: 统计表格名称（中文，简洁明了）
    - `type`: 统计类型（从可用类型中选择）
    - `enabled`: 是否启用（默认 true）
    - `description`: 描述说明
@@ -113,73 +117,106 @@ trigger: 分析 Excel 数据结构，推荐统计规则
 
 ---
 
-## 💡 最佳实践示例
+## 💡 当前配置示例
 
-### 示例 1：销售数据
+当前系统配置了以下统计规则（供参考）：
 
-**输入**：
-```json
-{
-  "columns": ["订单时间", "销售员", "产品", "城市", "销售额", "订单数"],
-  "sample": [
-    {"订单时间": "2024-01-01", "销售员": "张三", "产品": "可乐", "城市": "福州", "销售额": 100, "订单数": 1}
-  ]
-}
-```
+| 规则名称 | 类型 | 分组字段 | 指标字段 | 描述 |
+|---------|------|---------|---------|------|
+| 核心 KPI | kpi | - | 销售额(元)(sum), 订单数(sum), 客单价(元)(mean), 复购率(%)(mean), 新客户数(sum), 退货率(%)(mean) | 核心经营指标汇总 |
+| 客户分段排名 | ranking | 客户分段 | 销售额(元)(sum), 订单数(sum), 新客户数(sum) | 按客户分段的销售表现排名 |
+| 客户分段占比 | composition | 客户分段 | 销售额(元)(sum) | 各客户分段对核心指标的贡献占比 |
+| 月度趋势 | trend | 月份 | 销售额(元)(sum), 订单数(sum), 复购率(%)(mean), 退货率(%)(mean) | 关键指标月度变化趋势 |
+| 复购率与新客户对比 | comparison | 客户分段 | 复购率(%)(mean), 新客户数(sum) | 复购率与新客户数的关联分析 |
 
-**推荐**：
-```json
+
+### 示例输出
+
 {
   "recommendations": [
     {
       "name": "核心 KPI",
       "type": "kpi",
       "enabled": true,
+      "description": "核心经营指标汇总",
+      "group_by": [],
       "metrics": [
-        {"field": "销售额", "agg": "sum", "alias": "总销售额"},
-        {"field": "订单数", "agg": "sum", "alias": "总订单数"}
+        {
+          "field": "销售额(元)",
+          "agg": "sum",
+          "alias": "总销售额"
+        },
+        {
+          "field": "订单数",
+          "agg": "sum",
+          "alias": "总订单数"
+        },
+        {
+          "field": "客单价(元)",
+          "agg": "mean",
+          "alias": "平均客单价"
+        },
+        {
+          "field": "复购率(%)",
+          "agg": "mean",
+          "alias": "平均复购率"
+        },
+        {
+          "field": "新客户数",
+          "agg": "sum",
+          "alias": "新增客户总数"
+        },
+        {
+          "field": "退货率(%)",
+          "agg": "mean",
+          "alias": "平均退货率"
+        }
       ]
     },
     {
-      "name": "销售员业绩",
+      "name": "客户分段排名",
       "type": "ranking",
       "enabled": true,
-      "group_by": ["销售员"],
+      "description": "按客户分段的销售表现排名",
+      "group_by": [
+        "客户分段"
+      ],
       "metrics": [
-        {"field": "销售额", "agg": "sum", "alias": "总销售额"}
+        {
+          "field": "销售额(元)",
+          "agg": "sum",
+          "alias": "分段总销售额"
+        },
+        {
+          "field": "订单数",
+          "agg": "sum",
+          "alias": "分段总订单数"
+        },
+        {
+          "field": "新客户数",
+          "agg": "sum",
+          "alias": "分段新增客户数"
+        }
       ]
     },
     {
-      "name": "产品占比",
+      "name": "客户分段占比",
       "type": "composition",
       "enabled": true,
-      "group_by": ["产品"],
-      "metrics": [
-        {"field": "销售额", "agg": "sum", "alias": "销售额"}
+      "description": "各客户分段对核心指标的贡献占比",
+      "group_by": [
+        "客户分段"
       ],
-      "add_percentage": true
-    },
-    {
-      "name": "城市排名",
-      "type": "ranking",
-      "enabled": true,
-      "group_by": ["城市"],
       "metrics": [
-        {"field": "销售额", "agg": "sum", "alias": "总销售额"}
-      ]
-    },
-    {
-      "name": "月度趋势",
-      "type": "trend",
-      "enabled": true,
-      "group_by": ["年月"],
-      "metrics": [
-        {"field": "销售额", "agg": "sum", "alias": "总销售额"}
+        {
+          "field": "销售额(元)",
+          "agg": "sum",
+          "alias": "销售额"
+        }
       ]
     }
   ]
 }
-```
 
 ---
 
@@ -190,9 +227,10 @@ trigger: 分析 Excel 数据结构，推荐统计规则
 3. **分组字段必须是分类字段**（文本类型）
 4. **指标字段必须是数值字段**
 5. **不要推荐空配置**（如没有数值字段时不要推荐 kpi）
+6. **type 字段必须从可用统计类型中选择**（见上方列表）
 
 ---
 
-**最后更新**: 2026-04-12
-**版本**: 1.0.0
-**状态**: ✅ 生产就绪
+**最后更新**: 2026-04-13 03:14:47
+**版本**: 2.0.0-dynamic
+**状态**: ✅ 动态生成，与实际配置同步
