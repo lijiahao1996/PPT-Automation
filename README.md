@@ -8,20 +8,28 @@
 
 ## 🚀 快速开始
 
-### 方式 1: Web 界面（推荐）
+### 方式 1: 跨平台启动脚本（推荐）
 
+**Linux/macOS:**
 ```bash
 cd C:\Users\50319\Desktop\n8n
-python -m streamlit run scripts/config_tool/app.py --server.port 8501
+chmod +x start.sh
+./start.sh
+```
+
+**Windows:**
+```bash
+cd C:\Users\50319\Desktop\n8n
+scripts\config_tool\streamlit.bat
 ```
 
 访问界面：**http://localhost:8501/**
 
-### 方式 2: 命令行
+### 方式 2: 手动启动
 
 ```bash
 cd C:\Users\50319\Desktop\n8n
-.\Run.bat
+python -m streamlit run scripts/config_tool/app.py --server.port 8501
 ```
 
 ---
@@ -30,8 +38,7 @@ cd C:\Users\50319\Desktop\n8n
 
 ```
 n8n/
-├── Run.bat                     # Windows 入口脚本
-├── Run.ps1                     # PowerShell 入口脚本
+├── start.sh                    # 跨平台启动脚本 (Linux/macOS)
 ├── config.ini                  # 主配置文件
 ├── requirements.txt            # Python 依赖
 ├── README.md                   # 项目文档
@@ -53,13 +60,14 @@ n8n/
 │   │
 │   ├── ai/                     # AI 模块
 │   │   ├── __init__.py
-│   │   └── qwen_client.py      # Qwen API 客户端
+│   │   ├── qwen_client.py      # Qwen API 客户端
 │   │   └── insight_generator.py  # AI 洞察生成
 │   │
 │   └── config_tool/            # Web 配置工具 (Streamlit)
 │       ├── __init__.py
 │       ├── app.py              # Streamlit 主程序 (8 Tabs)
-│       ├── streamlit.bat       # 启动脚本
+│       ├── streamlit.bat       # Windows 启动脚本
+│       ├── streamlit.sh        # Linux/macOS 启动脚本
 │       └── tabs/               # 8 个功能页签
 │
 ├── templates/                  # 模板和配置
@@ -298,9 +306,83 @@ A: Tab 2 → 展开图表配置 → 选择「图表渲染方式」：
 
 ## 🌍 支持的平台
 
-- ✅ Windows
-- ✅ macOS
-- ✅ Linux
+- ✅ Windows (10/11)
+- ✅ macOS (10.15+)
+- ✅ Linux (Ubuntu 18.04+, CentOS 7+)
+
+### 系统要求
+
+**最低配置**：
+- Python 3.8+
+- 2GB RAM
+- 1GB 磁盘空间
+
+**推荐配置**：
+- Python 3.10+
+- 4GB RAM
+- 2GB 磁盘空间
+
+### 各平台安装指南
+
+#### Ubuntu/Debian
+
+```bash
+# 安装 Python 和 pip
+sudo apt-get update
+sudo apt-get install -y python3 python3-pip
+
+# 安装依赖
+cd n8n
+pip3 install -r requirements.txt
+
+# 启动
+chmod +x start.sh
+./start.sh
+```
+
+#### CentOS/RHEL
+
+```bash
+# 安装 Python 和 pip
+sudo yum install -y python3 python3-pip
+
+# 安装依赖
+cd n8n
+pip3 install -r requirements.txt
+
+# 启动
+chmod +x start.sh
+./start.sh
+```
+
+#### macOS
+
+```bash
+# 安装 Python (使用 Homebrew)
+brew install python3
+
+# 安装依赖
+cd n8n
+pip3 install -r requirements.txt
+
+# 启动
+chmod +x start.sh
+./start.sh
+```
+
+#### Windows
+
+```bash
+# 确保已安装 Python 3.8+
+# 下载安装：https://www.python.org/downloads/
+
+# 安装依赖
+cd n8n
+pip install -r requirements.txt
+
+# 启动
+scripts\config_tool\streamlit.bat
+```
 
 ---
 
