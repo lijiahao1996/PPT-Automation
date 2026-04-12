@@ -504,8 +504,25 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                     
                     # 添加渲染模式选择器
                     render_mode = chart_cfg.get('render_mode', 'image')
-                    render_mode_options = ["image", "native"]
-                    render_mode_index = render_mode_options.index(render_mode) if render_mode in render_mode_options else 0
+                    
+                    # 根据图表类型判断是否支持原生模式
+                    chart_type = chart_cfg.get('chart_type', '')
+                    native_supported = chart_type in ['bar_horizontal', 'bar_vertical', 'pie', 'line', 'area', 'scatter', 'column_clustered', 'multi_column']
+                    
+                    if not native_supported:
+                        # 不支持原生模式，强制使用图片方式
+                        if render_mode != 'image':
+                            chart_cfg['render_mode'] = 'image'
+                            with open(placeholders_file, 'w', encoding='utf-8') as f:
+                                json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                            st.info(f"ℹ️ {chart_type} 不支持原生模式，已自动切换为图片方式")
+                        st.caption("💡 此图表类型仅支持图片方式")
+                        render_mode_options = ["image"]
+                        render_mode_index = 0
+                    else:
+                        # 支持原生模式
+                        render_mode_options = ["image", "native"]
+                        render_mode_index = render_mode_options.index(render_mode) if render_mode in render_mode_options else 0
                     
                     new_render_mode = st.selectbox(
                         "图表渲染方式",
@@ -513,7 +530,7 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                         format_func=lambda x: "🖼️ 图片方式（不可编辑）" if x == "image" else "📊 原生方式（可编辑）",
                         index=render_mode_index,
                         key=f"render_mode_{chart_key}",
-                        help="图片方式：生成 PNG 插入 PPT（速度快）\n原生方式：在 PPT 中创建可编辑图表（可后期修改）"
+                        help="图片方式：生成 PNG 插入 PPT（速度快，支持所有图表类型）\n原生方式：在 PPT 中创建可编辑图表（可后期修改，仅支持基础图表）"
                     )
                     
                     if new_render_mode != render_mode:

@@ -394,8 +394,8 @@ def _build_chart_placeholder_map_from_config(placeholders: Dict, chart_paths: Di
             # 同时生成单方括号和双方括号的占位符（兼容不同模板）
             placeholder_map[f'[{key}]'] = chart_paths[chart_key]
             placeholder_map[f'[[{key}]]'] = chart_paths[chart_key]  # 兼容双方括号
-        else:
-            log_callback(f"      图表未生成：[{key}] (缺少数据：{config.get('data_source', '未知')})")
+        # 注意：如果图表不在 chart_paths 中，可能是原生图表，会在后续步骤处理
+        # 这里不输出"图表未生成"的警告，避免混淆
     
     log_callback(f"      动态构建 {len(placeholder_map)} 个图表占位符映射")
     return placeholder_map
@@ -639,12 +639,15 @@ def generate_report(template_name: str = None, output_name: str = None,
                 if template_engine.replace_with_chart(prs, placeholder, chart_path):
                     replaced_count += 1
         
-        log_callback(f"      [OK] 图表占位符已替换 ({replaced_count} 个图表)")
+        log_callback(f"      [OK] 图片图表占位符已替换 ({replaced_count} 个图表)")
         
         # ========== 创建原生图表（可编辑） ==========
         if native_charts:
-            log_callback("\n      [INFO] 开始创建原生图表...")
+            log_callback(f"\n      [INFO] 开始创建原生图表 ({len(native_charts)} 个)...")
             ppt_chart_engine = PPTChartEngine()
+            
+            native_success_count = 0
+            native_fail_count = 0
             
             for key, config in native_charts:
                 chart_key = key.split(':')[1] if ':' in key else key
@@ -696,8 +699,10 @@ def generate_report(template_name: str = None, output_name: str = None,
                                         
                                         if success:
                                             log_callback(f"      [OK] 原生图表 {chart_key}: slide {slide_idx+1}")
+                                            native_success_count += 1
                                         else:
                                             log_callback(f"      [ERROR] 原生图表 {chart_key} 创建失败")
+                                            native_fail_count += 1
                                         
                                         chart_created = True
                                     except Exception as e:
@@ -708,6 +713,9 @@ def generate_report(template_name: str = None, output_name: str = None,
                 
                 if not chart_created:
                     log_callback(f"      [WARN] 原生图表 {chart_key} 未找到占位符")
+                    native_fail_count += 1
+            
+            log_callback(f"      [OK] 原生图表创建完成：{native_success_count} 个成功，{native_fail_count} 个失败")
         
         # ========== 动态处理所有 TABLE 类型变量 ==========
         table_placeholders = placeholders.get('placeholders', {}).get('tables', {})

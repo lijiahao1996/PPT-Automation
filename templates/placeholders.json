@@ -81,7 +81,7 @@
           "运动户外",
           "食品生鲜"
         ],
-        "render_mode": "native"
+        "render_mode": "image"
       },
       "CHART:abnormal_order_scatter": {
         "description": "散点图可揭示单价与支付金额的关系，辅助识别异常高值订单",
@@ -90,7 +90,7 @@
         "title": "异常订单散点分析（单价 vs 支付金额）",
         "x_field": "单价 (元)",
         "y_field": "支付金额 (元)",
-        "render_mode": "native"
+        "render_mode": "image"
       },
       "CHART:city_sales_ranking": {
         "description": "城市销售排名（原生图表测试）",
@@ -225,6 +225,38 @@
         "custom_prompt": ""
       },
       "CHART:abnormal_order_scatter": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:city_sales_ranking": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:category_pie": {
         "dimensions": [
           "趋势分析",
           "对比分析"
