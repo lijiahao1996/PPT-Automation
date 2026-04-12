@@ -279,9 +279,9 @@ def render_tab1(base_dir, templates_dir, output_dir):
                                      index=list(types.keys()).index(rule.get('type', 'kpi')) if rule.get('type') in types else 0,
                                      key=f"et_{name}")
                 e_en = st.checkbox("启用", value=rule.get('enabled', True), key=f"ee_{name}")
-                e_desc = st.text_area("描述", value=rule.get('description', ''), height=50, key=f"ed_{name}")
-                e_grp = st.text_area("分组", value='\n'.join(rule.get('group_by', [])), height=70, key=f"eg_{name}")
-                e_met = st.text_area("指标 JSON", value=json.dumps(rule.get('metrics', []), ensure_ascii=False, indent=2), height=100, key=f"em_{name}")
+                e_desc = st.text_area("描述", value=rule.get('description', ''), height=60, key=f"ed_{name}")
+                e_grp = st.text_area("分组", value='\n'.join(rule.get('group_by', [])), height=100, key=f"eg_{name}")
+                e_met = st.text_area("指标 JSON", value=json.dumps(rule.get('metrics', []), ensure_ascii=False, indent=2), height=400, key=f"em_{name}")
                 
                 cs, cc = st.columns(2)
                 with cs:
