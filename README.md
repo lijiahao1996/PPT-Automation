@@ -1,8 +1,8 @@
 # PPT 报告生成系统
 
 > 📊 **架构**: 模板引擎 + 图表引擎 + AI 洞察  
-> **版本**: 5.0 Web 版  
-> **最后更新**: 2026-04-11
+> **版本**: 6.0 Web 版（支持原生可编辑图表）  
+> **最后更新**: 2026-04-12
 
 ---
 
@@ -38,44 +38,29 @@ n8n/
 ├── .gitignore                  # Git 配置
 │
 ├── scripts/                    # 核心代码
-│   ├── __init__.py             # 包初始化 (v5.0.0)
+│   ├── __init__.py             # 包初始化 (v6.0.0)
 │   ├── generate_report.py      # PPT 生成主流程
-│   ├── ppt_report_executor.py  # Web 执行器
 │   │
 │   ├── core/                   # 核心引擎
 │   │   ├── __init__.py
 │   │   ├── data_loader.py      # 数据加载器
 │   │   ├── stats_engine.py     # 统计引擎 (配置化)
-│   │   ├── chart_engine.py     # 图表引擎 (17 种图表)
+│   │   ├── chart_engine.py     # 图表引擎 (17 种图片图表)
+│   │   ├── ppt_chart_engine.py # PPT 原生图表引擎 (新增)
 │   │   ├── template_engine.py  # PPT 模板引擎
 │   │   ├── validator.py        # 数据校验器
 │   │   └── styles/             # 样式文件
-│   │       ├── enterprise.mplstyle
-│   │       └── color_palette.json
 │   │
 │   ├── ai/                     # AI 模块
 │   │   ├── __init__.py
-│   │   └── insight_generator.py  # AI 洞察生成 (Qwen)
-│   │
-│   ├── fanruan/                # 帆软模块
-│   │   ├── fanruan_login.py    # 帆软登录 (Playwright)
-│   │   ├── fanruan_scrape.py   # 帆软数据抓取
-│   │   └── fanruan_analyze.py  # 数据分析 + 统计
+│   │   └── qwen_client.py      # Qwen API 客户端
+│   │   └── insight_generator.py  # AI 洞察生成
 │   │
 │   └── config_tool/            # Web 配置工具 (Streamlit)
 │       ├── __init__.py
 │       ├── app.py              # Streamlit 主程序 (8 Tabs)
 │       ├── streamlit.bat       # 启动脚本
 │       └── tabs/               # 8 个功能页签
-│           ├── __init__.py
-│           ├── tab1_stats_rules.py      # 统计规则配置
-│           ├── tab2_chart_config.py     # 图表配置
-│           ├── tab3_insight_config.py   # 洞察配置
-│           ├── tab4_custom_vars.py      # 自定义变量
-│           ├── tab5_conclusion_strategy.py  # 结论&策略
-│           ├── tab6_ppt_vars.py         # PPT 变量总览
-│           ├── tab7_project_config.py   # 项目配置
-│           └── tab8_generate_report.py  # 生成 PPT 报告
 │
 ├── templates/                  # 模板和配置
 │   ├── stats_rules.json        # 统计规则配置
@@ -83,15 +68,18 @@ n8n/
 │   └── *.pptx                  # PPT 模板文件
 │
 ├── skills/                     # AI Skill 规范
-│   └── data-insight/
-│       └── SKILL.md            # 数据洞察 Skill (运行时生成)
+│   ├── data-insight/           # 数据洞察 Skill
+│   │   └── SKILL.md            # 运行时动态生成
+│   ├── stats-rule-recommender/ # 统计规则推荐 Skill
+│   │   └── SKILL.md
+│   └── chart-config-recommender/ # 图表配置推荐 Skill
+│       └── SKILL.md
 │
 ├── resources/                  # 资源文件
 │   └── images/                 # 用户上传图片
 │
 ├── output/                     # 输出目录 (运行时生成)
-│   ├── 帆软销售明细.xlsx       # 原始数据
-│   ├── *_统计汇总.xlsx         # 统计汇总
+│   ├── *.xlsx                  # 原始数据 + 统计汇总
 │   └── *_报告_*.pptx           # 生成的 PPT
 │
 └── artifacts/                  # 临时文件 (运行时生成)
@@ -106,11 +94,16 @@ n8n/
 ### 1. 上传数据
 进入 Web 界面 **"📋 统计规则配置"** 页签，上传 Excel 数据文件。
 
-### 2. 配置统计规则
-添加需要的统计规则（KPI、排名、占比、对比、趋势、分布、矩阵、异常检测）。
+### 2. AI 推荐统计规则（可选）
+勾选 "✨ 使用 AI 自动推荐统计规则"，AI 会根据数据结构推荐合适的统计规则。
 
 ### 3. 配置图表
-进入 **"📈 图表配置"** 页签，为每个统计配置图表（支持 17 种图表类型）。
+进入 **"📈 图表配置"** 页签：
+- 手动添加图表配置
+- 或使用 AI 自动推荐图表配置
+- **选择图表渲染方式**：
+  - 🖼️ **图片方式**（不可编辑）- 生成 PNG 插入 PPT
+  - 📊 **原生方式**（可编辑）- 在 PPT 中创建可编辑图表
 
 ### 4. 配置 AI 洞察
 进入 **"💡 洞察配置"** 页签，配置每个图表的 AI 分析维度、风格、字数。
@@ -120,6 +113,58 @@ n8n/
 
 ### 6. 生成 PPT
 进入 **"🚀 生成 PPT 报告"** 页签，点击"▶️ 开始生成 PPT 报告"。
+
+---
+
+## 🎨 图表渲染模式
+
+### 🖼️ 图片方式（默认）
+
+**流程**：
+```
+Excel 数据 → Matplotlib → PNG 图片 → 插入 PPT
+```
+
+**优势**：
+- ✅ 支持所有 17 种图表类型
+- ✅ 生成速度快
+- ✅ 样式统一美观
+
+**限制**：
+- ❌ 不可在 PPT 中编辑
+
+**适用场景**：
+- 复杂图表（热力图、箱线图等）
+- 批量生成报告
+- 不需要后期修改
+
+---
+
+### 📊 原生方式（可编辑）
+
+**流程**：
+```
+Excel 数据 → PPTChartEngine → PPT 原生 Chart 对象
+```
+
+**优势**：
+- ✅ 可在 PPT 中编辑（修改数据/样式/颜色）
+- ✅ 与 PPT 主题同步
+- ✅ 支持动画效果
+- ✅ 文件体积更小
+
+**限制**：
+- ❌ 仅支持 5 种基础图表类型
+  - 柱状图/条形图
+  - 饼图
+  - 折线图
+  - 面积图
+  - 散点图
+
+**适用场景**：
+- 需要后期修改的图表
+- 需要与 PPT 主题保持一致
+- 需要添加动画效果
 
 ---
 
@@ -141,6 +186,9 @@ logs_dir = logs
 [advanced]
 session_max_age = 7      # 帆软会话有效期 (天)
 log_level = INFO         # 日志级别
+
+[ai]
+enable_ai_insight = True  # 是否启用 AI 洞察生成
 ```
 
 ### 必要配置
@@ -157,35 +205,37 @@ log_level = INFO         # 日志级别
 |------|------|
 | `data_loader.py` | 统一数据加载接口，支持原始数据、统计汇总、KPI 提取 |
 | `stats_engine.py` | 配置化统计引擎，从 `stats_rules.json` 读取规则 |
-| `chart_engine.py` | 企业级图表生成器，支持 17 种图表类型 + 企业样式 |
-| `template_engine.py` | PPT 模板加载与占位符填充，支持动态扫描 |
-| `validator.py` | 数据质量校验器，预设销售数据校验规则 |
+| `chart_engine.py` | 企业级图表生成器（Matplotlib），支持 17 种图片图表 |
+| `ppt_chart_engine.py` | PPT 原生图表引擎，支持 5 种可编辑图表 |
+| `template_engine.py` | PPT 模板加载与占位符填充 |
+| `validator.py` | 数据质量校验器 |
 
 ### AI 模块 (`scripts/ai/`)
 
 | 模块 | 功能 |
 |------|------|
-| `insight_generator.py` | 调用 Qwen API 生成商业洞察，遵循 `skills/data-insight/SKILL.md` 规范 |
+| `qwen_client.py` | Qwen API 统一客户端 |
+| `insight_generator.py` | 调用 Qwen API 生成商业洞察 |
 
-### 帆软模块 (`scripts/fanruan/`)
+### AI Skills (`skills/`)
 
-| 模块 | 功能 |
-|------|------|
-| `fanruan_login.py` | Playwright 自动登录帆软，保存会话状态 |
-| `fanruan_scrape.py` | 拦截 API 抓取帆软数据，支持会话复用 |
-| `fanruan_analyze.py` | 数据清洗 + 统计引擎执行 |
+| Skill | 功能 |
+|-------|------|
+| `data-insight/SKILL.md` | 数据洞察生成规范（动态生成） |
+| `stats-rule-recommender/SKILL.md` | 统计规则推荐规范 |
+| `chart-config-recommender/SKILL.md` | 图表配置推荐规范 |
 
 ### Web 配置工具 (`scripts/config_tool/`)
 
-8 个功能页签，全部在 `tabs/` 目录模块化：
+8 个功能页签：
 
 | Tab | 功能 | 配置文件 |
 |-----|------|---------|
-| 1️⃣ 统计规则配置 | 添加/编辑统计规则，生成统计汇总 | `stats_rules.json` |
-| 2️⃣ 图表配置 | 配置图表类型、数据源、字段 | `placeholders.json` |
-| 3️⃣ 洞察配置 | 配置 AI 分析维度、风格、字数 | `placeholders.json` |
+| 1️⃣ 统计规则配置 | AI 推荐 + 手动添加统计规则 | `stats_rules.json` |
+| 2️⃣ 图表配置 | AI 推荐 + 手动添加图表，选择渲染模式 | `placeholders.json` |
+| 3️⃣ 洞察配置 | 配置 AI 分析维度 | `placeholders.json` |
 | 4️⃣ 自定义变量 | 文本/日期/图片/链接/表格变量 | `placeholders.json` |
-| 5️⃣ AI 综合洞察 | 自定义结论、策略等综合洞察 | `placeholders.json` |
+| 5️⃣ AI 综合洞察 | 自定义结论、策略等 | `placeholders.json` |
 | 6️⃣ PPT 变量总览 | 查看所有已配置变量 | - |
 | 7️⃣ 项目配置 | 管理 `config.ini` | `config.ini` |
 | 8️⃣ 生成 PPT 报告 | 一键执行完整流程 | - |
@@ -194,10 +244,20 @@ log_level = INFO         # 日志级别
 
 ## 📈 支持的图表类型
 
-- 📊 **基础图表**: 横向条形图、纵向柱状图、饼图/环形图、折线图
-- 📊 **对比图表**: 多列柱状图、热力图、散点图
-- 📊 **分布图表**: 直方图、箱线图、小提琴图
-- 📊 **高级图表**: 气泡图、误差棒图、极坐标图、瀑布图、漏斗图、面积图
+### 图片图表（17 种）
+
+| 类型 | 图表 |
+|------|------|
+| **基础图表** | 横向条形图、纵向柱状图、饼图/环形图、折线图、热力图、多列柱状图 |
+| **分布图表** | 散点图、直方图、箱线图、小提琴图、气泡图 |
+| **高级图表** | 面积图、误差棒图、极坐标图、瀑布图、漏斗图 |
+
+### 原生图表（5 种）
+
+| 类型 | 图表 |
+|------|------|
+| **基础图表** | 柱状图/条形图、饼图、折线图 |
+| **其他** | 面积图、散点图 |
 
 ---
 
@@ -205,7 +265,7 @@ log_level = INFO         # 日志级别
 
 日志文件位置：`logs/ppt_YYYYMMDD.log`
 
-例如：`logs/ppt_20260411.log`
+例如：`logs/ppt_20260412.log`
 
 ---
 
@@ -223,6 +283,17 @@ A: 通过 Web 界面的 **"⚙️ 项目配置"** 页签
 **Q: 文件被占用无法保存？**  
 A: 关闭 Excel/WPS 中的相关文件后重试
 
+**Q: 原生图表创建失败？**  
+A: 检查：
+1. PPT 模板中是否有对应的 `[CHART:xxx]` 占位符
+2. 图表类型是否支持原生模式
+3. 数据源字段名是否与 Excel 列名一致
+
+**Q: 如何选择图表渲染模式？**  
+A: Tab 2 → 展开图表配置 → 选择「图表渲染方式」：
+- 不支持原生模式的图表会自动显示提示
+- 已选择的图表会自动保存配置
+
 ---
 
 ## 🌍 支持的平台
@@ -233,6 +304,28 @@ A: 关闭 Excel/WPS 中的相关文件后重试
 
 ---
 
-**最后更新**: 2026-04-11  
-**版本**: 5.0 Web 版  
+## 📊 更新日志
+
+### v6.0.0 (2026-04-12)
+
+**新增功能**：
+- 🎨 图表渲染模式可选（图片方式/原生方式）
+- 📊 PPT 原生图表引擎（支持 5 种可编辑图表）
+- 🤖 AI Skill 规范化（统计规则推荐 + 图表配置推荐）
+- ⚙️ Tab 2 自动禁用不支持的图表类型的原生模式
+
+**优化改进**：
+- 📝 日志输出优化（区分图片图表和原生图表）
+- 🔧 移除误导性警告
+- 🐛 修复 Unicode 编码问题（兼容 Windows GBK）
+
+**技术改进**：
+- 📦 新增 `ppt_chart_engine.py` 模块
+- 🔗 优化图表配置字段名转换逻辑
+- 🎯 支持 AI 输出的多种字段名格式
+
+---
+
+**最后更新**: 2026-04-12  
+**版本**: 6.0 Web 版  
 **状态**: ✅ 生产就绪
