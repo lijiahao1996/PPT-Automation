@@ -105,10 +105,10 @@ def build_skill_always(log_callback=None):
             output_path=skill_path
         )
         
-        log_callback("✅ SKILL.md 已根据当前配置重新生成")
+        log_callback("[OK] SKILL.md 已根据当前配置重新生成")
     
     except Exception as e:
-        log_callback(f"⚠️ SKILL.md 生成失败：{e}，使用现有文件")
+        log_callback(f"[WARN] SKILL.md 生成失败：{e}，使用现有文件")
         import traceback
         log_callback(traceback.format_exc())
 

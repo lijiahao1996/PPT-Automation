@@ -6,13 +6,15 @@
   "placeholders": {
     "charts": {
       "CHART:core_kpi_summary": {
-        "description": "多列柱状图适合并列展示多个关键指标数值，便于横向对比",
+        "description": "核心 KPI 汇总（原生图表测试）",
         "data_source": "核心 KPI",
         "chart_type": "multi_column",
-        "title": "核心 KPI 指标概览",
+        "title": "核心 KPI 汇总",
         "category_field": "指标",
         "series": [
-          "数值"
+          "总销售额",
+          "订单数",
+          "客单价"
         ],
         "render_mode": "native"
       },
@@ -88,6 +90,24 @@
         "title": "异常订单散点分析（单价 vs 支付金额）",
         "x_field": "单价 (元)",
         "y_field": "支付金额 (元)",
+        "render_mode": "native"
+      },
+      "CHART:city_sales_ranking": {
+        "description": "城市销售排名（原生图表测试）",
+        "data_source": "城市销售排名",
+        "chart_type": "bar_horizontal",
+        "title": "城市销售排名",
+        "x_field": "总销售额",
+        "y_field": "城市",
+        "render_mode": "native"
+      },
+      "CHART:category_pie": {
+        "description": "商品类别占比（原生图表测试）",
+        "data_source": "商品类别占比",
+        "chart_type": "pie",
+        "title": "商品类别占比",
+        "category_field": "商品类别",
+        "value_field": "占比",
         "render_mode": "native"
       }
     },
