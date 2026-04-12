@@ -35,30 +35,51 @@ class DataLoader:
     
     def load_summary(self, filename: str = None) -> Dict[str, pd.DataFrame]:
         """加载统计汇总表（所有 Sheet）"""
-        # 如果没有指定文件名，自动查找 output 目录中的统计汇总文件
+        # 支持从 summary 子目录或 output 根目录加载
+        summary_subdir = os.path.join(self.output_dir, 'summary')
+        
+        # 如果没有指定文件名，自动查找
         if filename is None:
-            # 查找包含"统计汇总"的 xlsx 文件
-            for f in os.listdir(self.output_dir):
-                if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
-                    filename = f
-                    break
+            # 优先从 summary 目录查找
+            if os.path.exists(summary_subdir):
+                for f in os.listdir(summary_subdir):
+                    if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
+                        filename = f
+                        filepath = os.path.join(summary_subdir, filename)
+                        break
+            
+            # 如果 summary 目录没有，从 output 根目录查找
+            if filename is None:
+                for f in os.listdir(self.output_dir):
+                    if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
+                        filename = f
+                        filepath = os.path.join(self.output_dir, filename)
+                        break
             
             # 如果还没找到，使用默认值
             if filename is None:
                 filename = '销售统计汇总.xlsx'
-        
-        filepath = os.path.join(self.output_dir, filename)
+                filepath = os.path.join(summary_subdir, filename)
+        else:
+            # 指定了文件名，优先从 summary 目录查找
+            filepath = os.path.join(summary_subdir, filename)
+            if not os.path.exists(filepath):
+                # 如果 summary 目录没有，尝试 output 根目录
+                filepath = os.path.join(self.output_dir, filename)
         
         if not os.path.exists(filepath):
             # 尝试自动查找最近的 xlsx 文件
-            xlsx_files = [f for f in os.listdir(self.output_dir) if f.endswith('.xlsx') and not f.startswith('~')]
-            if xlsx_files:
-                # 使用最新的 xlsx 文件（排除统计汇总文件）
-                for f in sorted(xlsx_files, reverse=True):
-                    if '统计汇总' not in f:
-                        filepath = os.path.join(self.output_dir, f)
-                        logger.info(f"自动使用文件：{filepath}")
-                        break
+            search_dirs = [summary_subdir, self.output_dir] if os.path.exists(summary_subdir) else [self.output_dir]
+            for search_dir in search_dirs:
+                xlsx_files = [f for f in os.listdir(search_dir) if f.endswith('.xlsx') and not f.startswith('~')]
+                if xlsx_files:
+                    for f in sorted(xlsx_files, reverse=True):
+                        if '统计汇总' not in f:
+                            filepath = os.path.join(search_dir, f)
+                            logger.info(f"自动使用文件：{filepath}")
+                            break
+                if os.path.exists(filepath):
+                    break
             
             if not os.path.exists(filepath):
                 raise FileNotFoundError(f"统计汇总文件不存在：{filepath}")

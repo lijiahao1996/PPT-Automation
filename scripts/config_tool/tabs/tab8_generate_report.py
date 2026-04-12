@@ -171,12 +171,12 @@ def render_tab8(base_dir, output_dir, templates_dir):
         start_button = st.button(
             "▶️ 生成 PPT 报告",
             type="primary",
-            use_container_width=True,
+            width='stretch',
             disabled=st.session_state.execution_running
         )
     
     with col_btn2:
-        if st.button("🗑️ 清空日志", use_container_width=True):
+        if st.button("🗑️ 清空日志", width='stretch'):
             clear_logs()
             st.rerun()
     
@@ -202,6 +202,12 @@ def render_tab8(base_dir, output_dir, templates_dir):
         
         def run_pipeline():
             nonlocal result, error_msg
+            
+            # 日志回调（移到 try 外面，确保异常时可用）
+            def log_callback(msg):
+                log_queue.put(msg + "<br>")
+                print(msg)
+            
             try:
                 from generate_report import generate_report
                 
@@ -220,11 +226,6 @@ def render_tab8(base_dir, output_dir, templates_dir):
                 if not use_raw_data_file:
                     error_msg = "未找到原始数据文件，请先上传 Excel 文件"
                     return
-                
-                # 日志回调（使用闭包访问 log_queue）
-                def log_callback(msg):
-                    log_queue.put(msg + "<br>")
-                    print(msg)
                 
                 log_callback("=" * 60)
                 log_callback("开始生成 PPT 报告...")
@@ -337,7 +338,7 @@ def render_tab8(base_dir, output_dir, templates_dir):
                             data=f.read(),
                             file_name=files['summary'],
                             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                            use_container_width=True
+                            width='stretch'
                         )
         
         # 下载 PPT 报告
@@ -352,7 +353,7 @@ def render_tab8(base_dir, output_dir, templates_dir):
                             data=f.read(),
                             file_name=latest_ppt,
                             mime='application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                            use_container_width=True
+                            width='stretch'
                         )
     
     elif st.session_state.execution_result and not st.session_state.execution_result.get('success'):

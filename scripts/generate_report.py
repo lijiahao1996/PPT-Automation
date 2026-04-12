@@ -403,7 +403,7 @@ def _build_chart_placeholder_map_from_config(placeholders: Dict, chart_paths: Di
 
 def generate_report(template_name: str = None, output_name: str = None, 
                     parallel_charts: bool = True, regenerate_placeholders: bool = False,
-                    log_callback=None, raw_data_name: str = None):
+                    log_callback=None, raw_data_name: str = None, summary_file: str = None):
     """
     生成销售分析报告
     
@@ -413,6 +413,8 @@ def generate_report(template_name: str = None, output_name: str = None,
         parallel_charts: 是否并行生成图表（默认 True）
         regenerate_placeholders: 是否重新生成占位符配置（默认 False）
         log_callback: 日志回调函数，用于实时输出到 Web 界面
+        raw_data_name: 原始数据文件名
+        summary_file: 统计汇总文件名
     """
     # 如果没有提供 log_callback，使用默认 logger
     if log_callback is None:
@@ -463,14 +465,6 @@ def generate_report(template_name: str = None, output_name: str = None,
             return False
         
         # 从 summary 目录读取统计汇总
-        summary_path = os.path.join(summary_dir, summary_file)
-        data_summary = data_loader.load_summary(summary_file)
-                summary_file = None
-        
-        if not summary_file or not os.path.exists(os.path.join(output_dir, summary_file)):
-            log_callback("❌ 未找到统计汇总文件，请先在 Tab 1 生成")
-            return False
-        
         data_summary = data_loader.load_summary(filename=summary_file)
         log_callback(f"      已加载 {len(data_summary)} 个统计表（文件：{summary_file}）")
         

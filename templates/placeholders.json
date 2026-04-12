@@ -5,67 +5,47 @@
   "template_file": "销售分析报告_标准模板.pptx",
   "placeholders": {
     "charts": {
-      "CHART:core_kpi_horizontal_bar": {
-        "description": "横向条形图适合展示少量关键指标的数值对比，便于阅读指标名称和数值",
+      "CHART:core_kpi_summary": {
+        "description": "多列柱状图适合展示多个独立 KPI 的数值对比，清晰传达关键绩效指标",
         "data_source": "核心 KPI",
-        "chart_type": "bar_horizontal",
-        "title": "核心KPI指标值展示",
-        "x_field": "数值",
-        "y_field": "指标",
+        "chart_type": "multi_column",
+        "title": "核心 KPI 指标汇总",
+        "category_field": "指标",
+        "series": [
+          "数值"
+        ],
         "render_mode": "native"
       },
-      "CHART:customer_segment_ranking_bar": {
-        "description": "纵向柱状图适合分类对比单一主指标（如销售额），直观反映各分段贡献",
+      "CHART:customer_segment_ranking": {
+        "description": "横向条形图适合展示有限分类（5类）的排名对比，便于直观识别高价值分段",
         "data_source": "客户分段排名",
-        "chart_type": "bar_vertical",
+        "chart_type": "bar_horizontal",
         "title": "客户分段销售与订单排名",
-        "x_field": "客户分段",
-        "y_field": "分段销售额",
+        "x_field": "总销售额",
+        "y_field": "客户分段",
         "render_mode": "native"
       },
-      "CHART:customer_segment_composition_pie": {
-        "description": "饼图专用于展示构成占比，清晰呈现各客户分段对总销售额的结构性贡献",
+      "CHART:customer_segment_composition": {
+        "description": "饼图最适合呈现部分-整体占比关系，直观反映各客户分段对总销售额的贡献结构",
         "data_source": "客户分段占比",
         "chart_type": "pie",
         "title": "客户分段销售额占比",
         "category_field": "客户分段",
-        "value_field": "占比",
+        "value_field": "销售额",
         "render_mode": "native"
       },
-      "CHART:monthly_trend_line": {
-        "description": "折线图最适合展示时间序列趋势，突出销售额随时间变化规律",
+      "CHART:monthly_trend": {
+        "description": "折线图最适配时间序列趋势分析，能清晰展现销售额、订单数等指标的动态变化",
         "data_source": "月度趋势",
         "chart_type": "line",
-        "title": "月度销售与订单趋势",
+        "title": "月度经营趋势分析",
         "x_field": "月份",
         "y_field": "月销售额",
-        "render_mode": "native"
-      },
-      "CHART:customer_segment_multi_column": {
-        "description": "多列柱状图可并行对比同一分类下的多个业务指标，全面评估各分段表现",
-        "data_source": "客户分段排名",
-        "chart_type": "multi_column",
-        "title": "客户分段多维度对比",
-        "category_field": "客户分段",
-        "series": [
-          "分段销售额",
-          "分段订单数",
-          "分段新增客户数"
-        ],
-        "render_mode": "native"
-      },
-      "CHART:segment_repurchase_vs_return_scatter": {
-        "description": "散点图适合探索两个连续变量间的相关性或分布模式，揭示分段质量权衡关系",
-        "data_source": "客户分段 vs 复购率对比",
-        "chart_type": "scatter",
-        "title": "客户分段复购率与退货率关系",
-        "x_field": "平均复购率",
-        "y_field": "平均退货率",
         "render_mode": "native"
       }
     },
     "insights": {
-      "CHART:core_kpi_horizontal_bar": {
+      "CHART:core_kpi_summary": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -81,7 +61,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:customer_segment_ranking_bar": {
+      "CHART:customer_segment_ranking": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -97,7 +77,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:customer_segment_composition_pie": {
+      "CHART:customer_segment_composition": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -113,39 +93,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:monthly_trend_line": {
-        "dimensions": [
-          "趋势分析",
-          "对比分析"
-        ],
-        "metrics": [
-          "总销售额",
-          "订单数",
-          "客单价"
-        ],
-        "baseline": "环比",
-        "style": "平衡型",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": ""
-      },
-      "CHART:customer_segment_multi_column": {
-        "dimensions": [
-          "趋势分析",
-          "对比分析"
-        ],
-        "metrics": [
-          "总销售额",
-          "订单数",
-          "客单价"
-        ],
-        "baseline": "环比",
-        "style": "平衡型",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": ""
-      },
-      "CHART:segment_repurchase_vs_return_scatter": {
+      "CHART:monthly_trend": {
         "dimensions": [
           "趋势分析",
           "对比分析"

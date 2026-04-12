@@ -4,10 +4,10 @@
   "last_updated": "2026-04-07",
   "stats_sheets": {
     "核心 KPI": {
-      "name": "核心 KPI",
+      "description": "核心经营指标汇总",
       "type": "kpi",
       "enabled": true,
-      "description": "核心经营指标汇总",
+      "group_by": [],
       "metrics": [
         {
           "field": "销售额(元)",
@@ -32,7 +32,7 @@
         {
           "field": "新客户数",
           "agg": "sum",
-          "alias": "新增客户总数"
+          "alias": "总新客户数"
         },
         {
           "field": "退货率(%)",
@@ -42,10 +42,9 @@
       ]
     },
     "客户分段排名": {
-      "name": "客户分段排名",
+      "description": "按客户分段的销售业绩排名",
       "type": "ranking",
       "enabled": true,
-      "description": "按客户分段统计业绩并排名",
       "group_by": [
         "客户分段"
       ],
@@ -53,25 +52,19 @@
         {
           "field": "销售额(元)",
           "agg": "sum",
-          "alias": "分段销售额"
+          "alias": "总销售额"
         },
         {
           "field": "订单数",
           "agg": "sum",
-          "alias": "分段订单数"
-        },
-        {
-          "field": "新客户数",
-          "agg": "sum",
-          "alias": "分段新增客户数"
+          "alias": "总订单数"
         }
       ]
     },
     "客户分段占比": {
-      "name": "客户分段占比",
+      "description": "各客户分段销售额占比分析",
       "type": "composition",
       "enabled": true,
-      "description": "各客户分段对核心指标的贡献占比",
       "group_by": [
         "客户分段"
       ],
@@ -81,14 +74,12 @@
           "agg": "sum",
           "alias": "销售额"
         }
-      ],
-      "add_percentage": true
+      ]
     },
     "月度趋势": {
-      "name": "月度趋势",
+      "description": "关键指标月度趋势分析",
       "type": "trend",
       "enabled": true,
-      "description": "关键指标月度变化趋势",
       "group_by": [
         "月份"
       ],
@@ -112,40 +103,6 @@
           "field": "退货率(%)",
           "agg": "mean",
           "alias": "月平均退货率"
-        }
-      ]
-    },
-    "客户分段 vs 复购率对比": {
-      "name": "客户分段 vs 复购率对比",
-      "type": "comparison",
-      "enabled": true,
-      "description": "不同客户分段的复购率与退货率对比",
-      "group_by": [
-        "客户分段"
-      ],
-      "metrics": [
-        {
-          "field": "复购率(%)",
-          "agg": "mean",
-          "alias": "平均复购率"
-        },
-        {
-          "field": "退货率(%)",
-          "agg": "mean",
-          "alias": "平均退货率"
-        }
-      ]
-    },
-    "异常检测：销售额波动": {
-      "name": "异常检测：销售额波动",
-      "type": "outlier",
-      "enabled": true,
-      "description": "识别销售额显著偏离均值的月份",
-      "metrics": [
-        {
-          "field": "销售额(元)",
-          "agg": "sum",
-          "alias": "月销售额"
         }
       ]
     }

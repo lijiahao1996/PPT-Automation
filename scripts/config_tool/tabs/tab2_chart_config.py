@@ -522,7 +522,7 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                         st.json(chart_cfg)
                         
                         # 添加渲染模式选择器
-                        render_mode = chart_cfg.get('render_mode', 'image')
+                        render_mode = chart_cfg.get('render_mode', 'native')  # 默认原生方式
                         
                         # 根据图表类型判断是否支持原生模式
                         chart_type = chart_cfg.get('chart_type', '')
@@ -539,8 +539,8 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                             render_mode_options = ["image"]
                             render_mode_index = 0
                         else:
-                            # 支持原生模式
-                            render_mode_options = ["image", "native"]
+                            # 支持原生模式，默认原生
+                            render_mode_options = ["native", "image"]  # 原生在前
                             render_mode_index = render_mode_options.index(render_mode) if render_mode in render_mode_options else 0
                         
                         new_render_mode = st.selectbox(
