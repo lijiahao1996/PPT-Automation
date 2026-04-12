@@ -190,27 +190,45 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                             
                             # 根据图表类型转换字段名
                             chart_type = rec.get('chart_type', '')
+                            
+                            # 收集所有可能的字段（AI 可能输出不同的字段名）
+                            all_fields = {}
+                            for k, v in rec.items():
+                                if k not in ['chart_key', 'chart_title', 'data_source', 'chart_type', 'description', 'reason']:
+                                    all_fields[k] = v
+                            
                             if chart_type == 'pie':
-                                # 饼图：x_field -> category_field, y_field -> value_field
-                                if rec.get('x_field'): chart_config['category_field'] = rec['x_field']
-                                if rec.get('y_field'): chart_config['value_field'] = rec['y_field']
+                                # 饼图：需要 category_field 和 value_field
+                                if all_fields.get('category_field'): chart_config['category_field'] = all_fields['category_field']
+                                elif all_fields.get('x_field'): chart_config['category_field'] = all_fields['x_field']
+                                
+                                if all_fields.get('value_field'): chart_config['value_field'] = all_fields['value_field']
+                                elif all_fields.get('y_field'): chart_config['value_field'] = all_fields['y_field']
+                            
                             elif chart_type in ['multi_column', 'column_clustered']:
-                                # 多列柱状图：x_field -> category_field, y_field -> series
-                                if rec.get('x_field'): chart_config['category_field'] = rec['x_field']
-                                y_field = rec.get('y_field', '')
-                                if y_field:
-                                    try:
-                                        chart_config['series'] = json.loads(y_field) if y_field.startswith('[') else [y_field]
-                                    except:
-                                        chart_config['series'] = [y_field]
+                                # 多列柱状图：需要 category_field 和 series
+                                if all_fields.get('category_field'): chart_config['category_field'] = all_fields['category_field']
+                                elif all_fields.get('x_field'): chart_config['category_field'] = all_fields['x_field']
+                                
+                                # series 可能是 series/y_field/fields
+                                series_val = all_fields.get('series') or all_fields.get('y_field') or all_fields.get('fields')
+                                if series_val:
+                                    if isinstance(series_val, list):
+                                        chart_config['series'] = series_val
+                                    else:
+                                        try:
+                                            chart_config['series'] = json.loads(str(series_val)) if str(series_val).startswith('[') else [series_val]
+                                        except:
+                                            chart_config['series'] = [series_val]
+                            
                             elif chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter']:
-                                if rec.get('x_field'): chart_config['x_field'] = rec['x_field']
-                                if rec.get('y_field'): chart_config['y_field'] = rec['y_field']
+                                # 这些图表使用 x_field 和 y_field
+                                if all_fields.get('x_field'): chart_config['x_field'] = all_fields['x_field']
+                                if all_fields.get('y_field'): chart_config['y_field'] = all_fields['y_field']
+                            
                             else:
                                 # 其他图表类型直接使用 AI 输出的字段
-                                for k, v in rec.items():
-                                    if k not in ['chart_key', 'chart_title', 'data_source', 'chart_type', 'description', 'reason']:
-                                        chart_config[k] = v
+                                chart_config.update(all_fields)
                             
                             chart_key = f"CHART:{rec.get('chart_key', '')}"
                             placeholders_config.setdefault('placeholders', {}).setdefault('charts', {})[chart_key] = chart_config
@@ -241,24 +259,45 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                         
                         # 根据图表类型转换字段名
                         chart_type = rec.get('chart_type', '')
+                        
+                        # 收集所有可能的字段（AI 可能输出不同的字段名）
+                        all_fields = {}
+                        for k, v in rec.items():
+                            if k not in ['chart_key', 'chart_title', 'data_source', 'chart_type', 'description', 'reason']:
+                                all_fields[k] = v
+                        
                         if chart_type == 'pie':
-                            if rec.get('x_field'): chart_config['category_field'] = rec['x_field']
-                            if rec.get('y_field'): chart_config['value_field'] = rec['y_field']
+                            # 饼图：需要 category_field 和 value_field
+                            if all_fields.get('category_field'): chart_config['category_field'] = all_fields['category_field']
+                            elif all_fields.get('x_field'): chart_config['category_field'] = all_fields['x_field']
+                            
+                            if all_fields.get('value_field'): chart_config['value_field'] = all_fields['value_field']
+                            elif all_fields.get('y_field'): chart_config['value_field'] = all_fields['y_field']
+                        
                         elif chart_type in ['multi_column', 'column_clustered']:
-                            if rec.get('x_field'): chart_config['category_field'] = rec['x_field']
-                            y_field = rec.get('y_field', '')
-                            if y_field:
-                                try:
-                                    chart_config['series'] = json.loads(y_field) if y_field.startswith('[') else [y_field]
-                                except:
-                                    chart_config['series'] = [y_field]
+                            # 多列柱状图：需要 category_field 和 series
+                            if all_fields.get('category_field'): chart_config['category_field'] = all_fields['category_field']
+                            elif all_fields.get('x_field'): chart_config['category_field'] = all_fields['x_field']
+                            
+                            # series 可能是 series/y_field/fields
+                            series_val = all_fields.get('series') or all_fields.get('y_field') or all_fields.get('fields')
+                            if series_val:
+                                if isinstance(series_val, list):
+                                    chart_config['series'] = series_val
+                                else:
+                                    try:
+                                        chart_config['series'] = json.loads(str(series_val)) if str(series_val).startswith('[') else [series_val]
+                                    except:
+                                        chart_config['series'] = [series_val]
+                        
                         elif chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter']:
-                            if rec.get('x_field'): chart_config['x_field'] = rec['x_field']
-                            if rec.get('y_field'): chart_config['y_field'] = rec['y_field']
+                            # 这些图表使用 x_field 和 y_field
+                            if all_fields.get('x_field'): chart_config['x_field'] = all_fields['x_field']
+                            if all_fields.get('y_field'): chart_config['y_field'] = all_fields['y_field']
+                        
                         else:
-                            for k, v in rec.items():
-                                if k not in ['chart_key', 'chart_title', 'data_source', 'chart_type', 'description', 'reason']:
-                                    chart_config[k] = v
+                            # 其他图表类型直接使用 AI 输出的字段
+                            chart_config.update(all_fields)
                         
                         placeholders_config.setdefault('placeholders', {}).setdefault('charts', {})[chart_key] = chart_config
                         added_count += 1
