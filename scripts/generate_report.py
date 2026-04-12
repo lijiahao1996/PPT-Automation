@@ -107,18 +107,19 @@ def build_skill_always(log_callback=None):
             )
             log_callback("[OK] data-insight SKILL.md 已生成")
         
-        # 生成 stats-rule-recommender SKILL.md
+        # 生成 stats-rule-recommender SKILL.md（基于上传的 Excel 文件）
         if os.path.exists(stats_builder_path):
             import importlib.util
             spec = importlib.util.spec_from_file_location("stats_skill_builder", stats_builder_path)
             stats_builder = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(stats_builder)
             
-            stats_builder.build_skill_from_config(
-                stats_rules_path=stats_rules_path,
+            uploaded_dir = os.path.join(BASE_DIR, 'output', 'uploaded')
+            stats_builder.build_skill_from_excel(
+                uploaded_dir=uploaded_dir,
                 output_path=stats_skill_path
             )
-            log_callback("[OK] stats-rule-recommender SKILL.md 已生成")
+            log_callback("[OK] stats-rule-recommender SKILL.md 已生成（基于上传的 Excel）")
     
     except Exception as e:
         log_callback(f"[WARN] SKILL.md 生成失败：{e}，使用现有文件")
