@@ -9,7 +9,13 @@
         "description": "多列柱状图适合展示少量关键指标的并列对比，突出数值差异",
         "data_source": "核心 KPI",
         "chart_type": "multi_column",
-        "title": "核心 KPI 汇总"
+        "title": "核心 KPI 汇总",
+        "category_field": "指标",
+        "series": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ]
       },
       "CHART:salesperson_ranking": {
         "description": "横向条形图清晰呈现销售员按销售额排序的排名关系",
@@ -23,13 +29,21 @@
         "description": "饼图直观表达各城市在总销售额中的占比结构",
         "data_source": "城市销售占比",
         "chart_type": "pie",
-        "title": "城市销售占比"
+        "title": "城市销售占比",
+        "category_field": "城市",
+        "value_field": "占比"
       },
       "CHART:customer_segment_comparison": {
         "description": "多列柱状图可同时对比新客与老客在销售额和订单数两个维度的表现",
         "data_source": "客户属性对比",
         "chart_type": "multi_column",
-        "title": "客户属性对比"
+        "title": "客户属性对比",
+        "category_field": "客户类型",
+        "series": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ]
       },
       "CHART:monthly_sales_trend": {
         "description": "折线图最适合展示时间序列下的销售趋势变化",
