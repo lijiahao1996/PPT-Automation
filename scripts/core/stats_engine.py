@@ -97,7 +97,9 @@ class StatsEngine:
                 results[sheet_name] = result_df
                 logger.info(f"  [OK] {sheet_name} ({len(result_df)} 行)")
             except Exception as e:
-                logger.warning(f"  [SKIP] {sheet_name} 失败：{e} (可能是缺少字段或数据不足)")
+                logger.warning(f"  [SKIP] {sheet_name} 失败：{e}")
+                logger.warning(f"      规则配置：{json.dumps(config, ensure_ascii=False)}")
+                logger.warning(f"      可能是缺少字段或数据不足，继续执行其他统计")
                 # 不中断，继续执行其他统计
         
         # 保存到 Excel

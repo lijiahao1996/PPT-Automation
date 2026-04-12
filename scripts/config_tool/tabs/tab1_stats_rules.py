@@ -410,10 +410,21 @@ Excel 文件：{raw_data_file_name}
                 
                 st.success(f"✅ 已生成 {len(results)} 个统计 Sheet！")
                 
-                # 显示生成的 Sheet 列表
+                # 显示生成的 Sheet 列表和跳过的项目
                 with st.expander("📊 查看生成的 Sheet", expanded=True):
                     for sheet_name, df in results.items():
                         st.write(f"**{sheet_name}**: {len(df)} 行")
+                    
+                    # 显示跳过的规则
+                    all_rules = set(st.session_state.stats_config.get('stats_sheets', {}).keys())
+                    generated = set(results.keys())
+                    skipped = all_rules - generated
+                    
+                    if skipped:
+                        st.warning(f"⚠️ 以下 {len(skipped)} 条规则执行失败（可能是缺少字段）：")
+                        for name in sorted(skipped):
+                            st.write(f"- {name}")
+                        st.info("💡 **提示**: 请检查这些规则配置的字段是否存在于 Excel 中")
             
             st.success("🎉 完成！")
             
