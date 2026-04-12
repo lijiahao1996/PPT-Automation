@@ -218,7 +218,8 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                                     "description": rec.get('reason', ''),
                                     "data_source": rec.get('data_source', ''),
                                     "chart_type": rec.get('chart_type', 'bar_horizontal'),
-                                    "title": rec.get('chart_title', '')
+                                    "title": rec.get('chart_title', ''),
+                                    "render_mode": "native"  # 默认原生方式（可编辑）
                                 }
                                 
                                 # 根据图表类型转换字段名（支持 AI 输出的多种字段名）
@@ -287,6 +288,8 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                                 "description": rec.get('reason', ''),
                                 "data_source": rec.get('data_source', ''),
                                 "chart_type": rec.get('chart_type', 'bar_horizontal'),
+                                "title": rec.get('chart_title', ''),
+                                "render_mode": "native"  # 默认原生方式（可编辑）
                                 "title": rec.get('chart_title', '')
                             }
                             
@@ -443,7 +446,8 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                         "description": description,
                         "data_source": data_source,
                         "chart_type": chart_type,
-                        "title": chart_title
+                        "title": chart_title,
+                        "render_mode": "native"  # 默认原生方式（可编辑）
                     }
                     
                     # 根据图表类型保存正确的字段名
@@ -625,7 +629,8 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                                 "description": edit_desc,
                                 "data_source": edit_source,
                                 "chart_type": edit_type,
-                                "title": edit_title
+                                "title": edit_title,
+                                "render_mode": chart_cfg.get('render_mode', 'native')  # 保留原有渲染模式
                             }
                             
                             # 根据图表类型保存正确的字段名
