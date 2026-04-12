@@ -20,7 +20,7 @@
         "y_field": "销售员"
       },
       "CHART:city_sales_composition": {
-        "description": "饼图适用于展示各城市在总销售额中的占比结构，直观呈现地域贡献分布",
+        "description": "饼图适用于展示各城市在总销售额中的占比分布，直观呈现地域贡献结构",
         "data_source": "城市销售占比",
         "chart_type": "pie",
         "title": "城市销售占比"
@@ -32,7 +32,7 @@
         "title": "新老客户销售与订单对比"
       },
       "CHART:monthly_sales_trend": {
-        "description": "折线图最适合展示时间序列趋势，清晰反映销售额随月份变化的增长或波动规律",
+        "description": "折线图最适合展示时间序列趋势，清晰反映销售额随月份变化的增长/波动规律",
         "data_source": "月度销售趋势",
         "chart_type": "line",
         "title": "月度销售趋势",
