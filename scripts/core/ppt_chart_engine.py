@@ -61,8 +61,12 @@ class PPTChartEngine:
             sp = placeholder.element
             sp.getparent().remove(sp)
             
-            # 获取幻灯片对象
-            slide = placeholder.parent
+            # 获取幻灯片对象（通过 placeholder 的父级）
+            slide = placeholder._parent if hasattr(placeholder, '_parent') else None
+            if not slide:
+                # 尝试从模板中获取
+                logger.error("无法获取幻灯片对象")
+                return False
             
             # 根据图表类型创建不同的图表
             if chart_type in ['bar_horizontal', 'bar_vertical', 'column_clustered']:
@@ -81,6 +85,8 @@ class PPTChartEngine:
                 
         except Exception as e:
             logger.error(f"创建原生图表失败：{e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return False
     
     def _create_categorical_chart(self, slide, df: pd.DataFrame, chart_type: str, title: str,
@@ -99,6 +105,9 @@ class PPTChartEngine:
             chart_data.categories = df[category_field].tolist()
         elif y_field and y_field in df.columns:
             chart_data.categories = df[y_field].tolist()
+        else:
+            logger.error("未找到分类字段")
+            return False
         
         # 添加系列
         if series and isinstance(series, list):

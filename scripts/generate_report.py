@@ -659,7 +659,7 @@ def generate_report(template_name: str = None, output_name: str = None,
                 df = data_summary[data_source]
                 
                 # 查找占位符
-                placeholder_name = f'[CHART:{chart_key}]'
+                placeholder_name = f'CHART:{chart_key}'
                 chart_created = False
                 
                 for slide_idx, slide in enumerate(prs.slides):
@@ -670,21 +670,40 @@ def generate_report(template_name: str = None, output_name: str = None,
                             for paragraph in shape.text_frame.paragraphs:
                                 if placeholder_name in paragraph.text:
                                     # 在占位符位置创建原生图表
-                                    success = ppt_chart_engine.create_chart_in_placeholder(
-                                        shape, df, chart_type, title,
-                                        category_field=config.get('category_field'),
-                                        series=config.get('series'),
-                                        x_field=config.get('x_field'),
-                                        y_field=config.get('y_field'),
-                                        value_field=config.get('value_field')
-                                    )
-                                    
-                                    if success:
-                                        log_callback(f"      [OK] 原生图表 {chart_key}: slide {slide_idx+1}")
-                                    else:
-                                        log_callback(f"      [ERROR] 原生图表 {chart_key} 创建失败")
-                                    
-                                    chart_created = True
+                                    try:
+                                        # 传递幻灯片对象
+                                        success = ppt_chart_engine._create_categorical_chart(
+                                            slide, df, chart_type, title,
+                                            shape.left, shape.top, shape.width, shape.height,
+                                            category_field=config.get('category_field'),
+                                            series=config.get('series'),
+                                            x_field=config.get('x_field'),
+                                            y_field=config.get('y_field')
+                                        ) if chart_type in ['bar_horizontal', 'bar_vertical', 'column_clustered', 'multi_column'] \
+                                        else ppt_chart_engine._create_pie_chart(
+                                            slide, df, title,
+                                            shape.left, shape.top, shape.width, shape.height,
+                                            category_field=config.get('category_field'),
+                                            value_field=config.get('value_field')
+                                        ) if chart_type == 'pie' \
+                                        else ppt_chart_engine._create_line_chart(
+                                            slide, df, title,
+                                            shape.left, shape.top, shape.width, shape.height,
+                                            x_field=config.get('x_field'),
+                                            y_field=config.get('y_field')
+                                        ) if chart_type == 'line' \
+                                        else False
+                                        
+                                        if success:
+                                            log_callback(f"      [OK] 原生图表 {chart_key}: slide {slide_idx+1}")
+                                        else:
+                                            log_callback(f"      [ERROR] 原生图表 {chart_key} 创建失败")
+                                        
+                                        chart_created = True
+                                    except Exception as e:
+                                        log_callback(f"      [ERROR] 原生图表 {chart_key} 创建失败：{e}")
+                                        import traceback
+                                        log_callback(traceback.format_exc())
                                     break
                 
                 if not chart_created:
