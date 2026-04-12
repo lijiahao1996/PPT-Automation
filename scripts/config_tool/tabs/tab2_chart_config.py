@@ -301,6 +301,8 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
     
     with col2:
         st.markdown("### 字段配置")
+        
+        # 根据图表类型显示不同的字段配置 UI
         auto_fields_info = ""
         available_fields = []
         if data_source and summary_path and os.path.exists(summary_path):
@@ -311,24 +313,58 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
             except Exception:
                 pass
         
-        if chart_type in ["bar_horizontal", "bar_vertical", "line", "scatter", "area", "histogram", "waterfall", "funnel"]:
-            x_field = st.text_input("X 轴字段", placeholder="例如：总销售额", help=auto_fields_info if auto_fields_info else None, key="x_field_input")
-            y_field = st.text_input("Y 轴字段", placeholder="例如：销售员", help=auto_fields_info if auto_fields_info else None, key="y_field_input")
+        # 不同图表类型需要不同的字段配置
+        if chart_type in ["bar_horizontal", "bar_vertical"]:
+            st.info("💡 条形图/柱状图：需要 X 轴（数值）和 Y 轴（分类）字段")
+            x_field = st.text_input("X 轴字段（数值）", placeholder="例如：总销售额", help=auto_fields_info if auto_fields_info else None, key="x_field_input")
+            y_field = st.text_input("Y 轴字段（分类）", placeholder="例如：销售员", help=auto_fields_info if auto_fields_info else None, key="y_field_input")
+        
+        elif chart_type == "line":
+            st.info("💡 折线图：需要 X 轴（时间）和 Y 轴（数值）字段")
+            x_field = st.text_input("X 轴字段（时间）", placeholder="例如：年月", help=auto_fields_info if auto_fields_info else None, key="x_field_line")
+            y_field = st.text_input("Y 轴字段（数值）", placeholder="例如：总销售额", help=auto_fields_info if auto_fields_info else None, key="y_field_line")
+        
         elif chart_type == "pie":
+            st.info("💡 饼图：需要分类字段和数值字段")
             x_field = st.text_input("分类字段", placeholder="例如：产品", help=auto_fields_info if auto_fields_info else None, key="x_field_pie")
             y_field = st.text_input("数值字段", placeholder="例如：占比", help=auto_fields_info if auto_fields_info else None, key="y_field_pie")
-        elif chart_type in ["boxplot", "violin"]:
-            x_field = st.text_input("分类字段", placeholder="例如：城市", help=auto_fields_info if auto_fields_info else None, key="x_field_box")
-            y_field = st.text_input("数值字段", placeholder="例如：销售额", help=auto_fields_info if auto_fields_info else None, key="y_field_box")
+        
+        elif chart_type in ["multi_column", "column_clustered"]:
+            st.info("💡 多列柱状图：需要分类字段和多指标列表（JSON 格式）")
+            x_field = st.text_input("分类字段", placeholder="例如：客户类型", help=auto_fields_info if auto_fields_info else None, key="x_field_multi")
+            y_field = st.text_area("多指标列表（JSON 格式）", 
+                                  placeholder='["总销售额", "订单数", "客单价"]', 
+                                  value='["总销售额"]',
+                                  height=80, 
+                                  key="y_field_multi")
+        
+        elif chart_type == "scatter":
+            st.info("💡 散点图：需要 X 轴和 Y 轴字段（都是数值）")
+            x_field = st.text_input("X 轴字段", placeholder="例如：订单时间", help=auto_fields_info if auto_fields_info else None, key="x_field_scatter")
+            y_field = st.text_input("Y 轴字段", placeholder="例如：销售额", help=auto_fields_info if auto_fields_info else None, key="y_field_scatter")
+        
+        elif chart_type == "heatmap":
+            st.info("💡 热力图：需要行字段和列字段列表（JSON 格式）")
+            x_field = st.text_input("行字段", placeholder="例如：销售员", help=auto_fields_info if auto_fields_info else None, key="x_field_heatmap")
+            y_field = st.text_area("列字段列表（JSON 格式）", 
+                                  placeholder='["可乐", "巧克力", "牛奶"]', 
+                                  value='[]',
+                                  height=80, 
+                                  key="y_field_heatmap")
+        
         elif chart_type == "bubble":
+            st.info("💡 气泡图：需要 X 轴、Y 轴和大小字段")
             x_field = st.text_input("X 轴字段", placeholder="例如：年龄段", help=auto_fields_info if auto_fields_info else None, key="x_field_bubble")
             y_field = st.text_input("Y 轴字段", placeholder="例如：总销售额", help=auto_fields_info if auto_fields_info else None, key="y_field_bubble")
             size_field = st.text_input("大小字段", placeholder="例如：订单数", help=auto_fields_info if auto_fields_info else None, key="size_field_bubble")
-        elif chart_type == "polar":
-            x_field = st.text_input("角度字段", placeholder="例如：星期", help=auto_fields_info if auto_fields_info else None, key="x_field_polar")
-            y_field = st.text_input("半径字段", placeholder="例如：销售额", help=auto_fields_info if auto_fields_info else None, key="y_field_polar")
+        
         else:
-            x_field = st.text_area("字段配置", placeholder="JSON 格式", help=auto_fields_info if auto_fields_info else None, key="x_field_json")
+            # 其他图表类型使用通用配置
+            st.info(f"💡 {chart_types.get(chart_type, '')}：根据图表类型配置字段")
+            x_field = st.text_area("字段配置（JSON 格式）", 
+                                  placeholder='{"category_field": "城市", "value_field": "销售额"}',
+                                  height=100, 
+                                  key="x_field_json")
             y_field = ""
     
     description = st.text_area("描述", placeholder="例如：销售员业绩横向条形图", key="chart_desc_input")
@@ -349,38 +385,47 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                 # 饼图使用 category_field 和 value_field
                 if x_field: chart_config["category_field"] = x_field
                 if y_field: chart_config["value_field"] = y_field
+            
             elif chart_type in ["multi_column", "column_clustered"]:
-                # 多列柱状图使用 category_field 和 series
+                # 多列柱状图使用 category_field 和 series（列表）
                 if x_field: chart_config["category_field"] = x_field
-                # series 可能是字符串或 JSON 数组
-                try:
-                    if y_field.startswith('['):
+                # series 必须是 JSON 列表
+                if y_field:
+                    try:
                         chart_config["series"] = json.loads(y_field)
-                    else:
+                    except:
+                        # 如果不是 JSON，尝试转为列表
                         chart_config["series"] = [y_field] if y_field else []
-                except:
-                    chart_config["series"] = [y_field] if y_field else []
-            elif chart_type in ["bar_horizontal", "bar_vertical", "line", "scatter", "area", "histogram", "waterfall", "funnel"]:
-                if x_field: chart_config["x_field"] = x_field
-                if y_field: chart_config["y_field"] = y_field
-            elif chart_type == "bubble":
-                if x_field: chart_config["x_field"] = x_field
-                if y_field: chart_config["y_field"] = y_field
-                if 'size_field_bubble' in st.session_state and st.session_state.size_field_bubble:
-                    chart_config["size_field"] = st.session_state.size_field_bubble
-            elif chart_type == "polar":
-                if x_field: chart_config["angle_field"] = x_field
-                if y_field: chart_config["radius_field"] = y_field
-            elif chart_type in ["boxplot", "violin"]:
-                if x_field: chart_config["category_field"] = x_field
-                if y_field: chart_config["value_field"] = y_field
+            
             elif chart_type == "heatmap":
+                # 热力图使用 index_field 和 columns（列表）
                 if x_field: chart_config["index_field"] = x_field
                 if y_field:
                     try:
                         chart_config["columns"] = json.loads(y_field)
                     except:
-                        chart_config["columns"] = [y_field]
+                        chart_config["columns"] = []
+            
+            elif chart_type == "bubble":
+                # 气泡图使用 x_field, y_field, size_field
+                if x_field: chart_config["x_field"] = x_field
+                if y_field: chart_config["y_field"] = y_field
+                if 'size_field_bubble' in st.session_state and st.session_state.size_field_bubble:
+                    chart_config["size_field"] = st.session_state.size_field_bubble
+            
+            elif chart_type in ["bar_horizontal", "bar_vertical", "line", "scatter"]:
+                # 这些图表使用 x_field 和 y_field
+                if x_field: chart_config["x_field"] = x_field
+                if y_field: chart_config["y_field"] = y_field
+            
+            else:
+                # 其他图表类型：尝试解析 JSON 配置
+                if x_field:
+                    try:
+                        extra_fields = json.loads(x_field)
+                        chart_config.update(extra_fields)
+                    except:
+                        chart_config["x_field"] = x_field
             
             key = f"CHART:{chart_key}"
             if key not in placeholders_config.setdefault('placeholders', {}).setdefault('charts', {}):
