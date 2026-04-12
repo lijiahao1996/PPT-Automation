@@ -5,93 +5,67 @@
   "template_file": "销售分析报告_标准模板.pptx",
   "placeholders": {
     "charts": {
-      "CHART:core_kpi_summary": {
-        "description": "多列柱状图适合并列展示多个关键指标数值，便于横向对比",
+      "CHART:core_kpi_horizontal_bar": {
+        "description": "横向条形图适合展示少量关键指标的数值对比，便于阅读指标名称和数值",
         "data_source": "核心 KPI",
-        "chart_type": "multi_column",
-        "title": "核心 KPI 指标汇总",
-        "category_field": "指标",
-        "series": [
-          "数值"
-        ],
-        "render_mode": "native"
-      },
-      "CHART:city_sales_ranking_horizontal": {
-        "description": "横向条形图适合高基数分类（75城）的排名展示，避免标签重叠",
-        "data_source": "城市销售排名",
         "chart_type": "bar_horizontal",
-        "title": "城市销售金额排名（横向）",
-        "x_field": "城市总支付金额",
-        "y_field": "城市",
+        "title": "核心KPI指标值展示",
+        "x_field": "数值",
+        "y_field": "指标",
         "render_mode": "native"
       },
-      "CHART:category_composition_pie": {
-        "description": "饼图直观呈现有限类别（6类）的构成比例关系",
-        "data_source": "商品类别占比",
+      "CHART:customer_segment_ranking_bar": {
+        "description": "纵向柱状图适合分类对比单一主指标（如销售额），直观反映各分段贡献",
+        "data_source": "客户分段排名",
+        "chart_type": "bar_vertical",
+        "title": "客户分段销售与订单排名",
+        "x_field": "客户分段",
+        "y_field": "分段销售额",
+        "render_mode": "native"
+      },
+      "CHART:customer_segment_composition_pie": {
+        "description": "饼图专用于展示构成占比，清晰呈现各客户分段对总销售额的结构性贡献",
+        "data_source": "客户分段占比",
         "chart_type": "pie",
-        "title": "商品类别支付金额占比",
-        "category_field": "商品类别",
-        "value_field": "类别支付金额",
+        "title": "客户分段销售额占比",
+        "category_field": "客户分段",
+        "value_field": "占比",
         "render_mode": "native"
       },
-      "CHART:gender_comparison_multi_column": {
-        "description": "多列柱状图可同步对比同一分组下的多个业务指标",
-        "data_source": "性别与订单对比",
+      "CHART:monthly_trend_line": {
+        "description": "折线图最适合展示时间序列趋势，突出销售额随时间变化规律",
+        "data_source": "月度趋势",
+        "chart_type": "line",
+        "title": "月度销售与订单趋势",
+        "x_field": "月份",
+        "y_field": "月销售额",
+        "render_mode": "native"
+      },
+      "CHART:customer_segment_multi_column": {
+        "description": "多列柱状图可并行对比同一分类下的多个业务指标，全面评估各分段表现",
+        "data_source": "客户分段排名",
         "chart_type": "multi_column",
-        "title": "性别维度多指标对比",
-        "category_field": "性别",
+        "title": "客户分段多维度对比",
+        "category_field": "客户分段",
         "series": [
-          "性别总支付金额",
-          "性别平均订单金额",
-          "性别总购买数量"
+          "分段销售额",
+          "分段订单数",
+          "分段新增客户数"
         ],
         "render_mode": "native"
       },
-      "CHART:order_trend_line": {
-        "description": "折线图适合展示时间序列趋势；日支付金额为主趋势指标",
-        "data_source": "订单日期趋势",
-        "chart_type": "line",
-        "title": "订单日支付金额与订单数趋势",
-        "x_field": "订单日期",
-        "y_field": "日支付金额",
-        "render_mode": "native"
-      },
-      "CHART:order_status_composition_pie": {
-        "description": "饼图适合展示少量状态（4类）在总支付金额中的结构占比",
-        "data_source": "订单状态分布",
-        "chart_type": "pie",
-        "title": "订单状态支付金额占比",
-        "category_field": "订单状态",
-        "value_field": "状态支付金额",
-        "render_mode": "native"
-      },
-      "CHART:city_category_heatmap": {
-        "description": "热力图能高效呈现75×6二维矩阵的数值分布密度与模式",
-        "data_source": "城市-商品类别矩阵",
-        "chart_type": "heatmap",
-        "title": "城市-商品类别销售热力图",
-        "index_field": "城市",
-        "columns": [
-          "家居用品",
-          "服饰鞋包",
-          "电子产品",
-          "美妆护肤",
-          "运动户外",
-          "食品生鲜"
-        ]
-      },
-      "CHART:abnormal_order_scatter": {
-        "description": "散点图可揭示异常高值订单中单价与支付金额的离群关系",
-        "data_source": "异常订单检测",
+      "CHART:segment_repurchase_vs_return_scatter": {
+        "description": "散点图适合探索两个连续变量间的相关性或分布模式，揭示分段质量权衡关系",
+        "data_source": "客户分段 vs 复购率对比",
         "chart_type": "scatter",
-        "title": "异常订单单价与支付金额散点图",
-        "x_field": "单价 (元)",
-        "y_field": "支付金额 (元)",
-        "render_mode": "image"
+        "title": "客户分段复购率与退货率关系",
+        "x_field": "平均复购率",
+        "y_field": "平均退货率",
+        "render_mode": "native"
       }
     },
     "insights": {
-      "CHART:core_kpi_summary": {
+      "CHART:core_kpi_horizontal_bar": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -107,7 +81,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:city_sales_ranking_horizontal": {
+      "CHART:customer_segment_ranking_bar": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -123,7 +97,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:category_composition_pie": {
+      "CHART:customer_segment_composition_pie": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -139,7 +113,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:gender_comparison_multi_column": {
+      "CHART:monthly_trend_line": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -155,7 +129,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:order_trend_line": {
+      "CHART:customer_segment_multi_column": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -171,39 +145,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:order_status_composition_pie": {
-        "dimensions": [
-          "趋势分析",
-          "对比分析"
-        ],
-        "metrics": [
-          "总销售额",
-          "订单数",
-          "客单价"
-        ],
-        "baseline": "环比",
-        "style": "平衡型",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": ""
-      },
-      "CHART:city_category_heatmap": {
-        "dimensions": [
-          "趋势分析",
-          "对比分析"
-        ],
-        "metrics": [
-          "总销售额",
-          "订单数",
-          "客单价"
-        ],
-        "baseline": "环比",
-        "style": "平衡型",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": ""
-      },
-      "CHART:abnormal_order_scatter": {
+      "CHART:segment_repurchase_vs_return_scatter": {
         "dimensions": [
           "趋势分析",
           "对比分析"

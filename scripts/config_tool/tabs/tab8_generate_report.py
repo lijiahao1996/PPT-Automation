@@ -207,13 +207,15 @@ def render_tab8(base_dir, output_dir, templates_dir):
                 
                 # 获取数据文件名（使用刚才检测到的 files['raw_data']）
                 use_raw_data_file = files.get('raw_data')
+                use_summary_file = files.get('summary')
                 
                 if not use_raw_data_file:
-                    # 如果没检测到，再尝试自动查找
-                    for f in os.listdir(output_dir):
-                        if f.endswith('.xlsx') and '统计汇总' not in f and not f.startswith('~'):
-                            use_raw_data_file = f
-                            break
+                    # 如果没检测到，从 uploaded 目录查找
+                    if os.path.exists(uploaded_dir):
+                        for f in os.listdir(uploaded_dir):
+                            if f.endswith('.xlsx') and '统计汇总' not in f and not f.startswith('~'):
+                                use_raw_data_file = f
+                                break
                 
                 if not use_raw_data_file:
                     error_msg = "未找到原始数据文件，请先上传 Excel 文件"
@@ -228,7 +230,7 @@ def render_tab8(base_dir, output_dir, templates_dir):
                 log_callback("开始生成 PPT 报告...")
                 log_callback(f"使用模板：{template_name}")
                 log_callback(f"原始数据：{use_raw_data_file}")
-                log_callback(f"统计汇总：{use_raw_data_file.replace('.xlsx', '_统计汇总.xlsx')}")
+                log_callback(f"统计汇总：{use_summary_file}")
                 log_callback(f"将生成：{use_raw_data_file.replace('.xlsx', '')}_报告_xxx.pptx")
                 log_callback("=" * 60)
                 
@@ -238,17 +240,19 @@ def render_tab8(base_dir, output_dir, templates_dir):
                     output_name=None,  # 自动生成文件名
                     parallel_charts=True,
                     log_callback=log_callback,
-                    raw_data_name=use_raw_data_file  # 直接传入原始数据文件名
+                    raw_data_name=use_raw_data_file,  # 直接传入原始数据文件名
+                    summary_file=use_summary_file  # 传入统计汇总文件名
                 )
                 
                 result['success'] = success
                 if success:
-                    # 查找最新 PPT
-                    ppt_files = [f for f in os.listdir(output_dir) if f.endswith('.pptx') and not f.startswith('~')]
-                    if ppt_files:
-                        ppt_files.sort(reverse=True)
-                        result['files']['ppt_report'] = ppt_files[0]
-                        log_callback(f"✅ PPT 生成成功：{ppt_files[0]}")
+                    # 从 report 目录查找最新 PPT
+                    if os.path.exists(report_dir):
+                        ppt_files = [f for f in os.listdir(report_dir) if f.endswith('.pptx') and not f.startswith('~')]
+                        if ppt_files:
+                            ppt_files.sort(reverse=True)
+                            result['files']['ppt_report'] = ppt_files[0]
+                            log_callback(f"✅ PPT 生成成功：{ppt_files[0]}")
                 else:
                     log_callback("❌ PPT 生成失败")
                     
@@ -325,7 +329,7 @@ def render_tab8(base_dir, output_dir, templates_dir):
         # 下载统计汇总 Excel
         with col_down1:
             if files['summary']:
-                summary_path = os.path.join(output_dir, files['summary'])
+                summary_path = os.path.join(summary_dir, files['summary'])
                 if os.path.exists(summary_path):
                     with open(summary_path, 'rb') as f:
                         st.download_button(
@@ -340,7 +344,7 @@ def render_tab8(base_dir, output_dir, templates_dir):
         with col_down2:
             if result.get('files', {}).get('ppt_report'):
                 latest_ppt = result['files']['ppt_report']
-                ppt_path = os.path.join(output_dir, latest_ppt)
+                ppt_path = os.path.join(report_dir, latest_ppt)
                 if os.path.exists(ppt_path):
                     with open(ppt_path, 'rb') as f:
                         st.download_button(

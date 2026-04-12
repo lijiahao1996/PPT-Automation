@@ -438,35 +438,33 @@ def generate_report(template_name: str = None, output_name: str = None,
         log_callback("\n[1/5] 加载销售统计数据...")
         data_loader = DataLoader(BASE_DIR)
         
-        # 使用传入的文件名（如果提供了）
-        output_dir = os.path.join(BASE_DIR, 'output')
+        # 使用新的目录结构
+        summary_dir = os.path.join(BASE_DIR, 'output', 'summary')
         
-        if raw_data_name:
-            # 直接使用传入的文件名构建统计汇总文件名
-            if raw_data_name.endswith('.xlsx'):
-                summary_file = raw_data_name.replace('.xlsx', '_统计汇总.xlsx')
-            else:
-                summary_file = raw_data_name + '_统计汇总.xlsx'
-            
+        # 优先使用传入的 summary_file
+        if summary_file:
             # 检查文件是否存在
-            if not os.path.exists(os.path.join(output_dir, summary_file)):
+            if not os.path.exists(os.path.join(summary_dir, summary_file)):
                 log_callback(f"❌ 统计汇总文件不存在：{summary_file}")
                 log_callback("   将尝试自动检测...")
-                raw_data_name = None  # 回退到自动检测
+                summary_file = None
         
-        # 如果没有传入文件名，自动检测最新的统计汇总文件
-        if not raw_data_name:
-            summary_files = []
-            for f in os.listdir(output_dir):
-                if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
-                    full_path = os.path.join(output_dir, f)
-                    mtime = os.path.getmtime(full_path)
-                    summary_files.append((f, mtime))
-            
-            if summary_files:
-                summary_files.sort(key=lambda x: x[1], reverse=True)
-                summary_file = summary_files[0][0]
-            else:
+        # 如果没有传入，自动检测
+        if not summary_file:
+            if os.path.exists(summary_dir):
+                summary_files = [f for f in os.listdir(summary_dir) 
+                               if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~')]
+                if summary_files:
+                    summary_files.sort(reverse=True)
+                    summary_file = summary_files[0]
+        
+        if not summary_file:
+            log_callback("❌ 未找到统计汇总文件，请先在 Tab 1 生成")
+            return False
+        
+        # 从 summary 目录读取统计汇总
+        summary_path = os.path.join(summary_dir, summary_file)
+        data_summary = data_loader.load_summary(summary_file)
                 summary_file = None
         
         if not summary_file or not os.path.exists(os.path.join(output_dir, summary_file)):

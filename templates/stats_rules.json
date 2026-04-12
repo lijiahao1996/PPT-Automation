@@ -4,169 +4,148 @@
   "last_updated": "2026-04-07",
   "stats_sheets": {
     "核心 KPI": {
-      "description": "核心经营指标汇总",
+      "name": "核心 KPI",
       "type": "kpi",
       "enabled": true,
-      "group_by": [],
+      "description": "核心经营指标汇总",
       "metrics": [
         {
-          "field": "支付金额 (元)",
+          "field": "销售额(元)",
           "agg": "sum",
-          "alias": "总支付金额"
+          "alias": "总销售额"
         },
         {
-          "field": "支付金额 (元)",
-          "agg": "count",
+          "field": "订单数",
+          "agg": "sum",
           "alias": "总订单数"
         },
         {
-          "field": "支付金额 (元)",
+          "field": "客单价(元)",
           "agg": "mean",
-          "alias": "平均订单金额"
+          "alias": "平均客单价"
         },
         {
-          "field": "单价 (元)",
-          "agg": "sum",
-          "alias": "商品总单价"
+          "field": "复购率(%)",
+          "agg": "mean",
+          "alias": "平均复购率"
         },
         {
-          "field": "购买数量",
+          "field": "新客户数",
           "agg": "sum",
-          "alias": "总购买数量"
+          "alias": "新增客户总数"
+        },
+        {
+          "field": "退货率(%)",
+          "agg": "mean",
+          "alias": "平均退货率"
         }
       ]
     },
-    "城市销售排名": {
-      "description": "各城市订单金额排名",
+    "客户分段排名": {
+      "name": "客户分段排名",
       "type": "ranking",
       "enabled": true,
+      "description": "按客户分段统计业绩并排名",
       "group_by": [
-        "城市"
+        "客户分段"
       ],
       "metrics": [
         {
-          "field": "支付金额 (元)",
+          "field": "销售额(元)",
           "agg": "sum",
-          "alias": "城市总支付金额"
+          "alias": "分段销售额"
         },
         {
-          "field": "支付金额 (元)",
-          "agg": "count",
-          "alias": "城市订单数"
+          "field": "订单数",
+          "agg": "sum",
+          "alias": "分段订单数"
+        },
+        {
+          "field": "新客户数",
+          "agg": "sum",
+          "alias": "分段新增客户数"
         }
       ]
     },
-    "商品类别占比": {
-      "description": "商品类别销售额占比分析",
+    "客户分段占比": {
+      "name": "客户分段占比",
       "type": "composition",
       "enabled": true,
+      "description": "各客户分段对核心指标的贡献占比",
       "group_by": [
-        "商品类别"
+        "客户分段"
       ],
       "metrics": [
         {
-          "field": "支付金额 (元)",
+          "field": "销售额(元)",
           "agg": "sum",
-          "alias": "类别支付金额"
+          "alias": "销售额"
         }
-      ]
-    },
-    "性别与订单对比": {
-      "description": "不同性别用户的订单行为对比",
-      "type": "comparison",
-      "enabled": true,
-      "group_by": [
-        "性别"
       ],
-      "metrics": [
-        {
-          "field": "支付金额 (元)",
-          "agg": "sum",
-          "alias": "性别总支付金额"
-        },
-        {
-          "field": "支付金额 (元)",
-          "agg": "mean",
-          "alias": "性别平均订单金额"
-        },
-        {
-          "field": "购买数量",
-          "agg": "sum",
-          "alias": "性别总购买数量"
-        }
-      ]
+      "add_percentage": true
     },
-    "订单日期趋势": {
-      "description": "按日/月维度的订单金额趋势",
+    "月度趋势": {
+      "name": "月度趋势",
       "type": "trend",
       "enabled": true,
+      "description": "关键指标月度变化趋势",
       "group_by": [
-        "订单日期"
+        "月份"
       ],
       "metrics": [
         {
-          "field": "支付金额 (元)",
+          "field": "销售额(元)",
           "agg": "sum",
-          "alias": "日支付金额"
+          "alias": "月销售额"
         },
         {
-          "field": "支付金额 (元)",
-          "agg": "count",
-          "alias": "日订单数"
-        }
-      ]
-    },
-    "订单状态分布": {
-      "description": "订单状态分布情况",
-      "type": "distribution",
-      "enabled": true,
-      "group_by": [
-        "订单状态"
-      ],
-      "metrics": [
-        {
-          "field": "支付金额 (元)",
+          "field": "订单数",
           "agg": "sum",
-          "alias": "状态支付金额"
+          "alias": "月订单数"
         },
         {
-          "field": "支付金额 (元)",
-          "agg": "count",
-          "alias": "状态订单数"
+          "field": "复购率(%)",
+          "agg": "mean",
+          "alias": "月平均复购率"
+        },
+        {
+          "field": "退货率(%)",
+          "agg": "mean",
+          "alias": "月平均退货率"
         }
       ]
     },
-    "城市-商品类别矩阵": {
-      "description": "各城市在不同商品类别的销售表现",
-      "type": "matrix",
+    "客户分段 vs 复购率对比": {
+      "name": "客户分段 vs 复购率对比",
+      "type": "comparison",
       "enabled": true,
+      "description": "不同客户分段的复购率与退货率对比",
       "group_by": [
-        "城市",
-        "商品类别"
+        "客户分段"
       ],
       "metrics": [
         {
-          "field": "支付金额 (元)",
-          "agg": "sum",
-          "alias": "城市类别支付金额"
+          "field": "复购率(%)",
+          "agg": "mean",
+          "alias": "平均复购率"
+        },
+        {
+          "field": "退货率(%)",
+          "agg": "mean",
+          "alias": "平均退货率"
         }
       ]
     },
-    "异常订单检测": {
-      "description": "识别高金额或异常数量订单",
+    "异常检测：销售额波动": {
+      "name": "异常检测：销售额波动",
       "type": "outlier",
       "enabled": true,
-      "group_by": [],
+      "description": "识别销售额显著偏离均值的月份",
       "metrics": [
         {
-          "field": "支付金额 (元)",
-          "agg": "max",
-          "alias": "最高支付金额"
-        },
-        {
-          "field": "购买数量",
-          "agg": "max",
-          "alias": "最大购买数量"
+          "field": "销售额(元)",
+          "agg": "sum",
+          "alias": "月销售额"
         }
       ]
     }

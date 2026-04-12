@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 import json
 import os
+import sys
 
 def render_tab2(templates_dir, output_dir, base_dir=None):
     st.header("📈 图表配置")
