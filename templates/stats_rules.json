@@ -97,7 +97,7 @@
       ]
     },
     "销售员-产品矩阵": {
-      "description": "销售员与产品交叉维度销售额统计",
+      "description": "销售员与产品交叉维度的销售额汇总",
       "type": "matrix",
       "enabled": true,
       "group_by": [
@@ -108,7 +108,7 @@
         {
           "field": "销售额",
           "agg": "sum",
-          "alias": "销售额"
+          "alias": "总销售额"
         }
       ]
     },

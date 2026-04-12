@@ -484,8 +484,31 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                 edit_source = st.selectbox("数据源", options=available_sheets, 
                                           index=available_sheets.index(chart_cfg.get('data_source', '')) if chart_cfg.get('data_source', '') in available_sheets else 0,
                                           key=f"edit_source_{chart_key}")
-                edit_x = st.text_input("X 轴字段", value=chart_cfg.get('x_field', ''), key=f"edit_x_{chart_key}")
-                edit_y = st.text_input("Y 轴字段", value=chart_cfg.get('y_field', ''), key=f"edit_y_{chart_key}")
+                
+                # 根据图表类型显示正确的字段输入框
+                chart_type = chart_cfg.get('chart_type', '')
+                
+                if chart_type == 'pie':
+                    # 饼图：显示 category_field 和 value_field
+                    edit_cat = st.text_input("分类字段", value=chart_cfg.get('category_field', chart_cfg.get('x_field', '')), key=f"edit_cat_{chart_key}")
+                    edit_val = st.text_input("数值字段", value=chart_cfg.get('value_field', chart_cfg.get('y_field', '')), key=f"edit_val_{chart_key}")
+                    edit_x = None
+                    edit_y = None
+                elif chart_type in ['multi_column', 'column_clustered']:
+                    # 多列柱状图：显示 category_field 和 series
+                    edit_cat = st.text_input("分类字段", value=chart_cfg.get('category_field', chart_cfg.get('x_field', '')), key=f"edit_cat_{chart_key}")
+                    series_val = chart_cfg.get('series', chart_cfg.get('y_field', '[]'))
+                    if isinstance(series_val, list):
+                        series_val = json.dumps(series_val, ensure_ascii=False)
+                    edit_ser = st.text_area("多指标列表（JSON 格式）", value=series_val, height=80, key=f"edit_ser_{chart_key}")
+                    edit_x = None
+                    edit_y = None
+                else:
+                    # 其他图表：显示 x_field 和 y_field
+                    edit_cat = None
+                    edit_x = st.text_input("X 轴字段", value=chart_cfg.get('x_field', ''), key=f"edit_x_{chart_key}")
+                    edit_y = st.text_input("Y 轴字段", value=chart_cfg.get('y_field', ''), key=f"edit_y_{chart_key}")
+                
                 edit_desc = st.text_area("描述", value=chart_cfg.get('description', ''), key=f"edit_desc_{chart_key}")
                 
                 col_save, col_cancel = st.columns(2)
@@ -496,10 +519,23 @@ def render_tab2(templates_dir, output_dir, base_dir=None):
                             "description": edit_desc,
                             "data_source": edit_source,
                             "chart_type": edit_type,
-                            "title": edit_title,
-                            "x_field": edit_x,
-                            "y_field": edit_y
+                            "title": edit_title
                         }
+                        
+                        # 根据图表类型保存正确的字段名
+                        if edit_type == 'pie':
+                            if edit_cat: new_config['category_field'] = edit_cat
+                            if edit_val: new_config['value_field'] = edit_val
+                        elif edit_type in ['multi_column', 'column_clustered']:
+                            if edit_cat: new_config['category_field'] = edit_cat
+                            if edit_ser:
+                                try:
+                                    new_config['series'] = json.loads(edit_ser)
+                                except:
+                                    new_config['series'] = [edit_ser]
+                        else:
+                            if edit_x: new_config['x_field'] = edit_x
+                            if edit_y: new_config['y_field'] = edit_y
                         
                         # 如果 key 改变了，先删除旧的
                         if new_key != chart_key:
