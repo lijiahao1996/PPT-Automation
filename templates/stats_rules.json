@@ -37,7 +37,7 @@
       ]
     },
     "城市销售排名": {
-      "description": "各城市销售额排名",
+      "description": "各城市订单金额排名",
       "type": "ranking",
       "enabled": true,
       "group_by": [
@@ -47,7 +47,7 @@
         {
           "field": "支付金额 (元)",
           "agg": "sum",
-          "alias": "城市总销售额"
+          "alias": "城市总支付金额"
         },
         {
           "field": "支付金额 (元)",
@@ -67,12 +67,12 @@
         {
           "field": "支付金额 (元)",
           "agg": "sum",
-          "alias": "类别销售额"
+          "alias": "类别支付金额"
         }
       ]
     },
     "性别与订单对比": {
-      "description": "不同性别用户订单行为对比",
+      "description": "不同性别用户的订单行为对比",
       "type": "comparison",
       "enabled": true,
       "group_by": [
@@ -97,7 +97,7 @@
       ]
     },
     "订单日期趋势": {
-      "description": "按日/月订单金额趋势分析",
+      "description": "按日/月维度的订单金额趋势",
       "type": "trend",
       "enabled": true,
       "group_by": [
@@ -107,7 +107,7 @@
         {
           "field": "支付金额 (元)",
           "agg": "sum",
-          "alias": "日销售额"
+          "alias": "日支付金额"
         },
         {
           "field": "支付金额 (元)",
@@ -126,24 +126,29 @@
       "metrics": [
         {
           "field": "支付金额 (元)",
+          "agg": "sum",
+          "alias": "状态支付金额"
+        },
+        {
+          "field": "支付金额 (元)",
           "agg": "count",
-          "alias": "订单数"
+          "alias": "状态订单数"
         }
       ]
     },
-    "支付方式-商品类别矩阵": {
-      "description": "不同支付方式在各商品类别的使用情况",
+    "城市-商品类别矩阵": {
+      "description": "各城市在不同商品类别的销售表现",
       "type": "matrix",
       "enabled": true,
       "group_by": [
-        "支付方式",
+        "城市",
         "商品类别"
       ],
       "metrics": [
         {
           "field": "支付金额 (元)",
           "agg": "sum",
-          "alias": "支付金额"
+          "alias": "城市类别支付金额"
         }
       ]
     },
