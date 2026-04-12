@@ -37,7 +37,14 @@ def build_skill_from_config(stats_rules_path: str, output_path: str):
 def generate_skill_content(stats_sheets: dict) -> str:
     """生成 SKILL.md 内容"""
     
-    # 生成可用统计类型说明
+    # 动态提取当前配置中实际使用的统计类型
+    used_types = set()
+    for config in stats_sheets.values():
+        if config.get('enabled', True):
+            rule_type = config.get('type', 'unknown')
+            used_types.add(rule_type)
+    
+    # 生成可用统计类型说明（只包含当前配置中使用的类型）
     types_md = ""
     type_examples = {
         'kpi': '核心 KPI - 汇总指标（如总销售额、总订单数）',
@@ -50,8 +57,12 @@ def generate_skill_content(stats_sheets: dict) -> str:
         'outlier': '异常检测 - 异常值识别（如异常订单）'
     }
     
-    for type_key, type_desc in type_examples.items():
-        types_md += f"- `{type_key}`: {type_desc}\n"
+    # 只输出当前配置中实际使用的类型
+    for type_key in sorted(used_types):
+        if type_key in type_examples:
+            types_md += f"- `{type_key}`: {type_examples[type_key]}\n"
+        else:
+            types_md += f"- `{type_key}`: 自定义统计类型\n"
     
     # 生成当前配置中的统计规则表格
     rules_md = ""
