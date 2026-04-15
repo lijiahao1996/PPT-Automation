@@ -62,7 +62,39 @@ TAB_DEFINITIONS = [
 TAB_LABELS = [tab[0] for tab in TAB_DEFINITIONS]
 
 # ========== 默认配置 ==========
-DEFAULT_BASE_DIR = r"C:\Users\50319\Desktop\n8n"
+# 项目根目录：支持环境变量、配置文件、动态检测
+def get_base_dir():
+    """
+    获取项目根目录
+    优先级：环境变量 N8N_SCRIPTS_BASE_DIR > 配置文件 base_dir > 默认值
+    """
+    import os
+    import configparser
+    
+    # 1. 优先使用环境变量
+    env_base_dir = os.environ.get('N8N_SCRIPTS_BASE_DIR')
+    if env_base_dir:
+        return env_base_dir
+    
+    # 2. 读取配置文件
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    config_ini_path = os.path.join(script_dir, '..', '..', 'config.ini')
+    
+    if os.path.exists(config_ini_path):
+        config = configparser.ConfigParser()
+        try:
+            config.read(config_ini_path, encoding='utf-8')
+            if config.has_option('paths', 'base_dir'):
+                config_base_dir = config.get('paths', 'base_dir')
+                if config_base_dir and config_base_dir != '@N8N_SCRIPTS_BASE_DIR@':
+                    return config_base_dir
+        except Exception:
+            pass
+    
+    # 3. 默认值：动态获取项目根目录（脚本所在目录往上一级）
+    return os.path.dirname(os.path.dirname(script_dir))
+
+DEFAULT_BASE_DIR = get_base_dir()
 
 DEFAULT_STATS_CONFIG = {
     "version": "1.0",
@@ -111,10 +143,11 @@ def get_default_raw_data_filename():
     import configparser
     import os
     
-    config = configparser.ConfigParser()
-    config_path = os.path.join(DEFAULT_BASE_DIR, "config.ini")
+    base_dir = get_base_dir()
+    config_path = os.path.join(base_dir, "config.ini")
     
     if os.path.exists(config_path):
+        config = configparser.ConfigParser()
         config.read(config_path, encoding='utf-8')
         return config.get('paths', 'raw_data_file', fallback='帆软销售明细.xlsx')
     return '帆软销售明细.xlsx'
