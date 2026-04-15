@@ -19,6 +19,9 @@ services:
     environment:
       - QWEN_API_KEY=${QWEN_API_KEY:-}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - N8N_SCRIPTS_BASE_DIR=/app
+    env_file:
+      - .env
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
