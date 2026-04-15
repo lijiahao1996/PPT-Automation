@@ -1,130 +1,121 @@
 {
   "stats_sheets": {
     "核心 KPI": {
-      "description": "核心经营指标汇总",
+      "description": "员工核心人力指标汇总",
       "type": "kpi",
       "enabled": true,
       "group_by": [],
       "metrics": [
         {
-          "field": "销售额(元)",
-          "agg": "sum",
-          "alias": "总销售额"
-        },
-        {
-          "field": "订单数",
-          "agg": "sum",
-          "alias": "总订单数"
-        },
-        {
-          "field": "客单价(元)",
+          "field": "年龄",
           "agg": "mean",
-          "alias": "平均客单价"
+          "alias": "平均年龄"
         },
         {
-          "field": "复购率(%)",
-          "agg": "mean",
-          "alias": "平均复购率"
-        },
-        {
-          "field": "新客户数",
+          "field": "月薪 (元)",
           "agg": "sum",
-          "alias": "新增客户总数"
+          "alias": "总月薪支出"
         },
         {
-          "field": "退货率(%)",
+          "field": "月薪 (元)",
           "agg": "mean",
-          "alias": "平均退货率"
+          "alias": "平均月薪"
+        },
+        {
+          "field": "月薪 (元)",
+          "agg": "max",
+          "alias": "最高月薪"
+        },
+        {
+          "field": "月薪 (元)",
+          "agg": "min",
+          "alias": "最低月薪"
         }
       ]
     },
-    "客户分段排名": {
-      "description": "按客户分段的销售表现排名",
+    "部门业绩排名": {
+      "description": "各部门薪资与人力分布排名",
       "type": "ranking",
       "enabled": true,
       "group_by": [
-        "客户分段"
+        "部门"
       ],
       "metrics": [
         {
-          "field": "销售额(元)",
+          "field": "月薪 (元)",
           "agg": "sum",
-          "alias": "分段总销售额"
+          "alias": "部门总月薪"
         },
         {
-          "field": "订单数",
-          "agg": "sum",
-          "alias": "分段总订单数"
+          "field": "月薪 (元)",
+          "agg": "mean",
+          "alias": "部门平均月薪"
         },
         {
-          "field": "新客户数",
-          "agg": "sum",
-          "alias": "分段新增客户数"
+          "field": "年龄",
+          "agg": "mean",
+          "alias": "部门平均年龄"
+        },
+        {
+          "field": "用户 ID",
+          "agg": "count",
+          "alias": "部门人数"
         }
       ]
     },
-    "客户分段占比": {
-      "description": "各客户分段对核心指标的贡献占比",
+    "部门构成分析": {
+      "description": "各部门在总人力与薪酬中的占比",
       "type": "composition",
       "enabled": true,
       "group_by": [
-        "客户分段"
+        "部门"
       ],
       "metrics": [
         {
-          "field": "销售额(元)",
+          "field": "用户 ID",
+          "agg": "count",
+          "alias": "部门人数"
+        },
+        {
+          "field": "月薪 (元)",
           "agg": "sum",
-          "alias": "销售额"
+          "alias": "部门总月薪"
         }
       ]
     },
-    "月度趋势": {
-      "description": "关键指标月度变化趋势",
+    "入职时间趋势": {
+      "description": "按年月维度的入职人数与平均月薪趋势",
       "type": "trend",
       "enabled": true,
       "group_by": [
-        "月份"
+        "入职日期"
       ],
       "metrics": [
         {
-          "field": "销售额(元)",
-          "agg": "sum",
-          "alias": "月销售额"
+          "field": "用户 ID",
+          "agg": "count",
+          "alias": "当月入职人数"
         },
         {
-          "field": "订单数",
-          "agg": "sum",
-          "alias": "月订单数"
-        },
-        {
-          "field": "复购率(%)",
+          "field": "月薪 (元)",
           "agg": "mean",
-          "alias": "月平均复购率"
-        },
-        {
-          "field": "退货率(%)",
-          "agg": "mean",
-          "alias": "月平均退货率"
+          "alias": "当月入职员工平均月薪"
         }
       ]
     },
-    "复购率与新客户对比": {
-      "description": "复购率与新客户数的关联分析",
-      "type": "comparison",
+    "年龄-部门矩阵": {
+      "description": "各部门员工年龄分布矩阵",
+      "type": "matrix",
       "enabled": true,
       "group_by": [
-        "客户分段"
+        "部门",
+        "年龄"
       ],
       "metrics": [
         {
-          "field": "复购率(%)",
-          "agg": "mean",
-          "alias": "平均复购率"
-        },
-        {
-          "field": "新客户数",
-          "agg": "sum",
-          "alias": "新客户总数"
+          "field": "用户 ID",
+          "agg": "count",
+          "alias": "人数"
         }
       ]
     }

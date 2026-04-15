@@ -2,59 +2,96 @@
   "version": "3.0",
   "placeholders": {
     "charts": {
-      "CHART:core_kpi_summary": {
-        "description": "多列柱状图适合并列展示多个独立KPI数值，便于横向比较",
+      "CHART:核心_kpi": {
+        "description": "KPI 适合用文本卡片展示核心指标",
         "data_source": "核心 KPI",
-        "chart_type": "multi_column",
-        "title": "核心 KPI 指标概览",
-        "render_mode": "native",
-        "category_field": "指标",
-        "series": [
-          "数值"
-        ]
+        "chart_type": "text",
+        "title": "核心 KPI分析",
+        "render_mode": "image"
       },
-      "CHART:customer_segment_ranking": {
-        "description": "横向条形图适合按销售额对客户分段进行排序展示，清晰呈现层级关系",
-        "data_source": "客户分段排名",
+      "CHART:部门业绩排名_总月薪": {
+        "description": "排名适合用横向条形图对比",
+        "data_source": "部门业绩排名",
         "chart_type": "bar_horizontal",
-        "title": "客户分段业绩排名",
+        "title": "",
         "render_mode": "native",
-        "x_field": "分段总销售额",
-        "y_field": "客户分段"
+        "x_field": "部门总月薪",
+        "y_field": "部门"
       },
-      "CHART:customer_segment_composition": {
-        "description": "饼图直观展示各客户分段在总销售额中的占比结构",
-        "data_source": "客户分段占比",
+      "CHART:部门业绩排名_平均月薪": {
+        "description": "排名适合用横向条形图对比",
+        "data_source": "部门业绩排名",
+        "chart_type": "bar_horizontal",
+        "title": "",
+        "render_mode": "native",
+        "x_field": "部门平均月薪",
+        "y_field": "部门"
+      },
+      "CHART:部门构成分析_人数占比": {
+        "description": "占比适合用饼图/环形图展示",
+        "data_source": "部门构成分析",
         "chart_type": "pie",
-        "title": "客户分段销售额占比",
+        "title": "",
         "render_mode": "native",
-        "category_field": "客户分段",
-        "value_field": "销售额"
+        "category_field": "部门",
+        "value_field": "部门人数"
       },
-      "CHART:monthly_trend": {
-        "description": "折线图最适合展示时间序列下的销售额变化趋势",
-        "data_source": "月度趋势",
+      "CHART:部门构成分析_月薪占比": {
+        "description": "占比适合用饼图/环形图展示",
+        "data_source": "部门构成分析",
+        "chart_type": "pie",
+        "title": "",
+        "render_mode": "native",
+        "category_field": "部门",
+        "value_field": "部门总月薪"
+      },
+      "CHART:入职时间趋势_人数": {
+        "description": "趋势适合用折线图展示",
+        "data_source": "入职时间趋势",
         "chart_type": "line",
-        "title": "月度经营趋势分析",
+        "title": "",
         "render_mode": "native",
-        "x_field": "月份",
-        "y_field": "月销售额"
+        "x_field": "入职日期",
+        "y_field": "当月入职人数"
       },
-      "CHART:repurchase_vs_new_customers": {
-        "description": "多列柱状图可同步对比同一分段下的复购行为与拉新效果，支持双维度分析",
-        "data_source": "复购率与新客户对比",
-        "chart_type": "multi_column",
-        "title": "复购率与新客户数对比",
+      "CHART:入职时间趋势_平均月薪": {
+        "description": "趋势适合用折线图展示",
+        "data_source": "入职时间趋势",
+        "chart_type": "line",
+        "title": "",
         "render_mode": "native",
-        "category_field": "客户分段",
-        "series": [
-          "平均复购率",
-          "新客户总数"
-        ]
+        "x_field": "入职日期",
+        "y_field": "当月入职员工平均月薪"
+      },
+      "CHART:年龄_部门矩阵": {
+        "description": "矩阵适合用热力图展示",
+        "data_source": "年龄-部门矩阵",
+        "chart_type": "heatmap",
+        "title": "年龄-部门分布热力图",
+        "render_mode": "image",
+        "x_field": "部门",
+        "y_field": "年龄",
+        "value_field": "人数"
       }
     },
     "insights": {
-      "CHART:core_kpi_summary": {
+      "CHART:核心_kpi": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 140,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:部门业绩排名_总月薪": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -70,7 +107,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:customer_segment_ranking": {
+      "CHART:部门业绩排名_平均月薪": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -86,7 +123,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:customer_segment_composition": {
+      "CHART:部门构成分析_人数占比": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -102,7 +139,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:monthly_trend": {
+      "CHART:部门构成分析_月薪占比": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -118,7 +155,39 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:repurchase_vs_new_customers": {
+      "CHART:入职时间趋势_人数": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:入职时间趋势_平均月薪": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:年龄_部门矩阵": {
         "dimensions": [
           "趋势分析",
           "对比分析"
