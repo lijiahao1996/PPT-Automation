@@ -15,16 +15,15 @@ services:
       - ./resources:/app/resources
       # 模板和配置可挂载本地修改
       - ./templates:/app/templates
-      - ./config.ini:/app/config.ini
+      - ./config.ini:/app/config.ini:rw
     environment:
-      - QWEN_API_KEY=${QWEN_API_KEY:-}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - N8N_SCRIPTS_BASE_DIR=/app
-    env_file:
-      - .env
+      - PYTHONUNBUFFERED=1
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s

@@ -34,63 +34,58 @@ def render_tab1(base_dir, artifacts_dir, output_dir):
     # ========== 文件选择 ==========
     st.subheader("📤 选择/上传 Excel")
     
+    # 获取 uploaded_dir 中的第一个文件（单文件策略下只有一个）
     uploaded_files = []
     if os.path.exists(uploaded_dir):
         uploaded_files = [f for f in os.listdir(uploaded_dir) 
                          if f.endswith(('.xlsx', '.xls')) and not f.startswith('~')]
         uploaded_files.sort(reverse=True)
     
-    # 初始化 session_state（只初始化一次）
-    if 'uploaded_file_name' not in st.session_state:
-        st.session_state.uploaded_file_name = uploaded_files[0] if uploaded_files else None
+    # 直接使用第一个文件（最新的）
+    selected_file = uploaded_files[0] if uploaded_files else None
     
-    # 文件选择器 - 不使用 key 避免状态问题
-    if uploaded_files:
-        selected_file = st.selectbox(
-            "选择已上传的 Excel 文件",
-            options=uploaded_files,
-            index=uploaded_files.index(st.session_state.uploaded_file_name) if st.session_state.uploaded_file_name in uploaded_files else 0
-        )
-        # 直接更新，不触发 rerun
-        st.session_state.uploaded_file_name = selected_file
-    else:
-        selected_file = None
-        st.info("💡 暂无文件，请在下方上传")
-    
-    # 文件上传 - 使用 on_change 回调，不用 rerun
-    def handle_upload():
-        pass  # 上传后自动处理
-    
+    # 文件上传 - 上传后自动清理旧文件
     uploaded_file = st.file_uploader(
         "上传新的 Excel 文件",
         type=["xlsx", "xls"],
-        key="uploader",
-        on_change=handle_upload
+        key="uploader"
     )
     
-    if uploaded_file is not None:
+    # 检查是否刚上传过文件（避免重复处理）
+    last_uploaded = st.session_state.get('last_uploaded_file')
+    
+    if uploaded_file is not None and uploaded_file.name != last_uploaded:
         output_file = os.path.join(uploaded_dir, uploaded_file.name)
         
         try:
-            if os.path.exists(output_file):
-                try:
-                    os.remove(output_file)
-                except PermissionError:
-                    st.warning("⚠️ 文件被占用，请关闭 Excel 后重试")
-                    st.stop()
+            # 清理旧文件（单文件策略）
+            for old_file in os.listdir(uploaded_dir):
+                if old_file.endswith(('.xlsx', '.xls')) and not old_file.startswith('~'):
+                    old_path = os.path.join(uploaded_dir, old_file)
+                    try:
+                        os.remove(old_path)
+                        print(f"[INFO] 删除旧文件: {old_file}")
+                    except Exception as e:
+                        print(f"[WARNING] 删除旧文件失败 {old_file}: {e}")
             
+            # 保存新文件
             with open(output_file, "wb") as f:
                 f.write(uploaded_file.getbuffer())
             
+            # 记录已处理的文件
+            st.session_state.last_uploaded_file = uploaded_file.name
+            
             # 更新选中文件
-            st.session_state.uploaded_file_name = uploaded_file.name
             selected_file = uploaded_file.name
             
-            # 显示预览（不 rerun）
+            # 显示预览（前 5 行）
             df_preview = pd.read_excel(output_file, nrows=5)
             st.success(f"✅ 上传成功：{uploaded_file.name}")
-            with st.expander("📋 预览", expanded=True):
-                st.dataframe(df_preview, width='stretch')
+            with st.expander("📋 预览前 5 行数据", expanded=True):
+                st.dataframe(df_preview, use_container_width=True)
+            
+            # 触发 rerun 以更新后续组件
+            st.rerun()
             
         except Exception as e:
             st.error(f"❌ 上传失败：{e}")
@@ -100,7 +95,22 @@ def render_tab1(base_dir, artifacts_dir, output_dir):
         raw_path = os.path.join(uploaded_dir, selected_file)
         if os.path.exists(raw_path):
             size = os.path.getsize(raw_path)
-            st.success(f"✅ 当前文件：`{selected_file}` ({round(size/1024, 1)} KB)")
+            
+            # 使用列布局显示文件信息和删除按钮
+            col_file, col_del = st.columns([4, 1])
+            with col_file:
+                st.success(f"✅ 当前文件：`{selected_file}` ({round(size/1024, 1)} KB)")
+            with col_del:
+                if st.button("🗑️ 删除文件", type="secondary", use_container_width=True, key="delete_uploaded_file"):
+                    try:
+                        os.remove(raw_path)
+                        st.success(f"✅ 已删除：{selected_file}")
+                        selected_file = None  # 清空选中文件
+                        st.rerun()
+                    except PermissionError:
+                        st.error("❌ 文件被占用，请关闭 Excel 后重试")
+                    except Exception as e:
+                        st.error(f"❌ 删除失败：{e}")
     
     st.markdown("---")
     

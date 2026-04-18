@@ -1,104 +1,136 @@
 # Docker 部署指南
 
-## 快速启动
+## 快速开始
 
-### 1. 准备环境变量
-
-复制环境变量文件并配置 API Key：
-
+### 1. 构建镜像
 ```bash
-cp .env.example .env
-```
-
-编辑 `.env` 文件，填入你的 Qwen API Key：
-
-```
-QWEN_API_KEY=sk-your-api-key-here
+cd docker
+docker-compose build
 ```
 
 ### 2. 启动服务
-
 ```bash
-docker compose up -d --build
+docker-compose up -d
 ```
 
-### 3. 访问界面
-
-打开浏览器访问：**http://localhost:8501**
+### 3. 访问应用
+打开浏览器访问：http://localhost:8501
 
 ### 4. 查看日志
-
 ```bash
-docker compose logs -f ppt-generator
+docker-compose logs -f
 ```
 
 ### 5. 停止服务
-
 ```bash
-docker compose down
+docker-compose down
 ```
 
----
+## 目录结构
 
-## 目录说明
-
-启动后会自动创建以下目录（已配置持久化）：
-
-| 目录 | 用途 |
-|------|------|
-| `output/` | 生成的 PPT 和 Excel 文件 |
-| `artifacts/` | 临时文件、AI 洞察缓存 |
-| `logs/` | 日志文件 |
-| `resources/` | 用户上传的资源（需手动创建） |
-
----
-
-## 手动创建资源目录
-
-首次使用前，创建资源目录：
-
-```bash
-mkdir resources
 ```
-
-该目录用于存放用户上传的图片等资源，**不会被 Git 追踪**。
-
----
+docker/
+├── output/          # 运行时生成（自动创建）
+│   ├── uploaded/    # 用户上传的 Excel
+│   ├── summary/     # 统计汇总文件
+│   └── report/      # 生成的 PPT 报告
+├── artifacts/       # 临时文件和配置
+├── logs/            # 日志文件
+├── resources/       # 用户上传的资源（图片、视频）
+├── templates/       # PPT 模板
+├── config.ini       # 配置文件（可编辑）
+└── docker-compose.yml
+```
 
 ## 配置说明
 
-### 环境变量
+### 方式一：Web 界面配置（推荐）
+启动后通过 Streamlit Web 平台的 **Tab 7: 项目配置** 修改：
+- API 密钥
+- AI 洞察开关
+- 日志级别
+
+### 方式二：编辑配置文件
+直接编辑 `docker/config.ini`：
+```ini
+[api_keys]
+qwen_api_key = sk-your-api-key-here
+
+[ai]
+enable_ai_insight = False
+
+[advanced]
+log_level = INFO
+```
+
+修改后重启容器：
+```bash
+docker-compose restart
+```
+
+## 环境变量
+
+可在 `docker-compose.yml` 或 `.env` 文件中配置：
 
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
-| `QWEN_API_KEY` | 阿里云百炼 Qwen API Key | 空 |
 | `LOG_LEVEL` | 日志级别 | `INFO` |
+| `N8N_SCRIPTS_BASE_DIR` | 项目根目录 | `/app` |
 
-### 挂载卷
+## 数据持久化
 
-默认配置已将以下目录挂载到宿主机：
-
+通过 Docker volumes 实现数据持久化：
 - `./output` → `/app/output`
 - `./artifacts` → `/app/artifacts`
 - `./logs` → `/app/logs`
 - `./resources` → `/app/resources`
-- `./templates` → `/app/templates`
-- `./config.ini` → `/app/config.ini`
 
-修改模板或配置文件后无需重启，直接生效。
-
----
+所有数据保存在 `docker/` 目录下，删除容器不会丢失数据。
 
 ## 常见问题
 
-**Q: 容器启动失败？**  
-A: 检查 `.env` 文件是否配置正确，查看日志：`docker compose logs ppt-generator`
+### 1. 中文字体显示问题
+已内置文泉驿中文字体，无需额外配置。
 
-**Q: 如何更新镜像？**  
-A: 重新构建并启动：`docker compose up -d --build`
+### 2. Playwright 浏览器
+镜像已预装 Chromium，如需更新：
+```bash
+docker-compose exec ppt-generator playwright install --with-deps chromium
+```
 
-**Q: 如何进入容器？**  
-A: `docker compose exec ppt-generator bash`
+### 3. 端口冲突
+如果 8501 端口被占用，修改 `docker-compose.yml`：
+```yaml
+ports:
+  - "8502:8501"  # 主机端口:容器端口
+```
 
-**Q: 生成的文件在哪里？**  
-A: 宿主机的 `output/` 目录
+### 4. 查看容器状态
+```bash
+docker-compose ps
+```
+
+### 5. 进入容器调试
+```bash
+docker-compose exec ppt-generator bash
+```
+
+## 更新镜像
+
+```bash
+# 停止并删除旧容器
+docker-compose down
+
+# 重新构建镜像
+docker-compose build --no-cache
+
+# 启动新容器
+docker-compose up -d
+```
+
+## 生产环境建议
+
+1. **配置 API 密钥**：在 `config.ini` 中设置真实的 `qwen_api_key`
+2. **启用 AI 洞察**：将 `enable_ai_insight` 设为 `True`
+3. **日志级别**：生产环境建议使用 `INFO`，调试时使用 `DEBUG`
+4. **定期备份**：备份 `docker/output` 和 `docker/artifacts` 目录

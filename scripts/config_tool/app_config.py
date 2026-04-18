@@ -66,33 +66,49 @@ TAB_LABELS = [tab[0] for tab in TAB_DEFINITIONS]
 def get_base_dir():
     """
     获取项目根目录
-    优先级：环境变量 N8N_SCRIPTS_BASE_DIR > 配置文件 base_dir > 默认值
+    优先级：环境变量 N8N_SCRIPTS_BASE_DIR > 动态检测当前工作目录 > 配置文件
     """
     import os
     import configparser
     
-    # 1. 优先使用环境变量
+    # 1. 优先使用环境变量（Docker 环境中设置为 /app）
     env_base_dir = os.environ.get('N8N_SCRIPTS_BASE_DIR')
     if env_base_dir:
-        return env_base_dir
+        # Docker 环境中，环境变量是可信的
+        if os.path.exists(env_base_dir):
+            return env_base_dir
+        else:
+            # 如果路径不存在，输出警告并使用当前工作目录
+            print(f"[WARNING] N8N_SCRIPTS_BASE_DIR={env_base_dir} 不存在，将使用当前工作目录")
     
-    # 2. 读取配置文件
+    # 2. 使用当前工作目录（Docker 中是 /app，本地是项目根目录）
+    cwd = os.getcwd()
+    # 验证当前目录是否包含 scripts 目录（判断是否为项目根目录）
+    if os.path.exists(os.path.join(cwd, 'scripts')):
+        return cwd
+    
+    # 3. 尝试从脚本位置推算项目根目录
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    config_ini_path = os.path.join(script_dir, '..', '..', 'config.ini')
+    # scripts/config_tool -> scripts -> project_root
+    project_root = os.path.dirname(os.path.dirname(script_dir))
+    if os.path.exists(project_root):
+        return project_root
     
+    # 4. 最后尝试读取配置文件
+    config_ini_path = os.path.join(script_dir, '..', '..', 'config.ini')
     if os.path.exists(config_ini_path):
         config = configparser.ConfigParser()
         try:
             config.read(config_ini_path, encoding='utf-8')
             if config.has_option('paths', 'base_dir'):
                 config_base_dir = config.get('paths', 'base_dir')
-                if config_base_dir and config_base_dir != '@N8N_SCRIPTS_BASE_DIR@':
+                if config_base_dir and config_base_dir != '@N8N_SCRIPTS_BASE_DIR@' and os.path.exists(config_base_dir):
                     return config_base_dir
         except Exception:
             pass
     
-    # 3. 默认值：动态获取项目根目录（脚本所在目录往上一级）
-    return os.path.dirname(os.path.dirname(script_dir))
+    # 5. 兜底：返回脚本推算的根目录
+    return project_root
 
 DEFAULT_BASE_DIR = get_base_dir()
 
@@ -131,6 +147,69 @@ def ensure_output_dirs(base_dir):
     for dir_path in dirs.values():
         os.makedirs(dir_path, exist_ok=True)
     return dirs
+
+def enforce_single_file(directory, file_pattern='.xlsx', exclude_patterns=None):
+    """
+    确保目录中只保留一个文件（最新的）
+    注意：此函数会在文件列表变化时自动执行，避免死循环
+    
+    Args:
+        directory: 目录路径
+        file_pattern: 文件扩展名过滤
+        exclude_patterns: 排除的文件名模式列表
+    
+    Returns:
+        str: 保留的文件名，如果没有文件则返回 None
+    """
+    import time
+    
+    if not os.path.exists(directory):
+        return None
+    
+    if exclude_patterns is None:
+        exclude_patterns = ['~$', 'temp', 'tmp']
+    
+    # 获取所有匹配的文件
+    files = []
+    for f in os.listdir(directory):
+        # 跳过排除的模式
+        if any(pattern in f for pattern in exclude_patterns):
+            continue
+        if f.endswith(file_pattern):
+            files.append(f)
+    
+    # 如果没有文件或只有一个文件，直接返回
+    if len(files) <= 1:
+        return files[0] if files else None
+    
+    # 按修改时间排序，保留最新的
+    files_with_time = []
+    for f in files:
+        filepath = os.path.join(directory, f)
+        mtime = os.path.getmtime(filepath)
+        files_with_time.append((f, mtime))
+    
+    files_with_time.sort(key=lambda x: x[1], reverse=True)
+    
+    # 保留最新的，删除其他
+    latest_file = files_with_time[0][0]
+    deleted_count = 0
+    for f, _ in files_with_time[1:]:
+        try:
+            filepath = os.path.join(directory, f)
+            # 添加小延迟避免文件系统竞争
+            time.sleep(0.1)
+            os.remove(filepath)
+            deleted_count += 1
+            print(f"[INFO] 删除旧文件: {f}")
+        except Exception as e:
+            print(f"[WARNING] 删除文件失败 {f}: {e}")
+    
+    # 如果有删除操作，等待一下让文件系统稳定
+    if deleted_count > 0:
+        time.sleep(0.2)
+    
+    return latest_file
 
 # ========== 工具函数 ==========
 def validate_path(path):

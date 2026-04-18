@@ -138,11 +138,36 @@ def render_tab8(base_dir, output_dir, templates_dir):
             if os.path.exists(templates_dir):
                 template_files = [f for f in os.listdir(templates_dir) if f.endswith('.pptx') and not f.startswith('~')]
             
-            template_name = st.selectbox(
-                "📄 选择 PPT 模板",
-                options=template_files if template_files else ["销售分析报告_标准模板.pptx"],
-                help="PPT 模板文件名（在 templates 目录下）"
-            )
+            if template_files:
+                # 使用列布局显示模板选择和删除按钮
+                col_tmpl, col_del = st.columns([4, 1])
+                with col_tmpl:
+                    template_name = st.selectbox(
+                        "📄 选择 PPT 模板",
+                        options=template_files,
+                        help="PPT 模板文件名（在 templates 目录下）"
+                    )
+                with col_del:
+                    if st.button("🗑️ 删除模板", type="secondary", use_container_width=True, key="delete_template_btn"):
+                        try:
+                            template_path = os.path.join(templates_dir, template_name)
+                            if os.path.exists(template_path):
+                                os.remove(template_path)
+                                st.success(f"✅ 已删除模板：{template_name}")
+                                # 如果删除后没有模板了，重置选择
+                                remaining = [f for f in os.listdir(templates_dir) if f.endswith('.pptx') and not f.startswith('~')]
+                                if not remaining:
+                                    template_name = "销售分析报告_标准模板.pptx"
+                                st.rerun()
+                            else:
+                                st.error(f"❌ 模板文件不存在：{template_name}")
+                        except PermissionError:
+                            st.error("❌ 文件被占用，请关闭 PPT 后重试")
+                        except Exception as e:
+                            st.error(f"❌ 删除失败：{e}")
+            else:
+                template_name = "销售分析报告_标准模板.pptx"
+                st.info("💡 暂无模板文件，请上传或放置到 templates 目录")
         else:
             uploaded_template = st.file_uploader(
                 "📄 上传 PPT 模板",
@@ -171,12 +196,12 @@ def render_tab8(base_dir, output_dir, templates_dir):
         start_button = st.button(
             "▶️ 生成 PPT 报告",
             type="primary",
-            width='stretch',
+            use_container_width=True,
             disabled=st.session_state.execution_running
         )
     
     with col_btn2:
-        if st.button("🗑️ 清空日志", width='stretch'):
+        if st.button("🗑️ 清空日志", use_container_width=True):
             clear_logs()
             st.rerun()
     
@@ -338,7 +363,7 @@ def render_tab8(base_dir, output_dir, templates_dir):
                             data=f.read(),
                             file_name=files['summary'],
                             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                            width='stretch'
+                            use_container_width=True
                         )
         
         # 下载 PPT 报告
@@ -353,7 +378,7 @@ def render_tab8(base_dir, output_dir, templates_dir):
                             data=f.read(),
                             file_name=latest_ppt,
                             mime='application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                            width='stretch'
+                            use_container_width=True
                         )
     
     elif st.session_state.execution_result and not st.session_state.execution_result.get('success'):

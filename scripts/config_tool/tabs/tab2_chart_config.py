@@ -16,6 +16,7 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
     from app_config import get_output_dirs, ensure_output_dirs
     dirs = ensure_output_dirs(base_dir)
     summary_dir = dirs['summary']
+    report_dir = dirs['report']
     
     # 确保 artifacts 目录存在
     os.makedirs(artifacts_dir, exist_ok=True)
@@ -41,51 +42,58 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
         "violin": "小提琴图", "waterfall": "瀑布图", "funnel": "漏斗图"
     }
     
-    # ========== 统计汇总文件选择 ==========
-    st.subheader("📊 选择统计汇总 Excel")
-    
-    # 获取 summary 目录下的所有统计汇总文件
-    summary_files = []
-    if os.path.exists(summary_dir):
-        summary_files = [f for f in os.listdir(summary_dir) 
-                        if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~')]
-        summary_files.sort(reverse=True)  # 最新的在前
-    
-    # 优先使用 session_state 中记录的文件名（Tab 1 刚生成的）
-    if 'generated_summary_name' in st.session_state and st.session_state['generated_summary_name'] in summary_files:
-        default_index = summary_files.index(st.session_state['generated_summary_name'])
-    else:
-        default_index = 0
-    
-    if summary_files:
-        selected_summary = st.selectbox(
-            "选择统计汇总文件",
-            options=summary_files,
-            index=min(default_index, len(summary_files) - 1),
-            key="summary_file_select"
-        )
-        
-        # 更新 session_state
-        if selected_summary != st.session_state.get('selected_summary_name'):
-            st.session_state['selected_summary_name'] = selected_summary
-            st.rerun()
-    else:
-        st.warning("⚠️ 暂无统计汇总文件，请先在「📋 统计规则配置」页签生成数据")
-        selected_summary = None
-    
-    # 读取 Sheet 列表
+    # ========== 统计汇总文件 ==========
+    # 初始化变量
     available_sheets = []
     summary_path = None
     
-    if selected_summary:
-        summary_path = os.path.join(summary_dir, selected_summary)
-        if os.path.exists(summary_path):
-            try:
-                with pd.ExcelFile(summary_path) as xls:
-                    available_sheets = xls.sheet_names
-                st.info(f"📊 当前统计汇总：`{selected_summary}`，共 {len(available_sheets)} 个 Sheet")
-            except Exception as e:
-                st.warning(f"⚠️ 读取统计汇总失败：{e}")
+    # 获取 summary 目录下的所有统计汇总文件（单文件策略下只有一个）
+    summary_files = []
+    if os.path.exists(summary_dir):
+        summary_files = [f for f in os.listdir(summary_dir) 
+                        if f.endswith('.xlsx') and not f.startswith('~')]
+        summary_files.sort(reverse=True)  # 最新的在前
+    
+    # 直接使用第一个文件（最新的）
+    selected_summary = summary_files[0] if summary_files else None
+    
+    if not selected_summary:
+        st.warning("⚠️ 暂无统计汇总文件，请先在「📋 统计规则配置」页签生成数据")
+    else:
+        if selected_summary:
+            summary_path = os.path.join(summary_dir, selected_summary)
+            if os.path.exists(summary_path):
+                try:
+                    with pd.ExcelFile(summary_path) as xls:
+                        available_sheets = xls.sheet_names
+                    
+                    # 使用列布局显示统计汇总信息和删除按钮
+                    col_info, col_del = st.columns([4, 1])
+                    with col_info:
+                        st.info(f"📊 当前统计汇总：`{selected_summary}`，共 {len(available_sheets)} 个 Sheet")
+                    with col_del:
+                        if st.button("🗑️ 删除", type="secondary", use_container_width=True, key="delete_chart_config"):
+                            try:
+                                # 1. 删除图表配置文件
+                                if os.path.exists(placeholders_file):
+                                    os.remove(placeholders_file)
+                                    print(f"[INFO] 已删除配置文件: {placeholders_file}")
+                                
+                                # 2. 删除统计汇总 Excel 文件
+                                if selected_summary:
+                                    summary_path = os.path.join(summary_dir, selected_summary)
+                                    if os.path.exists(summary_path):
+                                        os.remove(summary_path)
+                                        print(f"[INFO] 已删除统计汇总文件: {summary_path}")
+                                
+                                st.success("✅ 已删除")
+                                st.rerun()
+                            except PermissionError:
+                                st.error("❌ 文件被占用，请关闭 Excel 后重试")
+                            except Exception as e:
+                                st.error(f"❌ 删除失败：{e}")
+                except Exception as e:
+                    st.warning(f"⚠️ 读取统计汇总失败：{e}")
     
     st.markdown("---")
     
@@ -377,7 +385,7 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                     try:
                         df_preview = pd.read_excel(summary_path, sheet_name=data_source, nrows=5)
                         with st.expander(f"📊 预览数据源 '{data_source}' (前 5 行)", expanded=False):
-                            st.dataframe(df_preview, use_container_width=True, width='stretch')
+                            st.dataframe(df_preview, use_container_width=True)
                             st.caption(f"共 {len(pd.read_excel(summary_path, sheet_name=data_source))} 行 × {len(df_preview.columns)} 列")
                     except Exception as e:
                         st.warning(f"⚠️ 预览失败：{e}")

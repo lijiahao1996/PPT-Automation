@@ -27,7 +27,9 @@ def render_tab3(artifacts_dir):
     
     if not charts_config:
         st.warning("⚠️ 请先在'图表配置'标签页添加图表")
-        st.stop()
+        # 不能用 st.stop()，会终止整个应用！
+        # 直接返回，不渲染后续内容
+        return
     
     existing_insights = placeholders_config.get("placeholders", {}).get("insights", {})
     st.info(f"📊 当前图表数量：{len(charts_config)} | 已配置洞察：{len(existing_insights)}")

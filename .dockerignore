@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+
+# Git
+.git/
+.gitignore
+
+# 配置文件（包含敏感信息）
+# 注意：docker/config.ini 是独立配置文件，不受此影响
+config.ini
+.env
+*.key
+*.pem
+
+# 输出目录（运行时生成，不打包）
+output/report/
+output/summary/
+output/uploaded/
+output/*.xlsx
+output/*.pptx
+output/*.json
+
+# 临时文件
+artifacts/
+!artifacts/.gitkeep
+!artifacts/stats_rules.json
+!artifacts/placeholders.json
+
+# 日志
+logs/
+*.log
+
+# 用户上传资源
+resources/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db

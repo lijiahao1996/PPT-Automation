@@ -117,7 +117,7 @@ class DataLoader:
             kpi_dict[metric_name] = {
                 'value': value,
                 'unit': unit,
-                'formatted': f"{value:,.2f}" if unit == '元' else f"{int(value):,}"
+                'formatted': f"{float(value):,.2f}" if unit == '元' else f"{int(float(value)):,}"
             }
         
         return kpi_dict

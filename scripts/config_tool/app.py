@@ -38,6 +38,15 @@ st.markdown("---")
 with st.sidebar:
     st.header("⚙️ 项目设置")
     
+    # 环境检测
+    import platform
+    is_docker = os.path.exists('/.dockerenv') or os.environ.get('N8N_SCRIPTS_BASE_DIR') == '/app'
+    
+    if is_docker:
+        st.info("🐳 **Docker 环境**")
+    else:
+        st.info(f"💻 **本地环境** ({platform.system()})")
+    
     base_dir = st.text_input("项目根目录", value=DEFAULT_BASE_DIR)
     
     if not validate_path(base_dir):
@@ -48,17 +57,32 @@ with st.sidebar:
     output_dir = os.path.join(base_dir, "output")
     artifacts_dir = os.path.join(base_dir, "artifacts")
     
-    # 检测 output 目录中的实际文件
+    # 检测 output/uploaded 目录中的文件
+    uploaded_dir = os.path.join(output_dir, "uploaded")
     raw_data_file_name = None
+    
+    if os.path.exists(uploaded_dir):
+        for f in os.listdir(uploaded_dir):
+            if f.endswith('.xlsx') and not f.startswith('~'):
+                raw_data_file_name = f
+                break
+    
+    # 如果没有在 uploaded 中找到，检测 output 根目录（兼容旧版本）
+    if not raw_data_file_name and os.path.exists(output_dir):
+        for f in os.listdir(output_dir):
+            if f.endswith('.xlsx') and '统计汇总' not in f and not f.startswith('~'):
+                raw_data_file_name = f
+                break
+    
+    # 检测 summary 目录
+    summary_dir = os.path.join(output_dir, "summary")
     summary_file_name = None
     
-    if os.path.exists(output_dir):
-        for f in os.listdir(output_dir):
-            if f.endswith('.xlsx') and not f.startswith('~'):
-                if '统计汇总' in f:
-                    summary_file_name = f
-                else:
-                    raw_data_file_name = f
+    if os.path.exists(summary_dir):
+        for f in os.listdir(summary_dir):
+            if f.endswith('.xlsx') and '统计汇总' in f and not f.startswith('~'):
+                summary_file_name = f
+                break
     
     # 如果没有检测到，使用默认值
     if not raw_data_file_name:
