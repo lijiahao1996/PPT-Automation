@@ -4,6 +4,10 @@ import streamlit as st
 import pandas as pd
 import json
 import os
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.enum.text import PP_ALIGN
+from io import BytesIO
 
 def render_tab6(templates_dir, stats_config, placeholders_config):
     st.header("🔖 PPT 变量总览")
@@ -223,3 +227,95 @@ def render_tab6(templates_dir, stats_config, placeholders_config):
     - **图表/表格变量** → 图表/表格占位符
     - **洞察变量** → AI 自动生成的分析文本
     """)
+    
+    st.markdown("---")
+    
+    # ========== 9. 下载 PPT 模板 Demo ==========
+    st.subheader("📄 下载 PPT 模板 Demo")
+    st.markdown("自动生成包含所有图表和洞察变量的 PPT 模板，每页一对 [CHART:xxx] + {{INSIGHT:xxx}}")
+    
+    if st.button("📥 生成并下载模板", type="primary", use_container_width=True, key="download_template_btn"):
+        try:
+            # 创建 PPT
+            prs = Presentation()
+            prs.slide_width = Inches(13.333)
+            prs.slide_height = Inches(7.5)
+            
+            # 获取图表和洞察配置
+            charts = placeholders_config.get('placeholders', {}).get('charts', {})
+            insights = placeholders_config.get('placeholders', {}).get('insights', {})
+            
+            if not charts:
+                st.error("❌ 暂无图表配置，请先在 Tab 2 添加图表")
+            else:
+                slide_num = 0
+                
+                for chart_key, chart_cfg in charts.items():
+                    chart_name = chart_key.replace("CHART:", "")
+                    chart_title = chart_cfg.get('title', chart_name)
+                    
+                    # 创建新幻灯片
+                    slide_layout = prs.slide_layouts[6]  # Blank layout
+                    slide = prs.slides.add_slide(slide_layout)
+                    slide_num += 1
+                    
+                    # 添加标题
+                    title_box = slide.shapes.add_textbox(Inches(0.5), Inches(0.3), Inches(12.333), Inches(0.8))
+                    tf = title_box.text_frame
+                    p = tf.paragraphs[0]
+                    p.text = f"第 {slide_num} 页：{chart_title}"
+                    p.font.size = Pt(28)
+                    p.font.bold = True
+                    p.alignment = PP_ALIGN.CENTER
+                    
+                    # 添加图表占位符（只包含占位符，无其他文本）
+                    chart_placeholder = slide.shapes.add_textbox(Inches(0.5), Inches(1.3), Inches(6), Inches(4.5))
+                    tf_chart = chart_placeholder.text_frame
+                    tf_chart.word_wrap = True
+                    p_chart = tf_chart.paragraphs[0]
+                    p_chart.text = f"[CHART:{chart_name}]"
+                    p_chart.font.size = Pt(24)
+                    p_chart.font.bold = True
+                    
+                    # 添加图表说明（独立文本框）
+                    chart_note = slide.shapes.add_textbox(Inches(0.5), Inches(5.9), Inches(6), Inches(0.5))
+                    tf_note = chart_note.text_frame
+                    p_note = tf_note.paragraphs[0]
+                    p_note.text = f"图表类型：{chart_cfg.get('chart_type', '未指定')} | 数据源：{chart_cfg.get('data_source', '未指定')}"
+                    p_note.font.size = Pt(10)
+                    p_note.font.italic = True
+                    
+                    # 添加洞察占位符（只包含占位符，无其他文本）
+                    insight_placeholder = slide.shapes.add_textbox(Inches(7), Inches(1.3), Inches(5.833), Inches(4.5))
+                    tf_insight = insight_placeholder.text_frame
+                    tf_insight.word_wrap = True
+                    p_insight = tf_insight.paragraphs[0]
+                    p_insight.text = f"{{{{INSIGHT:{chart_name}}}}}"
+                    p_insight.font.size = Pt(20)
+                    p_insight.font.bold = True
+                    
+                    # 添加洞察说明（独立文本框）
+                    insight_note = slide.shapes.add_textbox(Inches(7), Inches(5.9), Inches(5.833), Inches(0.5))
+                    tf_inote = insight_note.text_frame
+                    p_inote = tf_inote.paragraphs[0]
+                    p_inote.text = "（AI 将在此处生成洞察分析）"
+                    p_inote.font.size = Pt(10)
+                    p_inote.font.italic = True
+                
+                # 保存到内存
+                output = BytesIO()
+                prs.save(output)
+                output.seek(0)
+                
+                # 提供下载
+                st.success(f"✅ 已生成 {slide_num} 页 PPT 模板")
+                st.download_button(
+                    label="💾 下载 PPT 模板 Demo",
+                    data=output,
+                    file_name="PPT模板_Demo.pptx",
+                    mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                    use_container_width=True
+                )
+                
+        except Exception as e:
+            st.error(f"❌ 生成失败：{e}")

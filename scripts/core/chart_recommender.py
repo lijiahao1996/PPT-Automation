@@ -14,7 +14,7 @@ class ChartRecommender:
     
     # 统计类型 → 推荐图表类型
     CHART_MAP = {
-        'kpi': {'type': 'text', 'reason': 'KPI 适合用文本卡片展示'},
+        'kpi': {'type': 'bar_vertical', 'reason': 'KPI 指标适合用柱状图对比'},
         'ranking': {'type': 'bar_horizontal', 'reason': '排名适合用横向条形图对比'},
         'composition': {'type': 'pie', 'reason': '占比适合用饼图/环形图展示'},
         'comparison': {'type': 'column_clustered', 'reason': '对比适合用分组柱状图'},
@@ -56,21 +56,52 @@ class ChartRecommender:
                 'ai_reason': chart_info['reason']
             }
             
-            # 根据统计类型添加特定配置
+            # 根据统计类型添加特定配置（严格按照图表引擎要求）
             if stat_type == 'ranking':
+                # bar_horizontal: x_field=数值, y_field=分类
                 chart_config['params'] = {
                     'x_field': '总销售额',
                     'y_field': stat.get('group_by', [''])[0] if stat.get('group_by') else ''
                 }
             elif stat_type == 'composition':
+                # pie: category_field=分类, value_field=数值
                 chart_config['params'] = {
                     'category_field': stat.get('group_by', [''])[0] if stat.get('group_by') else '',
                     'value_field': '销售额'
                 }
             elif stat_type == 'trend':
+                # line: x_field=时间, y_field=数值
                 chart_config['params'] = {
                     'x_field': '年月',
                     'y_field': '总销售额'
+                }
+            elif stat_type == 'matrix':
+                # heatmap: 只需要 y_field（行字段）
+                chart_config['params'] = {
+                    'y_field': stat.get('group_by', [''])[0] if stat.get('group_by') else ''
+                }
+            elif stat_type == 'comparison':
+                # column_clustered: category_field=分类, series=数值列表
+                chart_config['params'] = {
+                    'category_field': stat.get('group_by', [''])[0] if stat.get('group_by') else '',
+                    'series': [m.get('alias', '') for m in stat.get('metrics', []) if m.get('alias')]
+                }
+            elif stat_type == 'distribution':
+                # histogram: y_field=数值
+                chart_config['params'] = {
+                    'y_field': stat.get('metrics', [{}])[0].get('alias', '数值')
+                }
+            elif stat_type == 'outlier':
+                # boxplot: category_field=分类, value_field=数值
+                chart_config['params'] = {
+                    'category_field': stat.get('group_by', [''])[0] if stat.get('group_by') else '',
+                    'value_field': stat.get('metrics', [{}])[0].get('alias', '数值')
+                }
+            elif stat_type == 'kpi':
+                # bar_vertical: x_field=分类, y_field=数值
+                chart_config['params'] = {
+                    'x_field': '指标名称',
+                    'y_field': stat.get('metrics', [{}])[0].get('alias', '总销售额')
                 }
             
             chart_recommendations.append(chart_config)

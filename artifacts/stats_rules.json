@@ -1,121 +1,101 @@
 {
   "stats_sheets": {
     "核心 KPI": {
-      "description": "员工核心人力指标汇总",
+      "description": "核心经营指标汇总",
       "type": "kpi",
       "enabled": true,
       "group_by": [],
       "metrics": [
         {
-          "field": "年龄",
-          "agg": "mean",
-          "alias": "平均年龄"
-        },
-        {
-          "field": "月薪 (元)",
+          "field": "销售额",
           "agg": "sum",
-          "alias": "总月薪支出"
+          "alias": "总销售额"
         },
         {
-          "field": "月薪 (元)",
+          "field": "销售额",
+          "agg": "count",
+          "alias": "订单总数"
+        },
+        {
+          "field": "销售额",
           "agg": "mean",
-          "alias": "平均月薪"
-        },
-        {
-          "field": "月薪 (元)",
-          "agg": "max",
-          "alias": "最高月薪"
-        },
-        {
-          "field": "月薪 (元)",
-          "agg": "min",
-          "alias": "最低月薪"
+          "alias": "平均单笔销售额"
         }
       ]
     },
-    "部门业绩排名": {
-      "description": "各部门薪资与人力分布排名",
+    "按销售员排名": {
+      "description": "销售员业绩排名统计",
       "type": "ranking",
       "enabled": true,
       "group_by": [
-        "部门"
+        "销售员"
       ],
       "metrics": [
         {
-          "field": "月薪 (元)",
+          "field": "销售额",
           "agg": "sum",
-          "alias": "部门总月薪"
-        },
-        {
-          "field": "月薪 (元)",
-          "agg": "mean",
-          "alias": "部门平均月薪"
-        },
-        {
-          "field": "年龄",
-          "agg": "mean",
-          "alias": "部门平均年龄"
-        },
-        {
-          "field": "用户 ID",
-          "agg": "count",
-          "alias": "部门人数"
+          "alias": "总销售额"
         }
       ]
     },
-    "部门构成分析": {
-      "description": "各部门在总人力与薪酬中的占比",
+    "按城市销售占比": {
+      "description": "各城市销售额占比分析",
       "type": "composition",
       "enabled": true,
       "group_by": [
-        "部门"
+        "城市"
       ],
       "metrics": [
         {
-          "field": "用户 ID",
-          "agg": "count",
-          "alias": "部门人数"
-        },
-        {
-          "field": "月薪 (元)",
+          "field": "销售额",
           "agg": "sum",
-          "alias": "部门总月薪"
+          "alias": "城市销售额"
         }
       ]
     },
-    "入职时间趋势": {
-      "description": "按年月维度的入职人数与平均月薪趋势",
+    "按产品销售对比": {
+      "description": "不同产品维度的销售对比（当前仅苹果汁，可扩展）",
+      "type": "comparison",
+      "enabled": true,
+      "group_by": [
+        "产品"
+      ],
+      "metrics": [
+        {
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "产品销售额"
+        }
+      ]
+    },
+    "月度销售趋势": {
+      "description": "按年月粒度的销售趋势分析",
       "type": "trend",
       "enabled": true,
       "group_by": [
-        "入职日期"
+        "年月"
       ],
       "metrics": [
         {
-          "field": "用户 ID",
-          "agg": "count",
-          "alias": "当月入职人数"
-        },
-        {
-          "field": "月薪 (元)",
-          "agg": "mean",
-          "alias": "当月入职员工平均月薪"
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "月度总销售额"
         }
       ]
     },
-    "年龄-部门矩阵": {
-      "description": "各部门员工年龄分布矩阵",
+    "销售员-产品矩阵": {
+      "description": "销售员与产品交叉维度的销售表现",
       "type": "matrix",
       "enabled": true,
       "group_by": [
-        "部门",
-        "年龄"
+        "销售员",
+        "产品"
       ],
       "metrics": [
         {
-          "field": "用户 ID",
-          "agg": "count",
-          "alias": "人数"
+          "field": "销售额",
+          "agg": "sum",
+          "alias": "销售额"
         }
       ]
     }

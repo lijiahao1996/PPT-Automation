@@ -175,13 +175,23 @@ def render_tab8(base_dir, output_dir, templates_dir):
                 help="上传自定义 PPT 模板"
             )
             
-            if uploaded_template is not None:
+            # 检查是否刚上传过文件（避免重复处理）
+            last_uploaded_template = st.session_state.get('last_uploaded_template')
+            
+            if uploaded_template is not None and uploaded_template.name != last_uploaded_template:
                 template_name = uploaded_template.name
                 template_path = os.path.join(templates_dir, template_name)
                 with open(template_path, "wb") as f:
                     f.write(uploaded_template.getbuffer())
+                
+                # 记录已处理的文件
+                st.session_state.last_uploaded_template = uploaded_template.name
+                
                 st.success(f"✅ 模板已保存：{template_name}")
                 st.rerun()
+            elif last_uploaded_template:
+                # 如果之前上传过，使用上传的模板
+                template_name = last_uploaded_template
             else:
                 template_name = "销售分析报告_标准模板.pptx"
     

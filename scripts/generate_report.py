@@ -181,13 +181,23 @@ def _generate_single_chart(args: Tuple) -> Tuple[str, str]:
             chart_engine.create_funnel(df, **params)
         elif chart_type == 'heatmap':
             # 热力图特殊处理：动态提取产品列
+            if not params.get('index_field'):
+                log_callback(f"      [ERROR] 热力图 {chart_key} 缺少 index_field 参数")
+                return (chart_key, None)
+            
             if params.get('columns') is None:
                 # 排除非产品列（销售员、Unnamed 等）
                 exclude_cols = ['销售员', 'Unnamed: 0', 'index']
                 product_cols = [col for col in df.columns if col not in exclude_cols]
                 params['columns'] = product_cols
                 log_callback(f"      [INFO] 热力图自动检测到 {len(product_cols)} 个产品：{product_cols}")
+            
+            log_callback(f"      [DEBUG] 热力图参数: index_field={params.get('index_field')}, columns={params.get('columns')}")
             chart_engine.create_heatmap(df, **params)
+        elif chart_type == 'text':
+            # 文本类型：跳过图表生成，由文本替换逻辑处理
+            log_callback(f"      [SKIP] 图表类型 {chart_type} 是文本，由文本替换逻辑处理")
+            return (chart_key, None)
         elif chart_type in ['multi_column', 'column_clustered']:
             chart_engine.create_multi_column(df, **params)
         elif chart_type == 'table':
@@ -556,24 +566,27 @@ def generate_report(template_name: str = None, output_name: str = None,
         for key, config in chart_placeholders.items():
             chart_key = key.split(':')[1] if ':' in key else key
             render_mode = config.get('render_mode', 'image')  # 默认图片方式
+            chart_type = config.get('chart_type', '')  # 提前定义 chart_type
             
-            log_callback(f"      [DEBUG] {chart_key}: mode={render_mode}, type={config.get('chart_type', '')}")
+            log_callback(f"      [DEBUG] {chart_key}: mode={render_mode}, type={chart_type}")
             
             if render_mode == 'native':
                 # 原生图表，稍后处理
                 native_charts.append((key, config))
+            elif chart_type == 'text':
+                # 文本类型：不需要生成图片，由文本替换逻辑处理
+                log_callback(f"      [SKIP] {chart_key}: text类型，跳过图片生成")
+                continue
             else:
                 # 图片图表，使用原有逻辑
                 task_config = {
                     'sheet': config.get('data_source'),
-                    'type': config.get('chart_type'),
+                    'type': chart_type,
                     'params': {
                         'title': config.get('title', ''),
                         'output_path': os.path.join(temp_dir, f'chart_{chart_key}.png'),
                     }
                 }
-                
-                chart_type = config.get('chart_type')
                 y_field_value = config.get('y_field', '')
                 
                 if chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter', 'area', 'histogram', 'waterfall', 'funnel']:
@@ -586,8 +599,20 @@ def generate_report(template_name: str = None, output_name: str = None,
                     if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
                     if config.get('series'): task_config['params']['series'] = config['series']
                 elif chart_type == 'heatmap':
-                    if config.get('index_field'): task_config['params']['index_field'] = config['index_field']
-                    if config.get('columns'): task_config['params']['columns'] = config['columns']
+                    # 热力图需要 index_field 和 columns
+                    # 从 y_field 提取 index_field（行字段）
+                    if config.get('y_field'):
+                        task_config['params']['index_field'] = config['y_field']
+                    elif config.get('index_field'):
+                        task_config['params']['index_field'] = config['index_field']
+                    
+                    # 强制清理错误字段（热力图不需要这些）
+                    task_config['params'].pop('x_field', None)
+                    task_config['params'].pop('value_field', None)
+                    task_config['params'].pop('category_field', None)
+                    
+                    # columns 需要动态计算（排除 index 列后的所有列）
+                    # 不在这里设置，由 _generate_single_chart 动态提取
                 elif chart_type in ['boxplot', 'violin']:
                     if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
                     if config.get('value_field'): task_config['params']['value_field'] = config['value_field']
@@ -862,6 +887,12 @@ def generate_report(template_name: str = None, output_name: str = None,
         print(f"[Insights] {insights_file}")
         print(f"[Placeholders] {template_engine.placeholders_file}")
         print("=" * 70)
+        
+        # 清理资源，释放文件句柄
+        del data_summary, data_loader, prs
+        import gc
+        gc.collect()
+        log_callback("\n[OK] 已释放文件资源")
         
         return True
         

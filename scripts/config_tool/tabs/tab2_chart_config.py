@@ -64,8 +64,10 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
             summary_path = os.path.join(summary_dir, selected_summary)
             if os.path.exists(summary_path):
                 try:
+                    # 读取 Sheet 列表后立即关闭文件
                     with pd.ExcelFile(summary_path) as xls:
                         available_sheets = xls.sheet_names
+                    # 文件已关闭，现在可以安全删除
                     
                     # 使用列布局显示统计汇总信息和删除按钮
                     col_info, col_del = st.columns([4, 1])
@@ -74,6 +76,8 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                     with col_del:
                         if st.button("🗑️ 删除", type="secondary", use_container_width=True, key="delete_chart_config"):
                             try:
+                                import time
+                                
                                 # 1. 删除图表配置文件
                                 if os.path.exists(placeholders_file):
                                     os.remove(placeholders_file)
@@ -83,6 +87,7 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                                 if selected_summary:
                                     summary_path = os.path.join(summary_dir, selected_summary)
                                     if os.path.exists(summary_path):
+                                        time.sleep(0.1)  # 确保文件系统稳定
                                         os.remove(summary_path)
                                         print(f"[INFO] 已删除统计汇总文件: {summary_path}")
                                 
@@ -168,18 +173,25 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                             with open(skill_path, 'r', encoding='utf-8') as f:
                                 skill_content = f.read()
                             
+                            # 转义 SKILL.md 中的花括号，避免被 .format() 解析
+                            skill_content_escaped = skill_content.replace('{', '{{').replace('}', '}}')
+                            
                             # 构建 Prompt
-                            prompt = f"""
+                            prompt = """
 请根据以下统计 Sheet 数据，推荐合适的图表配置：
 
 统计汇总文件：{selected_summary}
 统计 Sheet 列表:
-{json.dumps(sheet_analysis, ensure_ascii=False, indent=2)}
+{sheet_analysis_json}
 
 {skill_content}
 
 请根据 SKILL 中的规则，推荐图表配置。
-"""
+""".format(
+    selected_summary=selected_summary,
+    sheet_analysis_json=json.dumps(sheet_analysis, ensure_ascii=False, indent=2),
+    skill_content=skill_content_escaped
+)
                             
                             system_prompt = "你是数据可视化专家，输出严格 JSON 格式。只输出 JSON，不要任何其他文字。"
                             response = qwen.chat(system_prompt, prompt, json_mode=True)

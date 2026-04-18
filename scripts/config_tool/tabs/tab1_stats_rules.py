@@ -389,6 +389,151 @@ def render_tab1(base_dir, artifacts_dir, output_dir):
                     skip = set(stats_config.get('stats_sheets', {}).keys()) - set(results.keys())
                     if skip:
                         st.warning(f"失败：{', '.join(sorted(skip))}")
+                
+                # 自动生成图表配置
+                try:
+                    from core.chart_recommender import ChartRecommender
+                    recommender = ChartRecommender()
+                    
+                    # 提取 stats_sheets 列表
+                    stats_sheets = stats_config.get('stats_sheets', {})
+                    stats_list = []
+                    for name, cfg in stats_sheets.items():
+                        if cfg.get('enabled', True):
+                            stats_list.append({
+                                'name': name,
+                                'type': cfg.get('type', ''),
+                                'group_by': cfg.get('group_by', []),
+                                'metrics': cfg.get('metrics', [])
+                            })
+                    
+                    # 生成推荐
+                    recommendations = recommender.recommend(stats_list)
+                    
+                    # 更新 placeholders.json
+                    if os.path.exists(placeholders_file):
+                        with open(placeholders_file, 'r', encoding='utf-8') as f:
+                            placeholders_config = json.load(f)
+                    else:
+                        placeholders_config = {"version": "3.0", "placeholders": {"charts": {}, "insights": {}, "text": {}}}
+                    
+                    # 更新图表配置
+                    placeholders_config['placeholders']['charts'] = {}
+                    for rec in recommendations:
+                        chart_key = f"CHART:{rec['chart_key']}"
+                        chart_type = rec['chart_type']
+                        
+                        # 根据图表类型设置 render_mode
+                        if chart_type in ['bar_horizontal', 'bar_vertical', 'pie', 'line', 'column_clustered', 'multi_column', 'area']:
+                            render_mode = 'native'
+                        else:
+                            render_mode = 'image'
+                        
+                        chart_cfg = {
+                            'description': rec.get('ai_reason', ''),
+                            'data_source': rec['data_source'],
+                            'chart_type': chart_type,
+                            'title': rec.get('title', ''),
+                            'render_mode': render_mode
+                        }
+                        
+                        # 添加字段配置（严格按照图表引擎要求）
+                        params = rec.get('params', {})
+                        chart_type = rec['chart_type']
+                        
+                        # 根据图表类型添加对应字段
+                        if chart_type == 'heatmap':
+                            # 热力图：只需要 y_field（行字段）
+                            if 'y_field' in params:
+                                chart_cfg['y_field'] = params['y_field']
+                        elif chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter']:
+                            # 基础图表：x_field + y_field
+                            if 'x_field' in params:
+                                chart_cfg['x_field'] = params['x_field']
+                            if 'y_field' in params:
+                                chart_cfg['y_field'] = params['y_field']
+                        elif chart_type in ['pie', 'boxplot', 'violin', 'waterfall', 'funnel']:
+                            # 分类+数值型图表
+                            if 'category_field' in params:
+                                chart_cfg['category_field'] = params['category_field']
+                            if 'value_field' in params:
+                                chart_cfg['value_field'] = params['value_field']
+                        elif chart_type in ['column_clustered', 'multi_column']:
+                            # 分组柱状图：category_field + series
+                            if 'category_field' in params:
+                                chart_cfg['category_field'] = params['category_field']
+                            if 'series' in params:
+                                chart_cfg['series'] = params['series']
+                        elif chart_type == 'bubble':
+                            # 气泡图：x_field + y_field + size_field
+                            if 'x_field' in params:
+                                chart_cfg['x_field'] = params['x_field']
+                            if 'y_field' in params:
+                                chart_cfg['y_field'] = params['y_field']
+                            if 'size_field' in params:
+                                chart_cfg['size_field'] = params['size_field']
+                        elif chart_type == 'area':
+                            # 面积图：x_field + y_field（列表）
+                            if 'x_field' in params:
+                                chart_cfg['x_field'] = params['x_field']
+                            if 'y_field' in params:
+                                chart_cfg['y_field'] = params['y_field']
+                        elif chart_type == 'errorbar':
+                            # 误差棒图：x_field + y_field + error_field
+                            if 'x_field' in params:
+                                chart_cfg['x_field'] = params['x_field']
+                            if 'y_field' in params:
+                                chart_cfg['y_field'] = params['y_field']
+                            if 'error_field' in params:
+                                chart_cfg['error_field'] = params['error_field']
+                        elif chart_type == 'histogram':
+                            # 直方图：只需要 y_field
+                            if 'y_field' in params:
+                                chart_cfg['y_field'] = params['y_field']
+                        elif chart_type == 'polar':
+                            # 极坐标图：x_field（角度）+ y_field（半径）
+                            if 'x_field' in params:
+                                chart_cfg['x_field'] = params['x_field']
+                            if 'y_field' in params:
+                                chart_cfg['y_field'] = params['y_field']
+                        
+                        placeholders_config['placeholders']['charts'][chart_key] = chart_cfg
+                    
+                    # 生成 text 占位符（KPI 卡片）
+                    has_kpi = any(rec['chart_type'] == 'text' for rec in recommendations)
+                    if has_kpi:
+                        placeholders_config['placeholders']['text'] = {
+                            'TEXT:report_title': {
+                                'description': '报告标题',
+                                'default': '销售数据分析报告',
+                                'slide_index': 1
+                            },
+                            'TEXT:report_subtitle': {
+                                'description': '报告副标题',
+                                'default': '业绩复盘 · 洞察归因 · 策略建议',
+                                'slide_index': 1
+                            },
+                            'TEXT:report_date': {
+                                'description': '报告日期',
+                                'default': '',
+                                'slide_index': 1
+                            },
+                            'KPI:cards': {
+                                'description': '核心 KPI 卡片',
+                                'default': '',
+                                'slide_index': 2
+                            }
+                        }
+                    
+                    # 保存配置
+                    with open(placeholders_file, 'w', encoding='utf-8') as f:
+                        json.dump(placeholders_config, f, ensure_ascii=False, indent=2)
+                    
+                    st.success(f"✅ 已自动生成 {len(recommendations)} 个图表配置")
+                except Exception as e:
+                    import traceback
+                    st.warning(f"⚠️ 自动生成图表配置失败：{e}")
+                    print(traceback.format_exc())
             
             st.success("完成！")
         except Exception as e:

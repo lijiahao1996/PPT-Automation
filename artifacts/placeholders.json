@@ -1,77 +1,60 @@
 {
-  "version": "3.0",
   "placeholders": {
     "charts": {
       "CHART:核心_kpi": {
-        "description": "KPI 适合用文本卡片展示核心指标",
+        "description": "KPI 指标适合用柱状图对比",
         "data_source": "核心 KPI",
-        "chart_type": "text",
-        "title": "核心 KPI分析",
-        "render_mode": "image"
-      },
-      "CHART:部门业绩排名_总月薪": {
-        "description": "排名适合用横向条形图对比",
-        "data_source": "部门业绩排名",
-        "chart_type": "bar_horizontal",
+        "chart_type": "bar_vertical",
         "title": "",
-        "render_mode": "native",
-        "x_field": "部门总月薪",
-        "y_field": "部门"
-      },
-      "CHART:部门业绩排名_平均月薪": {
-        "description": "排名适合用横向条形图对比",
-        "data_source": "部门业绩排名",
-        "chart_type": "bar_horizontal",
-        "title": "",
-        "render_mode": "native",
-        "x_field": "部门平均月薪",
-        "y_field": "部门"
-      },
-      "CHART:部门构成分析_人数占比": {
-        "description": "占比适合用饼图/环形图展示",
-        "data_source": "部门构成分析",
-        "chart_type": "pie",
-        "title": "",
-        "render_mode": "native",
-        "category_field": "部门",
-        "value_field": "部门人数"
-      },
-      "CHART:部门构成分析_月薪占比": {
-        "description": "占比适合用饼图/环形图展示",
-        "data_source": "部门构成分析",
-        "chart_type": "pie",
-        "title": "",
-        "render_mode": "native",
-        "category_field": "部门",
-        "value_field": "部门总月薪"
-      },
-      "CHART:入职时间趋势_人数": {
-        "description": "趋势适合用折线图展示",
-        "data_source": "入职时间趋势",
-        "chart_type": "line",
-        "title": "",
-        "render_mode": "native",
-        "x_field": "入职日期",
-        "y_field": "当月入职人数"
-      },
-      "CHART:入职时间趋势_平均月薪": {
-        "description": "趋势适合用折线图展示",
-        "data_source": "入职时间趋势",
-        "chart_type": "line",
-        "title": "",
-        "render_mode": "native",
-        "x_field": "入职日期",
-        "y_field": "当月入职员工平均月薪"
-      },
-      "CHART:年龄_部门矩阵": {
-        "description": "矩阵适合用热力图展示",
-        "data_source": "年龄-部门矩阵",
-        "chart_type": "heatmap",
-        "title": "年龄-部门分布热力图",
         "render_mode": "image",
-        "x_field": "部门",
-        "y_field": "年龄",
-        "value_field": "人数"
+        "x_field": "指标",
+        "y_field": "数值"
+      },
+      "CHART:按销售员排名": {
+        "description": "排名适合用横向条形图对比",
+        "data_source": "按销售员排名",
+        "chart_type": "bar_horizontal",
+        "title": "",
+        "render_mode": "image",
+        "x_field": "总销售额",
+        "y_field": "销售员"
+      },
+      "CHART:按城市销售占比": {
+        "description": "占比适合用饼图/环形图展示",
+        "data_source": "按城市销售占比",
+        "chart_type": "pie",
+        "title": "",
+        "render_mode": "image",
+        "category_field": "城市",
+        "value_field": "城市销售额"
+      },
+      "CHART:按产品销售对比": {
+        "description": "对比适合用分组柱状图",
+        "data_source": "按产品销售对比",
+        "chart_type": "column_clustered",
+        "title": "",
+        "render_mode": "image",
+        "category_field": "产品",
+        "series": [
+          "产品销售额"
+        ]
+      },
+      "CHART:月度销售趋势": {
+        "description": "趋势适合用折线图展示",
+        "data_source": "月度销售趋势",
+        "chart_type": "line",
+        "title": "",
+        "render_mode": "image",
+        "x_field": "年月",
+        "y_field": "月度总销售额"
+      },
+      "CHART:销售员_产品矩阵": {
+        "description": "矩阵适合用热力图展示",
+        "data_source": "销售员-产品矩阵",
+        "chart_type": "heatmap",
+        "title": "产品-销售员销售矩阵",
+        "render_mode": "image",
+        "y_field": "销售员"
       }
     },
     "insights": {
@@ -87,11 +70,11 @@
         ],
         "baseline": "环比",
         "style": "平衡型",
-        "word_count": 140,
+        "word_count": 150,
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:部门业绩排名_总月薪": {
+      "CHART:按销售员排名": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -107,7 +90,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:部门业绩排名_平均月薪": {
+      "CHART:按城市销售占比": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -123,7 +106,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:部门构成分析_人数占比": {
+      "CHART:按产品销售对比": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -139,7 +122,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:部门构成分析_月薪占比": {
+      "CHART:月度销售趋势": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -155,39 +138,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:入职时间趋势_人数": {
-        "dimensions": [
-          "趋势分析",
-          "对比分析"
-        ],
-        "metrics": [
-          "总销售额",
-          "订单数",
-          "客单价"
-        ],
-        "baseline": "环比",
-        "style": "平衡型",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": ""
-      },
-      "CHART:入职时间趋势_平均月薪": {
-        "dimensions": [
-          "趋势分析",
-          "对比分析"
-        ],
-        "metrics": [
-          "总销售额",
-          "订单数",
-          "客单价"
-        ],
-        "baseline": "环比",
-        "style": "平衡型",
-        "word_count": 150,
-        "enabled": true,
-        "custom_prompt": ""
-      },
-      "CHART:年龄_部门矩阵": {
+      "CHART:销售员_产品矩阵": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -203,7 +154,6 @@
         "enabled": true,
         "custom_prompt": ""
       }
-    },
-    "text": {}
+    }
   }
 }
