@@ -10,6 +10,7 @@ def render_tab1(base_dir, artifacts_dir, output_dir):
     st.header("📋 统计规则配置")
     
     stats_rules_file = os.path.join(artifacts_dir, "stats_rules.json")
+    placeholders_file = os.path.join(artifacts_dir, "placeholders.json")
     
     from app_config import get_output_dirs, ensure_output_dirs
     dirs = ensure_output_dirs(base_dir)
@@ -169,10 +170,13 @@ def render_tab1(base_dir, artifacts_dir, output_dir):
                             with open(skill_path, 'r', encoding='utf-8') as f:
                                 skill = f.read()
                         
+                        # 转义 SKILL.md 中的花括号，避免被 f-string 解析
+                        skill_escaped = skill.replace('{', '{{').replace('}', '}}')
+                        
                         prompt = f"""Excel: {selected_file}
 列：{json.dumps(cols, ensure_ascii=False)}
 数据：{json.dumps(sample, ensure_ascii=False)}
-{skill}
+{skill_escaped}
 推荐统计规则，输出 JSON。"""
                         
                         resp = qwen.chat("输出严格 JSON", prompt, json_mode=True)
@@ -487,9 +491,9 @@ def render_tab1(base_dir, artifacts_dir, output_dir):
                             if 'error_field' in params:
                                 chart_cfg['error_field'] = params['error_field']
                         elif chart_type == 'histogram':
-                            # 直方图：只需要 y_field
+                            # 直方图：使用 field 参数（不是 y_field）
                             if 'y_field' in params:
-                                chart_cfg['y_field'] = params['y_field']
+                                chart_cfg['field'] = params['y_field']
                         elif chart_type == 'polar':
                             # 极坐标图：x_field（角度）+ y_field（半径）
                             if 'x_field' in params:

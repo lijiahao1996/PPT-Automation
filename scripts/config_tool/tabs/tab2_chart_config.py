@@ -76,7 +76,12 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                     with col_del:
                         if st.button("🗑️ 删除", type="secondary", use_container_width=True, key="delete_chart_config"):
                             try:
+                                import gc
                                 import time
+                                
+                                # 强制垃圾回收，释放所有可能的文件句柄
+                                gc.collect()
+                                time.sleep(0.2)  # 等待文件系统稳定
                                 
                                 # 1. 删除图表配置文件
                                 if os.path.exists(placeholders_file):
@@ -87,7 +92,7 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                                 if selected_summary:
                                     summary_path = os.path.join(summary_dir, selected_summary)
                                     if os.path.exists(summary_path):
-                                        time.sleep(0.1)  # 确保文件系统稳定
+                                        time.sleep(0.1)
                                         os.remove(summary_path)
                                         print(f"[INFO] 已删除统计汇总文件: {summary_path}")
                                 
@@ -119,7 +124,12 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                     # 分析每个 Sheet 的数据特征
                     sheet_analysis = []
                     for sheet_name in available_sheets:
-                        df = pd.read_excel(summary_path, sheet_name=sheet_name, nrows=5)
+                        # 使用 with 语句确保文件正确关闭
+                        with pd.ExcelFile(summary_path) as xls:
+                            df = pd.read_excel(xls, sheet_name=sheet_name, nrows=5)
+                            # 获取行数（不重新打开文件）
+                            row_count = len(pd.read_excel(xls, sheet_name=sheet_name))
+                        
                         # 将 Timestamp 转换为字符串
                         sample_data = []
                         for _, row in df.head(3).iterrows():
@@ -134,29 +144,116 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                         sheet_info = {
                             'name': sheet_name,
                             'columns': df.columns.tolist(),
-                            'row_count': len(pd.read_excel(summary_path, sheet_name=sheet_name)),
+                            'row_count': row_count,
                             'sample': sample_data
                         }
                         sheet_analysis.append(sheet_info)
+                        
+                        # 释放 DataFrame
+                        del df
                     
                     st.session_state['sheet_analysis'] = sheet_analysis
                     
                     # ========== 动态生成 SKILL.md ==========
-                    # chart-config-recommender 基于 stats_rules.json 生成（因为图表依赖统计规则）
-                    stats_rules_path = os.path.join(base_dir, 'artifacts', 'stats_rules.json')
-                    chart_skill_builder_path = os.path.join(base_dir, 'skills', 'chart-config-recommender', 'skill_builder.py')
+                    # 直接从 Excel 统计 Sheet 生成 SKILL.md，不依赖 stats_rules.json
+                    # 这样可以确保数据一致性
+                    stats_sheets_from_excel = {}
+                    for sheet_info in sheet_analysis:
+                        sheet_name = sheet_info['name']
+                        # 从 sheet 名称推断统计类型（如果有）
+                        # 这里只传递基本信息，让 AI 自己判断
+                        stats_sheets_from_excel[sheet_name] = {
+                            'enabled': True,
+                            'type': 'unknown',  # AI 会根据字段自行判断
+                            'columns': sheet_info.get('columns', []),
+                            'row_count': sheet_info.get('row_count', 0)
+                        }
                     
-                    if os.path.exists(chart_skill_builder_path) and os.path.exists(stats_rules_path):
-                        import importlib.util
-                        spec = importlib.util.spec_from_file_location("chart_skill_builder", chart_skill_builder_path)
-                        chart_skill_builder = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(chart_skill_builder)
-                        
-                        # 动态生成 chart-config-recommender SKILL.md
-                        chart_skill_builder.build_skill_from_config(
-                            stats_rules_path=stats_rules_path,
-                            output_path=os.path.join(base_dir, 'skills', 'chart-config-recommender', 'SKILL.md')
-                        )
+                    # 生成临时的 SKILL.md（基于 Excel 实际数据）
+                    chart_skill_path = os.path.join(base_dir, 'skills', 'chart-config-recommender', 'SKILL.md')
+                    
+                    # 生成包含实际 Excel 数据的 SKILL.md
+                    import json as json_lib
+                    from datetime import datetime
+                    
+                    rules_md = ""
+                    for sheet_name, info in stats_sheets_from_excel.items():
+                        columns_str = ', '.join(info.get('columns', []))
+                        row_count = info.get('row_count', 0)
+                        rules_md += f"| {sheet_name} | {row_count}行 | {columns_str} |\n"
+                    
+                    # 所有支持的图表类型（16种）
+                    all_chart_types_info = """
+| 图表类型 | 适用场景 | 需要字段 |
+|---------|---------|----------|
+| bar_horizontal | 排名对比 | x_field(数值), y_field(分类) |
+| bar_vertical | 指标对比 | x_field(分类), y_field(数值) |
+| pie | 占比分析 | category_field(分类), value_field(数值) |
+| line | 趋势分析 | x_field(时间), y_field(数值) |
+| column_clustered | 多系列对比 | category_field(分类), series(数值列表) |
+| heatmap | 矩阵分析 | y_field(行字段)，columns自动提取 |
+| scatter | 相关性分析 | x_field(数值), y_field(数值) |
+| histogram | 分布分析 | field(数值) |
+| boxplot | 异常检测 | category_field(分类), value_field(数值) |
+| violin | 分布密度 | category_field(分类), value_field(数值) |
+| bubble | 三维数据 | x_field, y_field, size_field(都是数值) |
+| area | 累计趋势 | x_field(时间), y_field(数值列表) |
+| errorbar | 误差分析 | x_field, y_field, error_field |
+| polar | 周期数据 | x_field(角度), y_field(半径) |
+| waterfall | 增减分析 | category_field, value_field |
+| funnel | 流程转化 | category_field(阶段), value_field |
+"""
+                    
+                    skill_content = f"""---
+name: chart-config-recommender
+description: 图表配置推荐技能（实时数据版）
+version: 3.0.0
+---
+
+# 图表配置推荐专家
+
+你是数据可视化专家，根据**实际统计 Sheet 数据**推荐图表配置。
+
+## 📊 当前统计 Sheet（从 Excel 实时读取）
+
+| Sheet名称 | 数据行数 | 列字段 |
+|---------|---------|----------|
+{rules_md}
+---
+
+## 🎯 图表选择指南
+
+{all_chart_types_info}
+
+## 📤 输出格式
+
+必须输出 JSON 格式：
+```json
+{{
+  "chart_recommendations": [
+    {{
+      "chart_key": "简洁的英文标识",
+      "chart_type": "图表类型",
+      "title": "图表标题",
+      "data_source": "Sheet名称（必须与上面表格中的一致）",
+      "render_mode": "native或image",
+      "x_field": "字段名（如果适用）",
+      "y_field": "字段名（如果适用）"
+    }}
+  ]
+}}
+```
+
+**关键要求**：
+1. data_source 必须与上面表格中的 Sheet 名称完全一致
+2. chart_key 使用简洁英文（如 sales_ranking，不要加图表类型后缀）
+3. 根据列字段选择合适的图表类型
+4. 灵活选择，不要总是用相同的图表
+
+---
+
+**生成时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+"""
                     
                     # 调用 AI（使用 chart-config-recommender SKILL）
                     if base_dir:
@@ -395,10 +492,13 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
                 data_source = st.selectbox("数据源", options=available_sheets, help="选择要使用的 Excel Sheet", key="data_source_select")
                 if data_source:
                     try:
-                        df_preview = pd.read_excel(summary_path, sheet_name=data_source, nrows=5)
+                        with pd.ExcelFile(summary_path) as xls:
+                            df_preview = pd.read_excel(xls, sheet_name=data_source, nrows=5)
+                            row_count = len(pd.read_excel(xls, sheet_name=data_source))
                         with st.expander(f"📊 预览数据源 '{data_source}' (前 5 行)", expanded=False):
                             st.dataframe(df_preview, use_container_width=True)
-                            st.caption(f"共 {len(pd.read_excel(summary_path, sheet_name=data_source))} 行 × {len(df_preview.columns)} 列")
+                            st.caption(f"共 {row_count} 行 × {len(df_preview.columns)} 列")
+                        del df_preview
                     except Exception as e:
                         st.warning(f"⚠️ 预览失败：{e}")
             else:
@@ -412,9 +512,11 @@ def render_tab2(artifacts_dir, output_dir, base_dir=None):
             available_fields = []
             if data_source and summary_path and os.path.exists(summary_path):
                 try:
-                    df_temp = pd.read_excel(summary_path, sheet_name=data_source, nrows=1)
+                    with pd.ExcelFile(summary_path) as xls:
+                        df_temp = pd.read_excel(xls, sheet_name=data_source, nrows=1)
                     available_fields = df_temp.columns.tolist()
                     auto_fields_info = f"📊 可用字段：{', '.join(available_fields)}"
+                    del df_temp
                 except Exception:
                     pass
             

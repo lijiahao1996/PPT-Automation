@@ -139,10 +139,31 @@ def _generate_single_chart(args: Tuple) -> Tuple[str, str]:
     if log_callback is None:
         log_callback = lambda x: None
     
-    if config['sheet'] not in data_summary:
-        return (chart_key, None)
+    # 直方图使用原始数据，其他图表使用统计汇总
+    chart_type = config['type']
     
-    df = data_summary[config['sheet']]
+    if chart_type == 'histogram':
+        # 直方图：data_source 是原始数据文件名
+        data_source = config.get('sheet', '')
+        if not data_source or data_source.endswith('.xlsx'):
+            # 从 config 中获取原始数据
+            raw_data_path = config.get('raw_data_path')
+            if raw_data_path and os.path.exists(raw_data_path):
+                df = pd.read_excel(raw_data_path)
+                log_callback(f"      [INFO] 直方图使用原始数据：{os.path.basename(raw_data_path)}")
+            else:
+                log_callback(f"      [ERROR] 直方图 {chart_key} 缺少原始数据路径")
+                return (chart_key, None)
+        else:
+            # 旧的逻辑：从 data_summary 加载
+            if data_source not in data_summary:
+                return (chart_key, None)
+            df = data_summary[data_source]
+    else:
+        # 其他图表：从统计汇总加载
+        if config['sheet'] not in data_summary:
+            return (chart_key, None)
+        df = data_summary[config['sheet']]
     chart_type = config['type']
     params = config['params'].copy()
     output_path = os.path.join(temp_dir, f'chart_{chart_key}.png')
@@ -562,13 +583,33 @@ def generate_report(template_name: str = None, output_name: str = None,
         # 从 placeholders.json 读取图表配置
         chart_placeholders = placeholders.get('placeholders', {}).get('charts', {})
         
+        # 获取实际存在的 Sheet 列表
+        actual_sheets = list(data_summary.keys())
+        log_callback(f"      [INFO] 实际可用 Sheet: {actual_sheets}")
+        
         # 分离图片图表和原生图表
         for key, config in chart_placeholders.items():
             chart_key = key.split(':')[1] if ':' in key else key
             render_mode = config.get('render_mode', 'image')  # 默认图片方式
             chart_type = config.get('chart_type', '')  # 提前定义 chart_type
             
-            log_callback(f"      [DEBUG] {chart_key}: mode={render_mode}, type={chart_type}")
+            # 修正 data_source：如果配置的 data_source 不存在，尝试匹配
+            data_source = config.get('data_source', '')
+            if data_source and data_source not in actual_sheets:
+                # 尝试模糊匹配
+                matched = None
+                for actual_sheet in actual_sheets:
+                    if data_source in actual_sheet or actual_sheet in data_source:
+                        matched = actual_sheet
+                        break
+                
+                if matched:
+                    log_callback(f"      [WARN] {chart_key}: data_source '{data_source}' 不存在，修正为 '{matched}'")
+                    config['data_source'] = matched
+                else:
+                    log_callback(f"      [WARN] {chart_key}: data_source '{data_source}' 不存在，且无法匹配")
+            
+            log_callback(f"      [DEBUG] {chart_key}: mode={render_mode}, type={chart_type}, source={config.get('data_source')}")
             
             if render_mode == 'native':
                 # 原生图表，稍后处理
@@ -589,9 +630,20 @@ def generate_report(template_name: str = None, output_name: str = None,
                 }
                 y_field_value = config.get('y_field', '')
                 
-                if chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter', 'area', 'histogram', 'waterfall', 'funnel']:
+                if chart_type in ['bar_horizontal', 'bar_vertical', 'line', 'scatter', 'area', 'waterfall', 'funnel']:
                     if config.get('x_field'): task_config['params']['x_field'] = config['x_field']
                     if y_field_value: task_config['params']['y_field'] = y_field_value
+                elif chart_type == 'histogram':
+                    # 直方图使用 field 参数（不是 y_field）
+                    if config.get('field'):
+                        task_config['params']['field'] = config['field']
+                    elif y_field_value:
+                        task_config['params']['field'] = y_field_value
+                    # 直方图需要原始数据路径
+                    raw_data_name_val = raw_data_name or summary_file.replace('_统计汇总.xlsx', '.xlsx') if summary_file else None
+                    if raw_data_name_val:
+                        task_config['raw_data_path'] = os.path.join(BASE_DIR, 'output', 'uploaded', raw_data_name_val)
+                        task_config['sheet'] = raw_data_name_val  # 设置为原始数据文件名
                 elif chart_type == 'pie':
                     if config.get('category_field'): task_config['params']['category_field'] = config['category_field']
                     if config.get('value_field'): task_config['params']['value_field'] = config['value_field']

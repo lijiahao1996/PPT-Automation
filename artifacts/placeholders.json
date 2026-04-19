@@ -1,64 +1,76 @@
 {
+  "version": "3.0",
   "placeholders": {
     "charts": {
-      "CHART:核心_kpi": {
-        "description": "KPI 指标适合用柱状图对比",
-        "data_source": "核心 KPI",
+      "CHART:core_kpi_bar_vertical": {
+        "description": "单维度指标对比，适合纵向柱状图直观展示数值差异",
+        "data_source": "核心用户KPI",
         "chart_type": "bar_vertical",
         "title": "",
-        "render_mode": "image",
+        "render_mode": "native",
         "x_field": "指标",
         "y_field": "数值"
       },
-      "CHART:按销售员排名": {
-        "description": "排名适合用横向条形图对比",
-        "data_source": "按销售员排名",
-        "chart_type": "bar_horizontal",
-        "title": "",
-        "render_mode": "image",
-        "x_field": "总销售额",
-        "y_field": "销售员"
-      },
-      "CHART:按城市销售占比": {
-        "description": "占比适合用饼图/环形图展示",
-        "data_source": "按城市销售占比",
+      "CHART:city_distribution_pie": {
+        "description": "分类占比分析，环形饼图能清晰表达各城市用户份额",
+        "data_source": "城市用户分布",
         "chart_type": "pie",
         "title": "",
-        "render_mode": "image",
+        "render_mode": "native",
         "category_field": "城市",
-        "value_field": "城市销售额"
+        "value_field": "用户数"
       },
-      "CHART:按产品销售对比": {
-        "description": "对比适合用分组柱状图",
-        "data_source": "按产品销售对比",
-        "chart_type": "column_clustered",
+      "CHART:membership_ranking_bar_horizontal": {
+        "description": "等级间用户数量排名对比，横向条形图便于阅读长分类标签并突出排序关系",
+        "data_source": "会员等级排名",
+        "chart_type": "bar_horizontal",
         "title": "",
-        "render_mode": "image",
-        "category_field": "产品",
-        "series": [
-          "产品销售额"
-        ]
+        "render_mode": "native",
+        "x_field": "用户数",
+        "y_field": "会员等级"
       },
-      "CHART:月度销售趋势": {
-        "description": "趋势适合用折线图展示",
-        "data_source": "月度销售趋势",
+      "CHART:gender_salary_age_scatter": {
+        "description": "双数值字段，适合散点图探索性别分组下的薪资与年龄潜在相关性",
+        "data_source": "性别-月薪对比",
+        "chart_type": "scatter",
+        "title": "",
+        "render_mode": "native",
+        "x_field": "平均月薪",
+        "y_field": "平均年龄"
+      },
+      "CHART:registration_trend_line": {
+        "description": "含时间序列及多指标变化，折线图可同时呈现新增用户与消费行为的趋势演变",
+        "data_source": "注册时间趋势",
         "chart_type": "line",
         "title": "",
-        "render_mode": "image",
-        "x_field": "年月",
-        "y_field": "月度总销售额"
+        "render_mode": "native",
+        "x_field": "注册日期",
+        "y_field": [
+          "当月新增用户",
+          "当月平均消费次数"
+        ]
       },
-      "CHART:销售员_产品矩阵": {
-        "description": "矩阵适合用热力图展示",
-        "data_source": "销售员-产品矩阵",
-        "chart_type": "heatmap",
-        "title": "产品-销售员销售矩阵",
+      "CHART:occupation_rating_bar_vertical": {
+        "description": "分类+单数值，纵向柱状图适合比较不同职业的评分水平",
+        "data_source": "职业-评分分布",
+        "chart_type": "bar_vertical",
+        "title": "",
+        "render_mode": "native",
+        "x_field": "职业",
+        "y_field": "平均评分"
+      },
+      "CHART:active_user_funnel": {
+        "description": "二阶段流程（活跃/非活跃）且数值递减，漏斗图直观呈现用户活跃度转化结构",
+        "data_source": "活跃用户分析",
+        "chart_type": "funnel",
+        "title": "活跃用户转化漏斗",
         "render_mode": "image",
-        "y_field": "销售员"
+        "category_field": "是否活跃",
+        "value_field": "用户数"
       }
     },
     "insights": {
-      "CHART:核心_kpi": {
+      "CHART:core_kpi_bar_vertical": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -74,7 +86,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:按销售员排名": {
+      "CHART:city_distribution_pie": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -90,7 +102,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:按城市销售占比": {
+      "CHART:membership_ranking_bar_horizontal": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -106,7 +118,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:按产品销售对比": {
+      "CHART:gender_salary_age_scatter": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -122,7 +134,7 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:月度销售趋势": {
+      "CHART:registration_trend_line": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -138,7 +150,23 @@
         "enabled": true,
         "custom_prompt": ""
       },
-      "CHART:销售员_产品矩阵": {
+      "CHART:occupation_rating_bar_vertical": {
+        "dimensions": [
+          "趋势分析",
+          "对比分析"
+        ],
+        "metrics": [
+          "总销售额",
+          "订单数",
+          "客单价"
+        ],
+        "baseline": "环比",
+        "style": "平衡型",
+        "word_count": 150,
+        "enabled": true,
+        "custom_prompt": ""
+      },
+      "CHART:active_user_funnel": {
         "dimensions": [
           "趋势分析",
           "对比分析"
@@ -154,6 +182,7 @@
         "enabled": true,
         "custom_prompt": ""
       }
-    }
+    },
+    "text": {}
   }
 }

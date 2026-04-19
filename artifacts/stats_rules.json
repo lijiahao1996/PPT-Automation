@@ -1,45 +1,35 @@
 {
   "stats_sheets": {
-    "核心 KPI": {
-      "description": "核心经营指标汇总",
+    "核心用户KPI": {
+      "description": "用户基础指标汇总，反映整体规模与活跃度",
       "type": "kpi",
       "enabled": true,
       "group_by": [],
       "metrics": [
         {
-          "field": "销售额",
-          "agg": "sum",
-          "alias": "总销售额"
-        },
-        {
-          "field": "销售额",
+          "field": "用户ID",
           "agg": "count",
-          "alias": "订单总数"
+          "alias": "总用户数"
         },
         {
-          "field": "销售额",
-          "agg": "mean",
-          "alias": "平均单笔销售额"
-        }
-      ]
-    },
-    "按销售员排名": {
-      "description": "销售员业绩排名统计",
-      "type": "ranking",
-      "enabled": true,
-      "group_by": [
-        "销售员"
-      ],
-      "metrics": [
-        {
-          "field": "销售额",
+          "field": "消费次数",
           "agg": "sum",
-          "alias": "总销售额"
+          "alias": "总消费次数"
+        },
+        {
+          "field": "月薪(元)",
+          "agg": "mean",
+          "alias": "平均月薪"
+        },
+        {
+          "field": "评分",
+          "agg": "mean",
+          "alias": "平均评分"
         }
       ]
     },
-    "按城市销售占比": {
-      "description": "各城市销售额占比分析",
+    "城市用户分布": {
+      "description": "各城市用户占比，识别区域覆盖重点",
       "type": "composition",
       "enabled": true,
       "group_by": [
@@ -47,55 +37,104 @@
       ],
       "metrics": [
         {
-          "field": "销售额",
-          "agg": "sum",
-          "alias": "城市销售额"
+          "field": "用户ID",
+          "agg": "count",
+          "alias": "用户数"
         }
       ]
     },
-    "按产品销售对比": {
-      "description": "不同产品维度的销售对比（当前仅苹果汁，可扩展）",
+    "会员等级排名": {
+      "description": "按会员等级统计用户数与平均消费，评估等级价值",
+      "type": "ranking",
+      "enabled": true,
+      "group_by": [
+        "会员等级"
+      ],
+      "metrics": [
+        {
+          "field": "用户ID",
+          "agg": "count",
+          "alias": "用户数"
+        },
+        {
+          "field": "消费次数",
+          "agg": "mean",
+          "alias": "平均消费次数"
+        }
+      ]
+    },
+    "性别-月薪对比": {
+      "description": "不同性别用户的收入与年龄对比，洞察人群特征",
       "type": "comparison",
       "enabled": true,
       "group_by": [
-        "产品"
+        "性别"
       ],
       "metrics": [
         {
-          "field": "销售额",
-          "agg": "sum",
-          "alias": "产品销售额"
+          "field": "月薪(元)",
+          "agg": "mean",
+          "alias": "平均月薪"
+        },
+        {
+          "field": "年龄",
+          "agg": "mean",
+          "alias": "平均年龄"
         }
       ]
     },
-    "月度销售趋势": {
-      "description": "按年月粒度的销售趋势分析",
+    "注册时间趋势": {
+      "description": "按月统计新增用户与平均消费次数，监测增长健康度",
       "type": "trend",
       "enabled": true,
       "group_by": [
-        "年月"
+        "注册日期"
       ],
       "metrics": [
         {
-          "field": "销售额",
-          "agg": "sum",
-          "alias": "月度总销售额"
+          "field": "用户ID",
+          "agg": "count",
+          "alias": "当月新增用户"
+        },
+        {
+          "field": "消费次数",
+          "agg": "mean",
+          "alias": "当月平均消费次数"
         }
       ]
     },
-    "销售员-产品矩阵": {
-      "description": "销售员与产品交叉维度的销售表现",
-      "type": "matrix",
+    "职业-评分分布": {
+      "description": "各职业用户评分分布，辅助服务质量分析",
+      "type": "distribution",
       "enabled": true,
       "group_by": [
-        "销售员",
-        "产品"
+        "职业"
       ],
       "metrics": [
         {
-          "field": "销售额",
+          "field": "评分",
+          "agg": "mean",
+          "alias": "平均评分"
+        }
+      ]
+    },
+    "活跃用户分析": {
+      "description": "活跃/非活跃用户占比及对应消费贡献",
+      "type": "composition",
+      "enabled": true,
+      "group_by": [
+        "是否活跃"
+      ],
+      "metrics": [
+        {
+          "field": "用户ID",
+          "agg": "count",
+          "alias": "用户数"
+        },
+        {
+          "field": "消费次数",
           "agg": "sum",
-          "alias": "销售额"
+          "alias": "总消费次数"
         }
       ]
     }

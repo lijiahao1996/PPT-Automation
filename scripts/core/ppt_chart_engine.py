@@ -181,14 +181,29 @@ class PPTChartEngine:
             logger.error("折线图需要 x_field 和 y_field")
             return False
         
-        if x_field not in df.columns or y_field not in df.columns:
-            logger.error(f"字段不存在：x_field={x_field}, y_field={y_field}")
+        # 支持 y_field 为列表（多系列）
+        if isinstance(y_field, list):
+            y_fields = y_field
+        else:
+            y_fields = [y_field]
+        
+        # 检查字段是否存在
+        if x_field not in df.columns:
+            logger.error(f"x_field 不存在：{x_field}")
             return False
+        
+        for yf in y_fields:
+            if yf not in df.columns:
+                logger.error(f"y_field 不存在：{yf}")
+                return False
         
         # 准备数据
         chart_data = CategoryChartData()
         chart_data.categories = df[x_field].tolist()
-        chart_data.add_series(y_field, df[y_field].tolist())
+        
+        # 添加多个系列
+        for yf in y_fields:
+            chart_data.add_series(yf, df[yf].tolist())
         
         # 创建图表
         chart = slide.shapes.add_chart(XL_CHART_TYPE.LINE, left, top, width, height, chart_data).chart

@@ -157,6 +157,11 @@ class StatsEngine:
         group_by = config.get('group_by', [])
         metrics = config.get('metrics', [])
         
+        # 检查 distribution 类型的 group_by
+        stats_type = config.get('type', '')
+        if stats_type == 'distribution' and not group_by:
+            raise ValueError("distribution 类型必须指定 group_by 字段（如：年龄段、月份等）")
+        
         # 分组聚合
         agg_dict = {}
         for metric in metrics:

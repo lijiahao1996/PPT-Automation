@@ -87,9 +87,9 @@ class ChartRecommender:
                     'series': [m.get('alias', '') for m in stat.get('metrics', []) if m.get('alias')]
                 }
             elif stat_type == 'distribution':
-                # histogram: y_field=数值
+                # histogram: 使用 field 参数（不是 y_field）
                 chart_config['params'] = {
-                    'y_field': stat.get('metrics', [{}])[0].get('alias', '数值')
+                    'y_field': stat.get('metrics', [{}])[0].get('alias', '数值')  # 这里用 y_field，tab1 会转换为 field
                 }
             elif stat_type == 'outlier':
                 # boxplot: category_field=分类, value_field=数值
